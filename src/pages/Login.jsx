@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Scale } from 'lucide-react';
+import { useDispatch } from "react-redux";
 import api from '../config/axios';
+import { login } from "../redux/features/userSlice";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -10,27 +12,44 @@ const Login = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-
+  const dispatch = useDispatch(); // Store data to redux
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
     try {
       const response = await api.auth.post("/api/Auth/login", { email, password });
-      const { role, token, tokenExpiration } = response.data;
+      const { token, tokenExpiration, user } = response.data;
+      const role = user.role;
 
+      console.log("Đăng nhập role:", role); // Xác minh lại
+
+      dispatch(login(response.data));
       localStorage.setItem("token", token);
       localStorage.setItem("tokenExpiration", tokenExpiration);
+      localStorage.setItem("role", role); // thêm dòng này
 
-      // Lấy đường dẫn redirect từ sessionStorage
-      const redirectPath = sessionStorage.getItem("redirectPath") || "/";
 
-      // Lưu thông tin user nếu có
-      if (response.data.user) {
-        localStorage.setItem('user', JSON.stringify(response.data.user));
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
       }
 
-      navigate('/');
+      const redirectPath = sessionStorage.getItem("redirectPath") || "/";
+      sessionStorage.removeItem("redirectPath");
+
+      switch (role) {
+        case 'Customer':
+          navigate('/');
+          break;
+        case 'Lawyer':
+          navigate('/lawyerprofile');
+          break;
+        case 'Admin':
+          navigate('/admin/dashboard');
+          break;
+        default:
+          navigate('/');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'An error occurred during login');
     } finally {
@@ -52,7 +71,7 @@ const Login = () => {
         <p className="mt-2 text-center text-sm text-gray-600">
           Hoặc{' '}
           <Link to="/register" className="font-medium text-primary-700 hover:text-primary-800">
-            tạo mới tài khoản 
+            tạo mới tài khoản
           </Link>
         </p>
       </div>
