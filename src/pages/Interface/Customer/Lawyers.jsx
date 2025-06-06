@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { lawyers } from '../data/lawyers';
+import { lawyers } from '../../../data/lawyers';
 import LawyerCard from '../components/LawyerCard';
 
 const Lawyers = () => {

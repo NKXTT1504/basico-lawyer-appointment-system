@@ -2,24 +2,25 @@ import { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 // Components
-import Navbar from './components/Navbar';
+import Navbar from './components/Layout/Navbar';
 import LawyerNavbar from './components/LawyerNavbar';
-import Footer from './components/Footer';
+import Footer from './components/Layout/Footer';
 
 // Pages
-import Home from './pages/Home';
-import Services from './pages/Services';
-import ServiceDetails from './pages/ServiceDetails';
-import Lawyers from './pages/Lawyers';
-import LawyerDetails from './pages/LawyerDetails';
-import About from './pages/About';
-import Contact from './pages/Contact';
-import Appointment from './pages/Appointment';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import ManageAppointment from './pages/ManageAppointment';
-import LawyerShift from './pages/LawyerShift';
-import LawyerProfile from './pages/LawyerProfile';
+import Home from './pages/Interface/Customer/Home';
+import Services from './pages/Interface/Customer/Services';
+import ServiceDetails from './pages/Interface/Customer/ServiceDetails';
+import Lawyers from './pages/Interface/Customer/Lawyers';
+import LawyerDetails from './pages/Interface/Customer/LawyerDetails';
+import About from './pages/Interface/Customer/About';
+import Contact from './pages/Interface/Customer/Contact';
+import Appointment from './pages/Interface/Customer/Appointment';
+import Login from './pages/Authentication/Login';
+import Register from './pages/Authentication/Register';
+import ManageAppointment from './pages/Interface/Lawyer/ManageAppointment';
+import LawyerShift from './pages/Interface/Lawyer/LawyerShift';
+import LawyerProfile from './pages/Profiles/LawyerProfile';
+import Profile from './pages/Profiles/CustomerProfile';
 
 function App() {
   const [role, setRole] = useState(localStorage.getItem("role"));
@@ -51,6 +52,7 @@ function App() {
             <Route path="/manageappointment" element={<ManageAppointment />} />
             <Route path="/lawyershift" element={<LawyerShift />} />
             <Route path="/lawyerprofile" element={<LawyerProfile />} />
+            <Route path="/customerprofile" element={<Profile />} />
           </Routes>
         </div>
         <Footer />

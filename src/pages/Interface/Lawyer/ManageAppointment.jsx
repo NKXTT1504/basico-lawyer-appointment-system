@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import api from "../config/axios";
+import api from "../../../config/axios";
 
 const ManageAppointment = () => {
   const { appointmentId } = useParams();

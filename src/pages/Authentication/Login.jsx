@@ -1,54 +1,62 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, User, ArrowRight, Scale } from 'lucide-react';
-import { toast } from "react-toastify";
-import api from "../config/axios"; // Import axios instance
+import { Mail, Lock, ArrowRight, Scale } from 'lucide-react';
+import { useDispatch } from "react-redux";
+import api from '../../config/axios';
+import { login } from "../../redux/features/userSlice";
 
-const Register = () => {
+const Login = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    fullName: '',
-    email: '',
-    phoneNumber: '',
-    password: '',
-    confirmPassword: ''
-  });
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-    const handleChange = (e) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
-  };
-
-  const handleRegister = async (e) => {
+  const dispatch = useDispatch(); // Store data to redux
+  const handleLogin = async (e) => {
     e.preventDefault();
-    setError('');
-    // Kiểm tra xem mật khẩu và xác nhận mật khẩu có khớp không
-    if (formData.password !== formData.confirmPassword) {
-      setError('Mật khẩu và xác nhận mật khẩu không khớp.');
-      return;
-    }
     setIsLoading(true);
-
+    setError('');
     try {
-      // values.role("CUSTOMER");
-      const response = await api.auth.post("/api/Auth/register", {
-      ...formData,
-      role: "CUSTOMER"
-    });
-      console.log(response.data);
-      toast.success("Đăng kí tài khoản thành công!"); // thông báo đăng kí thành công
-      navigate("/login");
+      const response = await api.auth.post("/api/Auth/login", { email, password });
+      const { token, tokenExpiration, user } = response.data;
+      const role = user.role;
+
+      console.log("Đăng nhập role:", role); // Xác minh lại
+
+      dispatch(login(response.data));
+      localStorage.setItem("token", token);
+      localStorage.setItem("tokenExpiration", tokenExpiration);
+      localStorage.setItem("role", role); // thêm dòng này
+
+
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+      }
+
+      const redirectPath = sessionStorage.getItem("redirectPath") || "/";
+      sessionStorage.removeItem("redirectPath");
+
+      switch (role) {
+        case 'Customer':
+          navigate('/');
+          break;
+        case 'Lawyer':
+          navigate('/lawyerprofile');
+          break;
+        case 'Admin':
+          navigate('/admin/dashboard');
+          break;
+        default:
+          navigate('/');
+      }
     } catch (err) {
-      console.error(err);
-      toast.error(err.response?.data?.message || "Không thể đăng kí tài khoản! Hãy thử lại."); // trả về lỗi từ back end
+      setError(err.response?.data?.message || 'An error occurred during login');
     } finally {
-      setIsLoading(false); // sau khi tất cả xong finally thì sẽ dừng loading
+      setIsLoading(false);
     }
   };
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
@@ -58,12 +66,12 @@ const Register = () => {
           <span className="text-2xl font-bold text-primary-700 font-serif">Basico</span>
         </Link>
         <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-          Tạo tài khoản
+          Đăng nhập tài khoản
         </h2>
         <p className="mt-2 text-center text-sm text-gray-600">
-          Đã có tài khoản?{' '}
-          <Link to="/login" className="font-medium text-primary-700 hover:text-primary-800">
-            Đăng nhập
+          Hoặc{' '}
+          <Link to="/register" className="font-medium text-primary-700 hover:text-primary-800">
+            tạo mới tài khoản
           </Link>
         </p>
       </div>
@@ -85,28 +93,7 @@ const Register = () => {
             </div>
           )}
 
-          <form className="space-y-6" onSubmit={handleRegister}>
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                Họ và tên
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="fullName"
-                  name="fullName"
-                  type="text"
-                  required
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  className="pl-10 block w-full"
-                  placeholder="John Doe"
-                />
-              </div>
-            </div>
-
+          <form className="space-y-6" onSubmit={handleLogin}>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email
@@ -121,30 +108,10 @@ const Register = () => {
                   type="email"
                   autoComplete="email"
                   required
-                  value={formData.email}
-                  onChange={handleChange}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="pl-10 block w-full"
                   placeholder="you@example.com"
-                />
-              </div>
-            </div>
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Số điện thoại
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="phoneNumber"
-                  name="phoneNumber"
-                  type="text"
-                  required
-                  value={formData.phoneNumber}
-                  onChange={handleChange}
-                  className="pl-10 block w-full"
-                  placeholder="0123456789"
                 />
               </div>
             </div>
@@ -161,34 +128,33 @@ const Register = () => {
                   id="password"
                   name="password"
                   type="password"
+                  autoComplete="current-password"
                   required
-                  value={formData.password}
-                  onChange={handleChange}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 block w-full"
                   placeholder="••••••••"
-                  minLength={8}
                 />
               </div>
             </div>
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Xác nhận mật khẩu
-              </label>
-              <div className="mt-1 relative rounded-md shadow-sm">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
                 <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="pl-10 block w-full"
-                  placeholder="••••••••"
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-4 w-4 text-primary-700 focus:ring-primary-500 border-gray-300 rounded"
                 />
+                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
+                  Remember me
+                </label>
+              </div>
+
+              <div className="text-sm">
+                <Link to="/forgot-password" className="font-medium text-primary-700 hover:text-primary-800">
+                  Quên mật khẩu
+                </Link>
               </div>
             </div>
 
@@ -204,11 +170,11 @@ const Register = () => {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Đang tạo mới...
+                    Đang đăng nhập...
                   </>
                 ) : (
                   <>
-                    Tạo tài khoản
+                    Đăng nhập
                     <ArrowRight className="ml-2 h-5 w-5" />
                   </>
                 )}
@@ -221,4 +187,4 @@ const Register = () => {
   );
 };
 
-export default Register;
+export default Login;

@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { lawyers } from '../data/lawyers';
+import { lawyers } from '../../../data/lawyers';
 import { Star, Calendar, ArrowLeft } from 'lucide-react';
 
 const LawyerDetails = () => {
