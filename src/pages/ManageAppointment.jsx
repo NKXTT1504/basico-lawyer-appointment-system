@@ -3,27 +3,37 @@ import { useNavigate, useParams } from "react-router-dom";
 import api from "../config/axios";
 
 const ManageAppointment = () => {
-  const { appointmentId } = useParams();
-  const navigate = useNavigate();
-  const [appointment, setAppointment] = useState(null);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
   const [appointments, setAppointments] = useState([]);
-  const [filterStatus, setFilterStatus] = useState('all');
 
   useEffect(() => {
-    api.get('/api/appointments')
-      .then(res => setAppointments(res.data))
-      .catch(err => console.error(err));
+    api.appointment.get('/api/AppointmentWithUserLawyer/GetAllAppointment')
+      .then(response => {
+        setAppointments(response.data);
+      })
+      .catch(err => {
+        console.error('Lỗi khi lấy danh sách cuộc hẹn:', err);
+      });
   }, []);
 
-  const filteredAppointments =
-    filterStatus === 'all'
-      ? appointments
-      : appointments.filter(app => app.status === filterStatus);
-
   const handleStatusChange = (id, newStatus) => {
-    api.put(`/api/appointments/${id}/status`, { status: newStatus })
+    let url = '';
+
+    switch (newStatus) {
+      case 'APPROVED':
+        url = `/api/Appointment/${id}/confirm`;
+        break;
+      case 'CANCELLED':
+        url = `/api/Appointment/${id}/cancel`;
+        break;
+      case 'DONE':
+        url = `/api/Appointment/${id}/complete`;
+        break;
+      default:
+        console.error(`Trạng thái không hỗ trợ: ${newStatus}`);
+        return;
+    }
+
+    api.appointment.put(url)
       .then(() => {
         setAppointments(prev =>
           prev.map(app =>
@@ -31,58 +41,35 @@ const ManageAppointment = () => {
           )
         );
       })
-      .catch(err => console.error(err));
+      .catch(err => {
+        console.error(`Lỗi khi cập nhật trạng thái ${newStatus}:`, err);
+      });
   };
 
   return (
-    <main className="p-6">
-      <div className="container mx-auto px-4 text-center">
-        <h1 className="text-4xl font-bold mt-10">QUẢN LÍ CUỘC HẸN</h1>
-      </div>
-
-      {/* Filter buttons */}
-      <div className="mt-10 flex-wrap flex justify-center items-center gap-10">
-        {['all', 'PENDING', 'APPROVED', 'IN_PROGRESS', 'DONE', 'CANCELLED'].map(status => (
-          <button
-            key={status}
-            className={`px-4 py-2 rounded-md text-sm font-medium border 
-              ${filterStatus === status
-                ? 'bg-primary-700 text-white'
-                : 'text-gray-700 hover:bg-gray-100'}`}
-            onClick={() => setFilterStatus(status)}
-          >
-            {status === 'all' ? 'TẤT CẢ' :
-              status === 'PENDING' ? 'ĐANG CHỜ' :
-              status === 'APPROVED' ? 'ĐÃ DUYỆT' :
-              status === 'IN_PROGRESS' ? 'ĐANG DIỄN RA' :
-              status === 'DONE' ? 'HOÀN THÀNH' :
-              status === 'CANCELLED' ? 'BỊ HỦY' : status}
-          </button>
-        ))}
-      </div>
-
-      {/* Appointment table */}
-      <div className="mt-10 overflow-x-auto">
-        <table className="w-full table-auto border-collapse border border-gray-200">
+    <div className="p-4">
+      <h1 className="text-4xl font-bold text-center mt-10 text-primary">Danh sách cuộc hẹn</h1>
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white border border-gray-300 mt-10">
           <thead>
-            <tr className="bg-gray-100">
-              <th className="border p-2">Khách hàng</th>
-              <th className="border p-2">Dịch vụ</th>
-              <th className="border p-2">Ngày</th>
-              <th className="border p-2">Thời gian</th>
-              <th className="border p-2">Trạng thái</th>
-              <th className="border p-2">Thao tác</th>
+            <tr className="bg-gray-100 text-gray-700">
+              <th className="py-2 px-4 border">STT</th>
+              <th className="py-2 px-4 border">Khách hàng</th>
+              <th className="py-2 px-4 border">Thời gian bắt đầu</th>
+              <th className="py-2 px-4 border">Thời gian kết thúc</th>
+              <th className="py-2 px-4 border">Trạng thái</th>
+              <th className="py-2 px-4 border">Hành động</th>
             </tr>
           </thead>
           <tbody>
-            {filteredAppointments.map(app => (
-              <tr key={app.id} className="hover:bg-gray-50">
-                <td className="border p-2">{app.customerName}</td>
-                <td className="border p-2">{app.serviceName}</td>
-                <td className="border p-2">{app.date}</td>
-                <td className="border p-2">{app.time}</td>
-                <td className="border p-2">{app.status}</td>
-                <td className="border p-2 flex gap-2">
+            {appointments.map((app, index) => (
+              <tr key={app.id} className="text-center">
+                <td className="py-2 px-4 border">{index + 1}</td>
+                <td className="py-2 px-4 border">{app.customerName}</td>
+                <td className="py-2 px-4 border">{app.startTime}</td>
+                <td className="py-2 px-4 border">{app.endTime}</td>
+                <td className="py-2 px-4 border">{app.status}</td>
+                <td className="py-2 px-4 border space-x-2">
                   {app.status === 'PENDING' && (
                     <>
                       <button
@@ -99,13 +86,28 @@ const ManageAppointment = () => {
                       </button>
                     </>
                   )}
+                  {app.status === 'IN_PROGRESS' && (
+                    <button
+                      className="text-blue-600 hover:underline"
+                      onClick={() => handleStatusChange(app.id, 'DONE')}
+                    >
+                      Hoàn thành
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
+            {appointments.length === 0 && (
+              <tr>
+                <td colSpan="6" className="py-4 text-gray-500 text-center">
+                  Không có cuộc hẹn nào.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
-    </main>
+    </div>
   );
 };
 
