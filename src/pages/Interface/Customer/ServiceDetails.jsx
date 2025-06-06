@@ -1,5 +1,5 @@
 import { useParams, Link } from 'react-router-dom';
-import { services, getIconComponent } from '../data/services';
+import { services, getIconComponent } from '../../../data/services';
 import { ArrowLeft, Check } from 'lucide-react';
 
 const ServiceDetails = () => {

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { services, serviceCategories } from "../data/services";
+import { services, serviceCategories } from "../../data/services";
 import ServiceCard from "./ServiceCard";
 
 const ServicesSection = () => {

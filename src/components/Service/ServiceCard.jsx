@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { getIconComponent } from '../data/services';
+import { getIconComponent } from '../../data/services';
 import { ArrowRight } from 'lucide-react';
 
 const ServiceCard = ({ service }) => {
