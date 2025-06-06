@@ -1,34 +1,51 @@
 import { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
-import { Menu, X, Scale } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Menu, X, Scale, User } from "lucide-react";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userRole, setUserRole] = useState(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      setIsScrolled(window.scrollY > 20);
+    };
+
+    const checkLoginStatus = () => {
+      const token = localStorage.getItem("token");
+      const role = localStorage.getItem("role");
+      setIsLoggedIn(!!token);
+      setUserRole(role);
     };
 
     window.addEventListener("scroll", handleScroll);
+    window.addEventListener("storage", checkLoginStatus);
+    checkLoginStatus();
+
     return () => {
       window.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("storage", checkLoginStatus);
     };
   }, []);
 
   useEffect(() => {
-    // Close mobile menu when route changes
     setIsMenuOpen(false);
   }, [location.pathname]);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("role");
+    setIsLoggedIn(false);
+    setUserRole(null);
+    navigate("/");
   };
 
   const navItems = [
@@ -48,10 +65,7 @@ const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-20">
           <Link to="/" className="flex items-center space-x-2">
-            <Scale
-              className="h-8 w-8"
-              style={{ color: "#1e3353" }}
-            />
+            <Scale className="h-8 w-8" style={{ color: "#1e3353" }} />
             <span className={`font-serif text-xl font-bold`}>BASICO</span>
           </Link>
 
@@ -67,9 +81,21 @@ const Navbar = () => {
                 {item.name}
               </Link>
             ))}
-            <Link to="/register" className="btn-primary">
-              Đăng Ký
-            </Link>
+            {isLoggedIn && userRole === "Customer" ? (
+              <div className="flex items-center space-x-4">
+                <Link to="/customerprofile" className="btn-primary">
+                  <User className="h-5 w-5 mr-2" />
+                  Profile
+                </Link>
+                <button onClick={handleLogout} className="btn-outline">
+                  Đăng xuất
+                </button>
+              </div>
+            ) : (
+              <Link to="/register" className="btn-primary">
+                Đăng Ký
+              </Link>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -102,12 +128,30 @@ const Navbar = () => {
                 {item.name}
               </Link>
             ))}
-            <Link
-              to="/appointment"
-              className="btn-primary w-full justify-center"
-            >
-              Đăng Ký
-            </Link>
+            {isLoggedIn && userRole === "Customer" ? (
+              <>
+                <Link
+                  to="/profile"
+                  className="btn-primary w-full justify-center"
+                >
+                  <User className="h-5 w-5 mr-2" />
+                  Profile
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="btn-outline w-full justify-center"
+                >
+                  Đăng xuất
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/register"
+                className="btn-primary w-full justify-center"
+              >
+                Đăng Ký
+              </Link>
+            )}
           </div>
         </div>
       </div>

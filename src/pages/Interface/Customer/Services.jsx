@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { services, serviceCategories } from '../data/services';
-import ServiceCard from '../components/ServiceCard';
+import { services, serviceCategories } from '../../../data/services';
+import ServiceCard from '../../../components/Service/ServiceCard';
 
 const Services = () => {
   const [activeCategory, setActiveCategory] = useState('all');

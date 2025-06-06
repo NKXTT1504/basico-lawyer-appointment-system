@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { testimonials } from "../data/testimonials";
+import { testimonials } from "../../data/testimonials";
 import TestimonialCard from "./TestimonialCard";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -7,7 +7,7 @@ const TestimonialsSection = () => {
   const [activeIndex, setActiveIndex] = useState(0);
   const testimonialsPerPage =
     window.innerWidth >= 1024 ? 3 : window.innerWidth >= 640 ? 2 : 1;
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const [ windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
