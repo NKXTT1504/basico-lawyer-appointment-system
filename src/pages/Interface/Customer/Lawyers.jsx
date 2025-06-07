@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { lawyers } from '../../../data/lawyers';
-import LawyerCard from '../components/LawyerCard';
+import LawyerCard from '../../../components/Lawyer/LawyerCard';
 
 const Lawyers = () => {
   const [searchTerm, setSearchTerm] = useState('');

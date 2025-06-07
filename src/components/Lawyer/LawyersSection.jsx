@@ -1,5 +1,4 @@
-import React from "react";
-import { lawyers } from "../data/lawyers";
+import { lawyers } from "../../data/lawyers";
 import LawyerCard from "./LawyerCard";
 import { ArrowRight } from "lucide-react";
 

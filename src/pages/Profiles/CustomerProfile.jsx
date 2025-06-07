@@ -1,53 +1,80 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, Calendar } from 'lucide-react';
+import { User, Mail, Phone, Calendar, MapPin, Shield } from 'lucide-react';
 import api from '../../config/axios';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
-const Profile = () => {
+const CustomerProfile = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(false);
+    const [userData, setUserData] = useState(null);
     const [formData, setFormData] = useState({
-        name: '',
+        fullName: '',
         email: '',
-        phone: '',
-        dateOfBirth: '',
-        address: ''
+        phoneNumber: ''
     });
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-useEffect(() => {
-  const getProfile = async () => {
-    try {
-      const userId = localStorage.getItem('userId');
-      if (!userId) {
-        throw new Error('User ID not found');
-      }
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    navigate('/login');
+                    return;
+                }
 
-      const response = await api.auth.get(`/api/Auth/update/${userId}`);
-      const profileData = response.data;
-      
-      setFormData({
-        name: profileData.fullName || '',
-        email: profileData.email || '',
-        phone: profileData.phoneNumber || '',
-        // Note: dateOfBirth and address are not provided by the API
-      });
-    } catch (error) {
-      console.error('Error loading profile:', error.message);
-      setError('Failed to load profile data. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-  getProfile();
-}, []);
+                // Get user ID from localStorage
+                const userId = localStorage.getItem('userId');
+                if (!userId) {
+                    // If userId is not in localStorage, try to get it from user object
+                    const userStr = localStorage.getItem('user');
+                    if (userStr) {
+                        const user = JSON.parse(userStr);
+                        if (user.id) {
+                            localStorage.setItem('userId', user.id);
+                        } else {
+                            throw new Error('User ID not found. Please login again.');
+                        }
+                    } else {
+                        throw new Error('User information not found. Please login again.');
+                    }
+                }
+
+                // Fetch user data using the API
+                const response = await api.user.get(`/api/User/${userId}`);
+
+                if (response.data && response.data.result) {
+                    const user = response.data.result;
+                    setUserData(user);
+
+                    setFormData({
+                        fullName: user.fullName || '',
+                        email: user.email || '',
+                        phoneNumber: user.phoneNumber || ''
+                    });
+                } else {
+                    throw new Error('Failed to load user data');
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+                setError(error.message || 'Failed to load profile data');
+                toast.error('Failed to load profile data. Please try again.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUserData();
+    }, [navigate]);
 
     const handleChange = (e) => {
+        const { name, value } = e.target;
         setFormData(prev => ({
             ...prev,
-            [e.target.name]: e.target.value
+            [name]: value
         }));
     };
 
@@ -58,21 +85,44 @@ useEffect(() => {
         setUpdating(true);
 
         try {
-            const userId = localStorage.getItem('userId'); // Assuming you store the user's ID in localStorag
+            const userId = localStorage.getItem('userId');
             if (!userId) {
                 throw new Error('User ID not found');
             }
-            await api.auth.put('/api/Auth/update/${userId}', {
-                fullName: formData.name,
-                email: formData.email,
-                phoneNumber: formData.phone,
-                role: "Customer", // Assuming the role is always CUSTOMER for this profile
-                isActive: true // Assuming you want to keep the user active
-            });
 
-            setSuccess('Profile updated successfully!');
+            // Prepare data for update
+            const updateData = {
+                id: userId,
+                fullName: formData.fullName,
+                email: formData.email,
+                phoneNumber: formData.phoneNumber,
+                dateOfBirth: formData.dateOfBirth || null,
+                address: formData.address,
+                role: userData.role || 'Customer',
+                isActive: userData.isActive !== undefined ? userData.isActive : true
+            };
+
+            // Update user data
+            const response = await api.put(`/api/User/${userId}`, updateData);
+
+            if (response.data && response.data.isSuccess) {
+                setSuccess('Profile updated successfully!');
+                toast.success('Profile updated successfully!');
+
+                // Update local storage with new user data
+                const userStr = localStorage.getItem('user');
+                if (userStr) {
+                    const user = JSON.parse(userStr);
+                    const updatedUser = { ...user, ...updateData };
+                    localStorage.setItem('user', JSON.stringify(updatedUser));
+                }
+            } else {
+                throw new Error(response.data.message || 'Failed to update profile');
+            }
         } catch (error) {
-            setError(error.response?.data?.message || 'An error occurred while updating your profile');
+            console.error('Error updating profile:', error);
+            setError(error.message || 'An error occurred while updating your profile');
+            toast.error('Failed to update profile. Please try again.');
         } finally {
             setUpdating(false);
         }
@@ -87,12 +137,12 @@ useEffect(() => {
     }
 
     return (
-        <main className="min-h-screen bg-gray-50 py-16">
+        <main className="min-h-screen bg-gray-50 py-16 pt-28">
             <div className="container mx-auto px-4">
                 <div className="max-w-3xl mx-auto">
                     <div className="bg-white rounded-lg shadow-md overflow-hidden">
                         <div className="bg-primary-700 px-6 py-4">
-                            <h1 className="text-2xl font-bold text-white">Profile Settings</h1>
+                            <h1 className="text-2xl font-bold text-white">Thông tin cá nhân</h1>
                         </div>
 
                         {error && (
@@ -128,26 +178,26 @@ useEffect(() => {
                         <form onSubmit={handleSubmit} className="p-6">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div className="input-group">
-                                    <label htmlFor="name" className="input-label">Full Name</label>
-                                    <div className="relative">
+                                    <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">Họ và tên</label>
+                                    <div className="mt-1 relative rounded-md shadow-sm">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <User className="h-5 w-5 text-gray-400" />
                                         </div>
                                         <input
                                             type="text"
-                                            id="name"
-                                            name="name"
-                                            value={formData.name}
+                                            id="fullName"
+                                            name="fullName"
+                                            value={formData.fullName}
                                             onChange={handleChange}
-                                            className="pl-10 w-full"
-                                            placeholder="John Doe"
+                                            className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                            placeholder="Nguyễn Văn A"
                                         />
                                     </div>
                                 </div>
 
                                 <div className="input-group">
-                                    <label htmlFor="email" className="input-label">Email Address</label>
-                                    <div className="relative">
+                                    <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
+                                    <div className="mt-1 relative rounded-md shadow-sm">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <Mail className="h-5 w-5 text-gray-400" />
                                         </div>
@@ -157,33 +207,33 @@ useEffect(() => {
                                             name="email"
                                             value={formData.email}
                                             disabled
-                                            className="pl-10 w-full bg-gray-50 cursor-not-allowed"
+                                            className="pl-10 block w-full rounded-md border-gray-300 bg-gray-50 shadow-sm cursor-not-allowed"
                                         />
                                     </div>
-                                    <p className="text-sm text-gray-500 mt-1">Email cannot be changed</p>
+                                    <p className="mt-1 text-sm text-gray-500">Email không thể thay đổi</p>
                                 </div>
 
                                 <div className="input-group">
-                                    <label htmlFor="phone" className="input-label">Phone Number</label>
-                                    <div className="relative">
+                                    <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">Số điện thoại</label>
+                                    <div className="mt-1 relative rounded-md shadow-sm">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <Phone className="h-5 w-5 text-gray-400" />
                                         </div>
                                         <input
                                             type="tel"
-                                            id="phone"
-                                            name="phone"
-                                            value={formData.phone}
+                                            id="phoneNumber"
+                                            name="phoneNumber"
+                                            value={formData.phoneNumber}
                                             onChange={handleChange}
-                                            className="pl-10 w-full"
-                                            placeholder="(123) 456-7890"
+                                            className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                            placeholder="0123456789"
                                         />
                                     </div>
                                 </div>
 
                                 <div className="input-group">
-                                    <label htmlFor="dateOfBirth" className="input-label">Date of Birth</label>
-                                    <div className="relative">
+                                    <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700">Ngày sinh</label>
+                                    <div className="mt-1 relative rounded-md shadow-sm">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                             <Calendar className="h-5 w-5 text-gray-400" />
                                         </div>
@@ -193,43 +243,55 @@ useEffect(() => {
                                             name="dateOfBirth"
                                             value={formData.dateOfBirth}
                                             onChange={handleChange}
-                                            className="pl-10 w-full"
+                                            className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
                                         />
                                     </div>
                                 </div>
 
                                 <div className="md:col-span-2">
-                                    <div className="input-group">
-                                        <label htmlFor="address" className="input-label">Address</label>
+                                    <label htmlFor="address" className="block text-sm font-medium text-gray-700">Địa chỉ</label>
+                                    <div className="mt-1 relative rounded-md shadow-sm">
+                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                            <MapPin className="h-5 w-5 text-gray-400" />
+                                        </div>
                                         <input
                                             type="text"
                                             id="address"
                                             name="address"
                                             value={formData.address}
                                             onChange={handleChange}
-                                            className="w-full"
-                                            placeholder="123 Main St, City, State, ZIP"
+                                            className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+                                            placeholder="123 Đường ABC, Quận XYZ, Thành phố..."
                                         />
+                                    </div>
+                                </div>
+
+                                <div className="md:col-span-2">
+                                    <div className="flex items-center">
+                                        <Shield className="h-5 w-5 text-primary-600 mr-2" />
+                                        <span className="text-sm font-medium text-gray-700">
+                                            Vai trò: <span className="font-semibold text-primary-700">{userData?.role || 'Customer'}</span>
+                                        </span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="mt-6 flex justify-end">
+                            <div className="mt-8 flex justify-end">
                                 <button
                                     type="submit"
                                     disabled={updating}
-                                    className="btn-primary"
+                                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-700 hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {updating ? (
                                         <>
-                                            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                             </svg>
-                                            Updating...
+                                            Đang cập nhật...
                                         </>
                                     ) : (
-                                        'Save Changes'
+                                        'Lưu thay đổi'
                                     )}
                                 </button>
                             </div>
@@ -238,20 +300,72 @@ useEffect(() => {
 
                     <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden">
                         <div className="bg-primary-700 px-6 py-4">
-                            <h2 className="text-2xl font-bold text-white">Security Settings</h2>
+                            <h2 className="text-2xl font-bold text-white">Bảo mật</h2>
                         </div>
 
                         <div className="p-6">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <h3 className="text-lg font-medium text-gray-900">Change Password</h3>
-                                    <p className="text-gray-500">Update your password to keep your account secure</p>
+                                    <h3 className="text-lg font-medium text-gray-900">Đổi mật khẩu</h3>
+                                    <p className="text-gray-500">Cập nhật mật khẩu để bảo vệ tài khoản của bạn</p>
                                 </div>
                                 <button
                                     onClick={() => navigate('/change-password')}
-                                    className="btn-outline"
+                                    className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                                 >
-                                    Change Password
+                                    Đổi mật khẩu
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden">
+                        <div className="bg-primary-700 px-6 py-4">
+                            <h2 className="text-2xl font-bold text-white">Lịch sử cuộc hẹn</h2>
+                        </div>
+
+                        <div className="p-6">
+                            <div className="flex flex-col">
+                                <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                                    <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                                        <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                                            <table className="min-w-full divide-y divide-gray-200">
+                                                <thead className="bg-gray-50">
+                                                    <tr>
+                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Luật sư
+                                                        </th>
+                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Ngày
+                                                        </th>
+                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Trạng thái
+                                                        </th>
+                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Hành động
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="bg-white divide-y divide-gray-200">
+                                                    {/* Placeholder for appointment history - will be implemented later */}
+                                                    <tr>
+                                                        <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">
+                                                            Chưa có cuộc hẹn nào
+                                                        </td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 flex justify-center">
+                                <button
+                                    onClick={() => navigate('/appointment')}
+                                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-700 hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                                >
+                                    Đặt lịch hẹn mới
                                 </button>
                             </div>
                         </div>
@@ -262,4 +376,4 @@ useEffect(() => {
     );
 };
 
-export default Profile;
+export default CustomerProfile;

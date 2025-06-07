@@ -43,9 +43,23 @@ const Navbar = () => {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");
+    localStorage.removeItem("user");
     setIsLoggedIn(false);
     setUserRole(null);
     navigate("/");
+  };
+
+  const getProfileLink = () => {
+    switch(userRole) {
+      case 'Customer':
+        return '/customerprofile';
+      case 'Lawyer':
+        return '/lawyerprofile';
+      case 'Admin':
+        return '/admin/dashboard';
+      default:
+        return '/customerprofile';
+    }
   };
 
   const navItems = [
@@ -81,9 +95,9 @@ const Navbar = () => {
                 {item.name}
               </Link>
             ))}
-            {isLoggedIn && userRole === "Customer" ? (
+            {isLoggedIn ? (
               <div className="flex items-center space-x-4">
-                <Link to="/customerprofile" className="btn-primary">
+                <Link to={getProfileLink()} className="btn-primary">
                   <User className="h-5 w-5 mr-2" />
                   Profile
                 </Link>
@@ -92,9 +106,14 @@ const Navbar = () => {
                 </button>
               </div>
             ) : (
-              <Link to="/register" className="btn-primary">
-                Đăng Ký
-              </Link>
+              <div className="flex items-center space-x-4">
+                <Link to="/login" className="btn-outline">
+                  Đăng nhập
+                </Link>
+                <Link to="/register" className="btn-primary">
+                  Đăng Ký
+                </Link>
+              </div>
             )}
           </div>
 
@@ -128,10 +147,10 @@ const Navbar = () => {
                 {item.name}
               </Link>
             ))}
-            {isLoggedIn && userRole === "Customer" ? (
+            {isLoggedIn ? (
               <>
                 <Link
-                  to="/profile"
+                  to={getProfileLink()}
                   className="btn-primary w-full justify-center"
                 >
                   <User className="h-5 w-5 mr-2" />
@@ -145,12 +164,20 @@ const Navbar = () => {
                 </button>
               </>
             ) : (
-              <Link
-                to="/register"
-                className="btn-primary w-full justify-center"
-              >
-                Đăng Ký
-              </Link>
+              <>
+                <Link
+                  to="/login"
+                  className="btn-outline w-full justify-center"
+                >
+                  Đăng nhập
+                </Link>
+                <Link
+                  to="/register"
+                  className="btn-primary w-full justify-center"
+                >
+                  Đăng Ký
+                </Link>
+              </>
             )}
           </div>
         </div>
