@@ -6,14 +6,19 @@ const ManageAppointment = () => {
   const [appointments, setAppointments] = useState([]);
 
   useEffect(() => {
-    api.appointment.get('/api/AppointmentWithUserLawyer/GetAllAppointment')
-      .then(response => {
+  api.appointment.get('/api/AppointmentWithUserLawyer/GetAllAppointment')
+    .then(response => {
+      if (Array.isArray(response.data)) {
         setAppointments(response.data);
-      })
-      .catch(err => {
-        console.error('Lỗi khi lấy danh sách cuộc hẹn:', err);
-      });
-  }, []);
+      } else {
+        console.error("Expected array but got:", response.data);
+        setAppointments([]); // fallback
+      }
+    })
+    .catch(err => {
+      console.error('Lỗi khi lấy danh sách cuộc hẹn:', err);
+    });
+}, []);
 
   const handleStatusChange = (id, newStatus) => {
     let url = '';
