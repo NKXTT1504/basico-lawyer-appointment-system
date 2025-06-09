@@ -2,6 +2,7 @@ import axios from 'axios';
 
 const API_URLS = {
   AUTH: 'https://localhost:7071/',
+  APPOINTMENT: 'https://localhost:7073/',
   // Thêm các service khác nếu cần
 };
 
@@ -33,7 +34,11 @@ const createAxiosInstance = (baseURL) => {
 };
 
 export const authApi = createAxiosInstance(API_URLS.AUTH);
+export const appointmentApi = createAxiosInstance(API_URLS.APPOINTMENT);
 
 export default {
   auth: authApi,
+  appointment: appointmentApi,
 };
+
+
