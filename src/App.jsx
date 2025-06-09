@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 
 // Components
 import Navbar from './components/Layout/Navbar';
-import LawyerNavbar from './components/Lawyer/LawyerNavbar';
 import Footer from './components/Layout/Footer';
 
 // Pages
@@ -36,7 +35,7 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen flex flex-col">
-        {role === "Lawyer" ? <LawyerNavbar /> : <Navbar />}
+         <Navbar />
         <div className="pt-20 flex-grow">
           <Routes>
             <Route path="/" element={<Home />} />
@@ -47,7 +46,7 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/appointment" element={<Appointment />} />
-            <Route path="/login" element={<Login />} />
+             <Route path="/login" element={<Login setRole={setRole} />} />
             <Route path="/register" element={<Register />} />
             <Route path="/manageappointment" element={<ManageAppointment />} />
             <Route path="/lawyershift" element={<LawyerShift />} />
