@@ -3,6 +3,7 @@ import axios from 'axios';
 const API_URLS = {
   AUTH: 'https://localhost:7071/',
   APPOINTMENT: 'https://localhost:7073/',
+  LAWYER: 'https://localhost:7110/',
   // Thêm các service khác nếu cần
 };
 
@@ -35,10 +36,12 @@ const createAxiosInstance = (baseURL) => {
 
 export const authApi = createAxiosInstance(API_URLS.AUTH);
 export const appointmentApi = createAxiosInstance(API_URLS.APPOINTMENT);
+export const lawyerApi = createAxiosInstance(API_URLS.LAWYER);
 
 export default {
   auth: authApi,
   appointment: appointmentApi,
+  lawyer: lawyerApi,
 };
 
 
