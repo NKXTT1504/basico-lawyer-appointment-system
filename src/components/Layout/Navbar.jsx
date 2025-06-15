@@ -65,6 +65,7 @@ const Navbar = () => {
   const adminNavItems = [
     { name: "Quản lí tài khoản", path: "/manageaccount" },
     { name: "Thống kê", path: "/dashboard" },
+    { name: "Quản lí luật sư", path: "/lawyermanagement" },
   ];
 
   let navItems = commonNavItems;

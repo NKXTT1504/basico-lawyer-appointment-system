@@ -46,7 +46,7 @@ const Login = () => {
           navigate('/lawyerprofile');
           break;
         case 'Admin':
-          navigate('/admin/dashboard');
+          navigate('/dashboard');
           break;
         default:
           navigate('/');

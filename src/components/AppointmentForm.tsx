@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { services } from '../data/services';
-import { lawyers } from '../data/lawyers';
 import { Star, Calendar, Clock } from 'lucide-react';
 import api from '../config/axios';
 
@@ -20,9 +19,11 @@ const AppointmentForm = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [lawyers, setLawyers] = useState<any[]>([]);
+  const [workSlots, setWorkSlots] = useState<any[]>([]);
 
   const availableTimes = [
-    '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'
+    '08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'
   ];
 
   // Lấy thông tin user từ localStorage
@@ -39,6 +40,36 @@ const AppointmentForm = ({
     return {};
   };
   const user = getUser();
+
+
+  useEffect(() => {
+    const fetchLawyers = async () => {
+      try {
+        const res = await api.auth.get('/api/UserWithLawyerProfile/only-lawyers');
+        console.log("Lawyers API:", res.data);
+        setLawyers(res.data.result || res.data);
+      } catch {
+        setLawyers([]);
+      }
+    };
+    fetchLawyers();
+  }, []);
+
+  useEffect(() => {
+    if (!formData.lawyer) {
+      setWorkSlots([]);
+      return;
+    }
+    const fetchSlots = async () => {
+      try {
+        const res = await api.lawyer.get(`/api/lawyers/${formData.lawyer}/workslots`);
+        setWorkSlots(res.data.result || res.data);
+      } catch {
+        setWorkSlots([]);
+      }
+    };
+    fetchSlots();
+  }, [formData.lawyer]);
 
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -115,7 +146,29 @@ const AppointmentForm = ({
   };
 
   const selectedService = services.find(s => s.id === formData.service);
-  const selectedLawyer = lawyers.find(l => l.id === formData.lawyer);
+  const selectedLawyer = lawyers.find(
+    l => String(l.lawyerProfile.id) === String(formData.lawyer)
+  );
+
+  const dayIndexToName = [
+    "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+  ];
+
+  const slotToTimes: { [key: string]: string[] } = {
+    1: ["8:00", "9:00"],
+    2: ["10:00", "11:00"],
+    3: ["13:00", "14:00"],
+    4: ["15:00", "16:00"],
+  };
+
+  const getAvailableTimes = () => {
+    if (!formData.date) return [];
+    const dateObj = new Date(formData.date);
+    const dayName = dayIndexToName[dateObj.getDay()];
+    return workSlots
+      .filter(slot => slot.dayOfWeek === dayName && slot.isActive)
+      .flatMap(slot => slotToTimes[slot.slot] || []);
+  };
 
   if (submitSuccess) {
     return (
@@ -134,7 +187,7 @@ const AppointmentForm = ({
             <h3 className="text-lg font-medium text-gray-900 mb-4">Chi tiết lịch hẹn:</h3>
             <div className="space-y-3">
               <p><span className="font-medium">Dịch vụ:</span> {selectedService?.title}</p>
-              <p><span className="font-medium">Luật sư:</span> {selectedLawyer?.name}</p>
+              <p><span className="font-medium">Luật sư:</span> {selectedLawyer?.user.fullName}</p>
               <p><span className="font-medium">Ngày:</span> {format(new Date(formData.date), 'dd/MM/yyyy')}</p>
               <p><span className="font-medium">Giờ:</span> {formData.time}</p>
             </div>
@@ -214,14 +267,14 @@ const AppointmentForm = ({
             <div className="mb-6">
               <label className="block text-gray-700 font-medium mb-2">Chọn luật sư</label>
               <select
-                className="w-full border-gray-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500"
                 value={formData.lawyer}
-                onChange={(e) => updateFormData('lawyer', e.target.value)}
+                onChange={e => updateFormData('lawyer', e.target.value)}
+                className="w-full border-gray-300 rounded-md shadow-sm"
               >
                 <option value="">Chọn luật sư...</option>
-                {lawyers.map((lawyer) => (
-                  <option key={lawyer.id} value={lawyer.id}>
-                    {lawyer.name} - {lawyer.specialization.join(', ')}
+                {lawyers.map(lawyer => (
+                  <option key={lawyer.lawyerProfile.id} value={lawyer.lawyerProfile.id}>
+                    {lawyer.user.fullName}
                   </option>
                 ))}
               </select>
@@ -243,16 +296,25 @@ const AppointmentForm = ({
               <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center">
                   <img
-                    src={selectedLawyer.photo}
-                    alt={selectedLawyer.name}
+                    src={selectedLawyer.lawyerProfile.img}
+                    alt={selectedLawyer.user.fullName}
                     className="h-16 w-16 rounded-full object-cover mr-4"
                   />
                   <div>
-                    <h3 className="font-medium text-gray-900">{selectedLawyer.name}</h3>
-                    <p className="text-gray-600">{selectedLawyer.experience} năm kinh nghiệm</p>
+                    <h3 className="font-medium text-gray-900">{selectedLawyer.fullName}</h3>
+                    <p className="text-gray-600">{selectedLawyer.lawyerProfile.expYears} năm kinh nghiệm</p>
+                    <p className="text-gray-600">
+                      Lĩnh vực: {
+                        typeof selectedLawyer?.lawyerProfile?.spec === 'string'
+                          ? selectedLawyer.lawyerProfile.spec
+                          : Array.isArray(selectedLawyer?.lawyerProfile?.spec)
+                            ? selectedLawyer.lawyerProfile.spec.join(', ')
+                            : 'Chưa cập nhật'
+                      }
+                    </p>
                     <div className="flex items-center mt-1">
                       <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                      <span className="ml-1 text-gray-700">{selectedLawyer.rating}</span>
+                      <span className="ml-1 text-gray-700">{selectedLawyer.lawyerProfile.rating}</span>
                       <span className="text-gray-500 text-sm ml-1">({selectedLawyer.reviewCount} đánh giá)</span>
                     </div>
                   </div>
@@ -294,28 +356,32 @@ const AppointmentForm = ({
                 <Clock className="h-5 w-5 mr-2 text-primary-600" />
                 Chọn giờ
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {availableTimes.map((time) => (
-                  <button
-                    key={time}
-                    type="button"
-                    className={`py-2 px-4 rounded-md text-center transition-colors ${
-                      formData.time === time
-                        ? 'bg-primary-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                    onClick={() => updateFormData('time', time)}
-                  >
-                    {time}
-                  </button>
-                ))}
-              </div>
+              {getAvailableTimes().length === 0 ? (
+                <p className="text-gray-500">Luật sư không làm việc ngày này.</p>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {getAvailableTimes().map(time => (
+                    <button
+                      key={time}
+                      type="button"
+                      className={`py-2 px-4 rounded-md text-center transition-colors ${
+                        formData.time === time
+                          ? "bg-primary-600 text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
+                      onClick={() => updateFormData("time", time)}
+                    >
+                      {time}
+                    </button>
+                  ))}
+                </div>
+              )}
               {errors.time && <p className="text-red-500 text-sm mt-1">{errors.time}</p>}
             </div>
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
               <h3 className="font-medium text-gray-900 mb-2">Tóm tắt lịch hẹn:</h3>
               <p><span className="font-medium">Dịch vụ:</span> {selectedService?.title}</p>
-              <p><span className="font-medium">Luật sư:</span> {selectedLawyer?.name}</p>
+              <p><span className="font-medium">Luật sư:</span> {selectedLawyer?.user.fullName}</p>
               {formData.date && <p>
                 <span className="font-medium">Ngày:</span> {format(new Date(formData.date), 'dd/MM/yyyy')}
               </p>}
@@ -360,11 +426,17 @@ const AppointmentForm = ({
               <p><span className="font-medium">Email:</span> {user?.email}</p>
               <p><span className="font-medium">Số điện thoại:</span> {user?.phoneNumber || user?.phone}</p>
               <p><span className="font-medium">Dịch vụ:</span> {selectedService?.title}</p>
-              <p><span className="font-medium">Luật sư:</span> {selectedLawyer?.name}</p>
+              <p><span className="font-medium">Luật sư:</span> {selectedLawyer?.user.fullName}</p>
               {formData.date && <p>
                 <span className="font-medium">Ngày:</span> {format(new Date(formData.date), 'dd/MM/yyyy')}
               </p>}
               {formData.time && <p><span className="font-medium">Giờ:</span> {formData.time}</p>}
+              <p>
+                {(() => {
+                  const slot = workSlots.find(s => String(s.id) === formData.time);
+                  return slot ? `${slot.dayOfWeek} - Slot ${slot.slot}` : "";
+                })()}
+              </p>
             </div>
             <div className="flex justify-between mt-6">
               <button
