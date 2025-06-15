@@ -1,17 +1,44 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from "react";
 import { User, Mail, Shield, MapPin } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import api from '../../config/axios';
 
 const AdminProfile = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    fullName: 'Trần Thị Quản Trị',
-    email: 'admin@legal.vn',
-    address: 'Hà Nội, Việt Nam',
+    id: 0,
+    fullName: '',
+    email: '',
+    phoneNumber: '',
+    img: '',
   });
   const [updating, setUpdating] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userId = user?.id;
+
+  // 🎯 Fetch API khi load trang
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await api.auth.get(`/api/UserWithLawyerProfile/${userId}`);
+        // Nếu API trả về { fullName, email, phone } như chuẩn:
+        setFormData({
+          fullName: user.fullName || '',
+          email: user.email || '',
+          phoneNumber: user.phoneNumber || '',
+          img: user.img || ''
+        });
+
+      } catch (err) {
+        console.error('Lỗi khi load dữ liệu admin:', err);
+        setError('Không thể tải thông tin admin. Vui lòng thử lại sau.');
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,7 +53,8 @@ const AdminProfile = () => {
     setUpdating(true);
     setError('');
     setSuccess('');
-    // Simulate API update
+
+    // Call API để update (tùy bạn thêm sau)
     setTimeout(() => {
       setUpdating(false);
       setSuccess('Cập nhật thông tin thành công!');
@@ -40,11 +68,10 @@ const AdminProfile = () => {
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="bg-primary-700 px-6 py-4 flex items-center gap-4">
               <img
-                src="https://via.placeholder.com/80"
                 alt="Ảnh Admin"
                 className="w-20 h-20 rounded-full border-4 border-white object-cover"
               />
-              <h1 className="text-2xl font-bold text-white">Thông tin quản trị viên</h1>
+              <h1 className="text-2xl font-bold text-white">Hi, {formData.fullName}</h1>
             </div>
 
             {error && (
@@ -115,30 +142,21 @@ const AdminProfile = () => {
                   <p className="mt-1 text-sm text-gray-500">Email không thể thay đổi</p>
                 </div>
 
-                <div className="md:col-span-2">
-                  <label htmlFor="address" className="block text-sm font-medium text-gray-700">Địa chỉ</label>
+                <div className="input-group">
+                  <label htmlFor="phoneNumber" className="block text-sm font-medium text-gray-700">Số điện thoại</label>
                   <div className="mt-1 relative rounded-md shadow-sm">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <MapPin className="h-5 w-5 text-gray-400" />
                     </div>
                     <input
                       type="text"
-                      id="address"
-                      name="address"
-                      value={formData.address}
+                      id="phoneNumber"
+                      name="phoneNumber"
+                      value={formData.phoneNumber}
                       onChange={handleChange}
                       className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                      placeholder="Địa chỉ"
+                      placeholder="Số điện thoại"
                     />
-                  </div>
-                </div>
-
-                <div className="md:col-span-2">
-                  <div className="flex items-center">
-                    <Shield className="h-5 w-5 text-primary-600 mr-2" />
-                    <span className="text-sm font-medium text-gray-700">
-                      Vai trò: <span className="font-semibold text-primary-700">Admin</span>
-                    </span>
                   </div>
                 </div>
               </div>

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../../../config/axios';
 
 const dayLabels = {
   Monday: 'Thứ Hai',
@@ -15,24 +16,38 @@ const slotNames = ['1', '2', '3', '4'];
 
 const LawyerShift = () => {
   const [shifts, setShifts] = useState([]);
+  const user = JSON.parse(localStorage.getItem("user"));
+  const [lawyerId, setLawyerId] = useState(null);
 
   useEffect(() => {
-    fetch('http://localhost:5173/api/lich-truc')
-      .then(res => res.json())
-      .then(data => setShifts(data))
-      .catch(err => console.error('Lỗi tải dữ liệu:', err));
-  }, []);
+    // Lấy lawyerId từ profile
+    const fetchLawyerId = async () => {
+      try {
+        const res = await api.lawyer.get(`/api/Lawyer/GetProfileByUserId/${user.id}`);
+        setLawyerId(res.data.result.id);
+      } catch {
+        setLawyerId(null);
+      }
+    };
+    if (user?.id) fetchLawyerId();
+  }, [user]);
+
+  useEffect(() => {
+    if (!lawyerId) return;
+    api.lawyer.get(`/api/lawyers/${lawyerId}/workslots`)
+      .then(res => setShifts(res.data.result || res.data))
+      .catch(() => setShifts([]));
+  }, [lawyerId]);
 
   const getSlotAvailability = (slotIndex, day) => {
-    const shift = shifts.find(s => s.day === day);
-    if (!shift) return false;
-    return [shift.slot1, shift.slot2, shift.slot3, shift.slot4][slotIndex];
+    const shift = shifts.find(s => s.dayOfWeek === day && s.slot === (slotIndex + 1).toString());
+    return shift?.isActive;
   };
 
   return (
     <main className="bg-700 py-16 text-white">
       <div className="container mx-auto px-4">
-        <h1 className="text-4xl font-bold text-center mb-10 text-primary">LỊCH LÀM VIỆC</h1>
+        <h1 className="text-4xl font-bold text-center mb-10 text-primary">LỊCH LÀM VIỆC CỦA BẠN</h1>
         <div className="overflow-x-auto bg-white text-black rounded-lg shadow-md">
           <table className="min-w-full text-sm table-fixed">
             <thead className="bg-primary-800 text-white">
