@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { services } from '../data/services';
-import { lawyers } from '../data/lawyers';
 import { Star, Calendar, Clock } from 'lucide-react';
+import api from '../config/axios';
 
-
-const AppointmentForm = ({ 
+const AppointmentForm = ({
   initialService = '',
   initialLawyer = ''
 }) => {
@@ -15,22 +14,65 @@ const AppointmentForm = ({
     lawyer: initialLawyer,
     date: '',
     time: '',
-    name: '',
-    email: '',
-    phone: '',
     notes: ''
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [lawyers, setLawyers] = useState<any[]>([]);
+  const [workSlots, setWorkSlots] = useState<any[]>([]);
 
   const availableTimes = [
-    '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'
+    '08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'
   ];
+
+  // Lấy thông tin user từ localStorage
+  const getUser = () => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        return user;
+      } catch {
+        return {};
+      }
+    }
+    return {};
+  };
+  const user = getUser();
+
+
+  useEffect(() => {
+    const fetchLawyers = async () => {
+      try {
+        const res = await api.auth.get('/api/UserWithLawyerProfile/only-lawyers');
+        console.log("Lawyers API:", res.data);
+        setLawyers(res.data.result || res.data);
+      } catch {
+        setLawyers([]);
+      }
+    };
+    fetchLawyers();
+  }, []);
+
+  useEffect(() => {
+    if (!formData.lawyer) {
+      setWorkSlots([]);
+      return;
+    }
+    const fetchSlots = async () => {
+      try {
+        const res = await api.lawyer.get(`/api/lawyers/${formData.lawyer}/workslots`);
+        setWorkSlots(res.data.result || res.data);
+      } catch {
+        setWorkSlots([]);
+      }
+    };
+    fetchSlots();
+  }, [formData.lawyer]);
 
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error for this field
     if (errors[field]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -42,22 +84,14 @@ const AppointmentForm = ({
 
   const validateStep = (stepNum: number) => {
     const newErrors: Record<string, string> = {};
-    
-    if (stepNum === 1) {
-      if (!formData.service) newErrors.service = 'Please select a service';
-      if (!formData.lawyer) newErrors.lawyer = 'Please select an attorney';
-    } else if (stepNum === 2) {
-      if (!formData.date) newErrors.date = 'Please select a date';
-      if (!formData.time) newErrors.time = 'Please select a time';
-    } else if (stepNum === 3) {
-      if (!formData.name) newErrors.name = 'Please enter your name';
-      if (!formData.email) newErrors.email = 'Please enter your email';
-      if (!formData.phone) newErrors.phone = 'Please enter your phone number';
-      else if (!/^\d{10}$/.test(formData.phone.replace(/\D/g, ''))) {
-        newErrors.phone = 'Please enter a valid phone number';
-      }
-    }
 
+    if (stepNum === 1) {
+      if (!formData.service) newErrors.service = 'Vui lòng chọn dịch vụ';
+      if (!formData.lawyer) newErrors.lawyer = 'Vui lòng chọn luật sư';
+    } else if (stepNum === 2) {
+      if (!formData.date) newErrors.date = 'Vui lòng chọn ngày';
+      if (!formData.time) newErrors.time = 'Vui lòng chọn giờ';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -74,23 +108,67 @@ const AppointmentForm = ({
     window.scrollTo(0, 0);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (validateStep(3)) {
       setIsSubmitting(true);
-      
-      // Simulate API call with timeout
-      setTimeout(() => {
-        console.log('Form submitted:', formData);
+
+      // Chuẩn bị dữ liệu gửi API
+      const userId = user?.id || user?.userId || 0;
+      const lawyerId = formData.lawyer;
+      const scheduledAt = formData.date && formData.time
+        ? new Date(`${formData.date}T${formData.time}:00`).toISOString()
+        : null;
+      const slot = formData.time;
+      const note = formData.notes;
+      const selectedService = services.find(s => s.id === formData.service);
+      const spec = selectedService?.title || '';
+      const servicesArr = [formData.service];
+
+      try {
+        await api.appointment.post('/api/Appointment/CREATE', {
+          userId,
+          lawyerId,
+          scheduledAt,
+          slot,
+          note,
+          spec,
+          services: servicesArr
+        });
         setIsSubmitting(false);
         setSubmitSuccess(true);
-      }, 1500);
+      } catch (error) {
+        setIsSubmitting(false);
+        setErrors({ api: "Đặt lịch thất bại. Vui lòng thử lại!" });
+      }
     }
   };
 
   const selectedService = services.find(s => s.id === formData.service);
-  const selectedLawyer = lawyers.find(l => l.id === formData.lawyer);
+  const selectedLawyer = lawyers.find(
+    l => String(l.lawyerProfile.id) === String(formData.lawyer)
+  );
+
+  const dayIndexToName = [
+    "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+  ];
+
+  const slotToTimes: { [key: string]: string[] } = {
+    1: ["8:00", "9:00"],
+    2: ["10:00", "11:00"],
+    3: ["13:00", "14:00"],
+    4: ["15:00", "16:00"],
+  };
+
+  const getAvailableTimes = () => {
+    if (!formData.date) return [];
+    const dateObj = new Date(formData.date);
+    const dayName = dayIndexToName[dateObj.getDay()];
+    return workSlots
+      .filter(slot => slot.dayOfWeek === dayName && slot.isActive)
+      .flatMap(slot => slotToTimes[slot.slot] || []);
+  };
 
   if (submitSuccess) {
     return (
@@ -101,26 +179,24 @@ const AppointmentForm = ({
               <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
             </svg>
           </div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Appointment Scheduled!</h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Đặt lịch thành công!</h2>
           <p className="text-gray-600 mb-6">
-            Thank you for booking with us. We've sent a confirmation email to {formData.email}.
+            Cảm ơn bạn đã đặt lịch. Chúng tôi đã gửi email xác nhận tới {user?.email}.
           </p>
-          
           <div className="bg-gray-50 rounded-lg p-6 mb-6 text-left">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Appointment Details:</h3>
+            <h3 className="text-lg font-medium text-gray-900 mb-4">Chi tiết lịch hẹn:</h3>
             <div className="space-y-3">
-              <p><span className="font-medium">Service:</span> {selectedService?.title}</p>
-              <p><span className="font-medium">Attorney:</span> {selectedLawyer?.name}</p>
-              <p><span className="font-medium">Date:</span> {format(new Date(formData.date), 'MMMM d, yyyy')}</p>
-              <p><span className="font-medium">Time:</span> {formData.time}</p>
+              <p><span className="font-medium">Dịch vụ:</span> {selectedService?.title}</p>
+              <p><span className="font-medium">Luật sư:</span> {selectedLawyer?.user.fullName}</p>
+              <p><span className="font-medium">Ngày:</span> {format(new Date(formData.date), 'dd/MM/yyyy')}</p>
+              <p><span className="font-medium">Giờ:</span> {formData.time}</p>
             </div>
           </div>
-          
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <a href="/" className="btn-primary">
-              Return to Home
+              Về trang chủ
             </a>
-            <button 
+            <button
               onClick={() => {
                 setStep(1);
                 setSubmitSuccess(false);
@@ -129,15 +205,12 @@ const AppointmentForm = ({
                   lawyer: '',
                   date: '',
                   time: '',
-                  name: '',
-                  email: '',
-                  phone: '',
                   notes: ''
                 });
               }}
               className="btn-outline"
             >
-              Book Another Appointment
+              Đặt lịch mới
             </button>
           </div>
         </div>
@@ -150,7 +223,7 @@ const AppointmentForm = ({
       {/* Progress Bar */}
       <div className="bg-gray-50 p-4">
         <div className="flex justify-between items-center">
-          {['Service & Attorney', 'Date & Time', 'Your Information'].map((title, index) => {
+          {['Dịch vụ & Luật sư', 'Ngày & Giờ', 'Ghi chú'].map((title, index) => {
             const stepNum = index + 1;
             return (
               <div key={title} className="flex flex-col items-center flex-1">
@@ -171,19 +244,18 @@ const AppointmentForm = ({
       </div>
 
       <form onSubmit={handleSubmit} className="p-6">
-        {/* Step 1: Service & Attorney Selection */}
+        {/* Bước 1: Chọn dịch vụ & luật sư */}
         {step === 1 && (
           <div className="animate-fade-in">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Select Service & Attorney</h2>
-            
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Chọn dịch vụ & luật sư</h2>
             <div className="mb-6">
-              <label className="block text-gray-700 font-medium mb-2">Select Service</label>
+              <label className="block text-gray-700 font-medium mb-2">Chọn dịch vụ</label>
               <select
                 className="w-full border-gray-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500"
                 value={formData.service}
                 onChange={(e) => updateFormData('service', e.target.value)}
               >
-                <option value="">Select a legal service...</option>
+                <option value="">Chọn dịch vụ pháp lý...</option>
                 {services.map((service) => (
                   <option key={service.id} value={service.id}>
                     {service.title} - {service.price}
@@ -192,79 +264,83 @@ const AppointmentForm = ({
               </select>
               {errors.service && <p className="text-red-500 text-sm mt-1">{errors.service}</p>}
             </div>
-            
             <div className="mb-6">
-              <label className="block text-gray-700 font-medium mb-2">Select Attorney</label>
+              <label className="block text-gray-700 font-medium mb-2">Chọn luật sư</label>
               <select
-                className="w-full border-gray-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500"
                 value={formData.lawyer}
-                onChange={(e) => updateFormData('lawyer', e.target.value)}
+                onChange={e => updateFormData('lawyer', e.target.value)}
+                className="w-full border-gray-300 rounded-md shadow-sm"
               >
-                <option value="">Select an attorney...</option>
-                {lawyers.map((lawyer) => (
-                  <option key={lawyer.id} value={lawyer.id}>
-                    {lawyer.name} - {lawyer.specialization.join(', ')}
+                <option value="">Chọn luật sư...</option>
+                {lawyers.map(lawyer => (
+                  <option key={lawyer.lawyerProfile.id} value={lawyer.lawyerProfile.id}>
+                    {lawyer.user.fullName}
                   </option>
                 ))}
               </select>
               {errors.lawyer && <p className="text-red-500 text-sm mt-1">{errors.lawyer}</p>}
             </div>
-            
-            {/* Selected Service Details */}
+            {/* Thông tin dịch vụ đã chọn */}
             {selectedService && (
               <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-                <h3 className="font-medium text-gray-900 mb-2">Service Details:</h3>
+                <h3 className="font-medium text-gray-900 mb-2">Chi tiết dịch vụ:</h3>
                 <p className="text-gray-600 mb-2">{selectedService.description}</p>
                 <div className="flex flex-wrap gap-x-4 text-sm">
-                  <p><span className="font-medium">Price Range:</span> {selectedService.price}</p>
-                  <p><span className="font-medium">Duration:</span> {selectedService.duration}</p>
+                  <p><span className="font-medium">Giá:</span> {selectedService.price}</p>
+                  <p><span className="font-medium">Thời lượng:</span> {selectedService.duration}</p>
                 </div>
               </div>
             )}
-            
-            {/* Selected Attorney Details */}
+            {/* Thông tin luật sư đã chọn */}
             {selectedLawyer && (
               <div className="mb-6 p-4 bg-gray-50 rounded-lg">
                 <div className="flex items-center">
-                  <img 
-                    src={selectedLawyer.photo} 
-                    alt={selectedLawyer.name}
-                    className="h-16 w-16 rounded-full object-cover mr-4" 
+                  <img
+                    src={selectedLawyer.lawyerProfile.img}
+                    alt={selectedLawyer.user.fullName}
+                    className="h-16 w-16 rounded-full object-cover mr-4"
                   />
                   <div>
-                    <h3 className="font-medium text-gray-900">{selectedLawyer.name}</h3>
-                    <p className="text-gray-600">{selectedLawyer.experience} years of experience</p>
+                    <h3 className="font-medium text-gray-900">{selectedLawyer.fullName}</h3>
+                    <p className="text-gray-600">{selectedLawyer.lawyerProfile.expYears} năm kinh nghiệm</p>
+                    <p className="text-gray-600">
+                      Lĩnh vực: {
+                        typeof selectedLawyer?.lawyerProfile?.spec === 'string'
+                          ? selectedLawyer.lawyerProfile.spec
+                          : Array.isArray(selectedLawyer?.lawyerProfile?.spec)
+                            ? selectedLawyer.lawyerProfile.spec.join(', ')
+                            : 'Chưa cập nhật'
+                      }
+                    </p>
                     <div className="flex items-center mt-1">
                       <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                      <span className="ml-1 text-gray-700">{selectedLawyer.rating}</span>
-                      <span className="text-gray-500 text-sm ml-1">({selectedLawyer.reviewCount} reviews)</span>
+                      <span className="ml-1 text-gray-700">{selectedLawyer.lawyerProfile.rating}</span>
+                      <span className="text-gray-500 text-sm ml-1">({selectedLawyer.reviewCount} đánh giá)</span>
                     </div>
                   </div>
                 </div>
               </div>
             )}
-            
             <div className="flex justify-end">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={nextStep}
                 className="btn-primary"
               >
-                Continue
+                Tiếp tục
               </button>
             </div>
           </div>
         )}
-        
-        {/* Step 2: Date & Time Selection */}
+
+        {/* Bước 2: Chọn ngày & giờ */}
         {step === 2 && (
           <div className="animate-fade-in">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Select Date & Time</h2>
-            
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Chọn ngày & giờ</h2>
             <div className="mb-6">
               <label className="block text-gray-700 font-medium mb-2 flex items-center">
                 <Calendar className="h-5 w-5 mr-2 text-primary-600" />
-                Select Date
+                Chọn ngày
               </label>
               <input
                 type="date"
@@ -275,136 +351,102 @@ const AppointmentForm = ({
               />
               {errors.date && <p className="text-red-500 text-sm mt-1">{errors.date}</p>}
             </div>
-            
             <div className="mb-6">
               <label className="block text-gray-700 font-medium mb-2 flex items-center">
                 <Clock className="h-5 w-5 mr-2 text-primary-600" />
-                Select Time
+                Chọn giờ
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {availableTimes.map((time) => (
-                  <button
-                    key={time}
-                    type="button"
-                    className={`py-2 px-4 rounded-md text-center transition-colors ${
-                      formData.time === time 
-                        ? 'bg-primary-600 text-white' 
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                    onClick={() => updateFormData('time', time)}
-                  >
-                    {time}
-                  </button>
-                ))}
-              </div>
+              {getAvailableTimes().length === 0 ? (
+                <p className="text-gray-500">Luật sư không làm việc ngày này.</p>
+              ) : (
+                <div className="grid grid-cols-3 gap-2">
+                  {getAvailableTimes().map(time => (
+                    <button
+                      key={time}
+                      type="button"
+                      className={`py-2 px-4 rounded-md text-center transition-colors ${
+                        formData.time === time
+                          ? "bg-primary-600 text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
+                      onClick={() => updateFormData("time", time)}
+                    >
+                      {time}
+                    </button>
+                  ))}
+                </div>
+              )}
               {errors.time && <p className="text-red-500 text-sm mt-1">{errors.time}</p>}
             </div>
-            
             <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-medium text-gray-900 mb-2">Appointment Summary:</h3>
-              <p><span className="font-medium">Service:</span> {selectedService?.title}</p>
-              <p><span className="font-medium">Attorney:</span> {selectedLawyer?.name}</p>
+              <h3 className="font-medium text-gray-900 mb-2">Tóm tắt lịch hẹn:</h3>
+              <p><span className="font-medium">Dịch vụ:</span> {selectedService?.title}</p>
+              <p><span className="font-medium">Luật sư:</span> {selectedLawyer?.user.fullName}</p>
               {formData.date && <p>
-                <span className="font-medium">Date:</span> {format(new Date(formData.date), 'MMMM d, yyyy')}
+                <span className="font-medium">Ngày:</span> {format(new Date(formData.date), 'dd/MM/yyyy')}
               </p>}
-              {formData.time && <p><span className="font-medium">Time:</span> {formData.time}</p>}
+              {formData.time && <p><span className="font-medium">Giờ:</span> {formData.time}</p>}
             </div>
-            
             <div className="flex justify-between">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={prevStep}
                 className="btn-outline"
               >
-                Back
+                Quay lại
               </button>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={nextStep}
                 className="btn-primary"
               >
-                Continue
+                Tiếp tục
               </button>
             </div>
           </div>
         )}
-        
-        {/* Step 3: Personal Information */}
+
+        {/* Bước 3: Ghi chú */}
         {step === 3 && (
           <div className="animate-fade-in">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Your Information</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="input-group">
-                <label className="input-label" htmlFor="name">Full Name</label>
-                <input
-                  type="text"
-                  id="name"
-                  className="w-full"
-                  value={formData.name}
-                  onChange={(e) => updateFormData('name', e.target.value)}
-                  placeholder="John Doe"
-                />
-                {errors.name && <p className="text-red-500 text-sm">{errors.name}</p>}
-              </div>
-              
-              <div className="input-group">
-                <label className="input-label" htmlFor="email">Email Address</label>
-                <input
-                  type="email"
-                  id="email"
-                  className="w-full"
-                  value={formData.email}
-                  onChange={(e) => updateFormData('email', e.target.value)}
-                  placeholder="john.doe@example.com"
-                />
-                {errors.email && <p className="text-red-500 text-sm">{errors.email}</p>}
-              </div>
-              
-              <div className="input-group md:col-span-2">
-                <label className="input-label" htmlFor="phone">Phone Number</label>
-                <input
-                  type="tel"
-                  id="phone"
-                  className="w-full"
-                  value={formData.phone}
-                  onChange={(e) => updateFormData('phone', e.target.value)}
-                  placeholder="(123) 456-7890"
-                />
-                {errors.phone && <p className="text-red-500 text-sm">{errors.phone}</p>}
-              </div>
-              
-              <div className="input-group md:col-span-2">
-                <label className="input-label" htmlFor="notes">Additional Notes (Optional)</label>
-                <textarea
-                  id="notes"
-                  className="w-full h-32"
-                  value={formData.notes}
-                  onChange={(e) => updateFormData('notes', e.target.value)}
-                  placeholder="Please share any additional information about your legal matter that would help us prepare for your consultation."
-                ></textarea>
-              </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">Ghi chú thêm</h2>
+            <div className="mb-6">
+              <label className="input-label" htmlFor="notes">Ghi chú (không bắt buộc)</label>
+              <textarea
+                id="notes"
+                className="w-full h-32"
+                value={formData.notes}
+                onChange={(e) => updateFormData('notes', e.target.value)}
+                placeholder="Bạn có thể ghi chú thêm về vấn đề pháp lý hoặc yêu cầu đặc biệt..."
+              ></textarea>
             </div>
-            
-            <div className="mb-6 mt-8 p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-medium text-gray-900 mb-2">Final Appointment Details:</h3>
-              <p><span className="font-medium">Service:</span> {selectedService?.title}</p>
-              <p><span className="font-medium">Attorney:</span> {selectedLawyer?.name}</p>
+            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
+              <h3 className="font-medium text-gray-900 mb-2">Thông tin lịch hẹn:</h3>
+              <p><span className="font-medium">Khách hàng:</span> {user?.fullName || user?.name || 'Ẩn danh'}</p>
+              <p><span className="font-medium">Email:</span> {user?.email}</p>
+              <p><span className="font-medium">Số điện thoại:</span> {user?.phoneNumber || user?.phone}</p>
+              <p><span className="font-medium">Dịch vụ:</span> {selectedService?.title}</p>
+              <p><span className="font-medium">Luật sư:</span> {selectedLawyer?.user.fullName}</p>
               {formData.date && <p>
-                <span className="font-medium">Date:</span> {format(new Date(formData.date), 'MMMM d, yyyy')}
+                <span className="font-medium">Ngày:</span> {format(new Date(formData.date), 'dd/MM/yyyy')}
               </p>}
-              {formData.time && <p><span className="font-medium">Time:</span> {formData.time}</p>}
+              {formData.time && <p><span className="font-medium">Giờ:</span> {formData.time}</p>}
+              <p>
+                {(() => {
+                  const slot = workSlots.find(s => String(s.id) === formData.time);
+                  return slot ? `${slot.dayOfWeek} - Slot ${slot.slot}` : "";
+                })()}
+              </p>
             </div>
-            
             <div className="flex justify-between mt-6">
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={prevStep}
                 className="btn-outline"
               >
-                Back
+                Quay lại
               </button>
-              <button 
+              <button
                 type="submit"
                 className="btn-primary"
                 disabled={isSubmitting}
@@ -415,10 +457,10 @@ const AppointmentForm = ({
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    Processing...
+                    Đang xử lý...
                   </>
                 ) : (
-                  'Confirm Appointment'
+                  'Xác nhận đặt lịch'
                 )}
               </button>
             </div>

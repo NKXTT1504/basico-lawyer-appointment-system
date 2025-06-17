@@ -19,7 +19,10 @@ import Register from './pages/Authentication/Register';
 import ManageAppointment from './pages/Interface/Lawyer/ManageAppointment';
 import LawyerShift from './pages/Interface/Lawyer/LawyerShift';
 import LawyerProfile from './pages/Profiles/LawyerProfile';
-import Profile from './pages/Profiles/CustomerProfile';
+import AdminProfile from './pages/Profiles/AdminProfile';
+import Profile from './pages/Profiles/CustomerProfile'; 
+import ManageAccount from './pages/ManageAccount'; 
+import ManageLawyer from './pages/Interface/Admin/LawyerManagement'; 
 
 function App() {
   const [role, setRole] = useState(localStorage.getItem("role"));
@@ -52,6 +55,9 @@ function App() {
             <Route path="/lawyershift" element={<LawyerShift />} />
             <Route path="/lawyerprofile" element={<LawyerProfile />} />
             <Route path="/customerprofile" element={<Profile />} />
+            <Route path="/adminprofile" element={<AdminProfile />} />
+            <Route path="/manageaccount" element={<ManageAccount />} />
+            <Route path="/lawyermanagement" element={<ManageLawyer />} />
           </Routes>
         </div>
         <Footer />

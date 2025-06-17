@@ -19,7 +19,6 @@ const Navbar = () => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
     };
-
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
@@ -31,6 +30,8 @@ const Navbar = () => {
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
   const handleLogout = () => {
+    localStorage.clear(); // Xóa hết storage
+    sessionStorage.clear(); // Xóa hết session storage
     dispatch(logout());
     navigate("/");
   };
@@ -63,23 +64,35 @@ const Navbar = () => {
 
   const adminNavItems = [
     { name: "Quản lí tài khoản", path: "/manageaccount" },
-    { name: "Thống kê", path: "/stastic" },
+    { name: "Thống kê", path: "/dashboard" },
+    { name: "Quản lí luật sư", path: "/lawyermanagement" },
   ];
 
   let navItems = commonNavItems;
   if (userRole === "Lawyer") {
-    navItems = [...lawyerNavItems, { path: "/lawyerprofile" }];
+    navItems = [...lawyerNavItems];
   } else if (userRole === "Admin") {
-    navItems = [...adminNavItems, { path: "/adminprofile" }];
+    navItems = [...adminNavItems];
   }
 
+  // Định nghĩa màu sắc tùy vào role
+  const isRoleWithDarkNavbar = userRole === "Lawyer" || userRole === "Admin";
+  const navbarBgClass = isRoleWithDarkNavbar ? "bg-primary-900" : "bg-white";
+  const textColor = isRoleWithDarkNavbar ? "text-white" : "text-primary-900";
+  const iconColor = isRoleWithDarkNavbar ? "#fff" : "#1e3353";
+
   return (
-    <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${isScrolled ? "bg-white shadow-md" : "bg-white"}`}>
+    <nav
+      className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${navbarBgClass} ${isScrolled && !isRoleWithDarkNavbar ? "shadow-md" : ""
+        }`}
+    >
       <div className="container mx-auto px-4">
         <div className="flex justify-between items-center h-20">
           <Link to="/" className="flex items-center space-x-2">
-            <Scale className="h-8 w-8" style={{ color: "#1e3353" }} />
-            <span className="font-serif text-xl font-bold">BASICO</span>
+            <Scale className="h-8 w-8" style={{ color: iconColor }} />
+            <span className={`font-serif text-xl font-bold ${textColor}`}>
+              BASICO
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
@@ -88,8 +101,7 @@ const Navbar = () => {
               <Link
                 key={item.name}
                 to={item.path}
-                className="font-medium"
-                style={{ color: "#1e3353" }}
+                className={`font-medium ${textColor}`}
               >
                 {item.name}
               </Link>
@@ -97,20 +109,32 @@ const Navbar = () => {
 
             {isLoggedIn ? (
               <div className="flex items-center space-x-4">
-                <Link to={getProfileLink()} className="btn-primary">
+                <Link
+                  to={getProfileLink()}
+                  className={`btn-primary ${isRoleWithDarkNavbar ? "bg-white text-primary-900 hover:bg-gray-200" : ""}`}
+                >
                   <User className="h-5 w-5 mr-2" />
                   Tài khoản
                 </Link>
-                <button onClick={handleLogout} className="btn-outline">
+                <button
+                  onClick={handleLogout}
+                  className={`btn-outline ${isRoleWithDarkNavbar ? "border-white text-white hover:bg-primary-800" : ""}`}
+                >
                   Đăng xuất
                 </button>
               </div>
             ) : (
               <div className="flex items-center space-x-4">
-                <Link to="/login" className="btn-outline">
+                <Link
+                  to="/login"
+                  className={`btn-outline ${isRoleWithDarkNavbar ? "border-white text-white hover:bg-primary-800" : ""}`}
+                >
                   Đăng nhập
                 </Link>
-                <Link to="/register" className="btn-primary">
+                <Link
+                  to="/register"
+                  className={`btn-primary ${isRoleWithDarkNavbar ? "bg-white text-primary-900 hover:bg-gray-200" : ""}`}
+                >
                   Đăng Ký
                 </Link>
               </div>
@@ -118,23 +142,36 @@ const Navbar = () => {
           </div>
 
           {/* Mobile Menu Button */}
-          <button onClick={toggleMenu} className="md:hidden focus:outline-none" aria-label="Toggle menu">
+          <button
+            onClick={toggleMenu}
+            className="md:hidden focus:outline-none"
+            aria-label="Toggle menu"
+          >
             {isMenuOpen ? (
-              <X className="h-6 w-6" style={{ color: "#1e3353" }} />
+              <X className="h-6 w-6" style={{ color: iconColor }} />
             ) : (
-              <Menu className="h-6 w-6" style={{ color: "#1e3353" }} />
+              <Menu className="h-6 w-6" style={{ color: iconColor }} />
             )}
           </button>
         </div>
 
         {/* Mobile Menu */}
-        <div className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${isMenuOpen ? "max-h-96 py-4" : "max-h-0 py-0"}`}>
-          <div className="flex flex-col space-y-4 bg-white rounded-lg p-4 shadow-lg">
+        <div
+          className={`md:hidden transition-all duration-300 ease-in-out overflow-hidden ${isMenuOpen ? "max-h-96 py-4" : "max-h-0 py-0"
+            }`}
+        >
+          <div
+            className={`flex flex-col space-y-4 rounded-lg p-4 shadow-lg ${isRoleWithDarkNavbar ? "bg-primary-900" : "bg-white"
+              }`}
+          >
             {navItems.map((item) => (
               <Link
                 key={item.name}
                 to={item.path}
-                className="text-gray-700 hover:text-primary-700 font-medium px-4 py-2 hover:bg-gray-50 rounded-md"
+                className={`font-medium px-4 py-2 rounded-md ${isRoleWithDarkNavbar
+                    ? "text-white hover:bg-primary-800"
+                    : "text-gray-700 hover:bg-gray-50"
+                  }`}
               >
                 {item.name}
               </Link>
@@ -142,20 +179,44 @@ const Navbar = () => {
 
             {isLoggedIn ? (
               <>
-                <Link to={getProfileLink()} className="btn-primary w-full justify-center">
+                <Link
+                  to={getProfileLink()}
+                  className={`btn-primary w-full justify-center ${isRoleWithDarkNavbar
+                      ? "bg-white text-primary-900 hover:bg-gray-200"
+                      : ""
+                    }`}
+                >
                   <User className="h-5 w-5 mr-2" />
                   Tài khoản
                 </Link>
-                <button onClick={handleLogout} className="btn-outline w-full justify-center">
+                <button
+                  onClick={handleLogout}
+                  className={`btn-outline w-full justify-center ${isRoleWithDarkNavbar
+                      ? "border-white text-white hover:bg-primary-800"
+                      : ""
+                    }`}
+                >
                   Đăng xuất
                 </button>
               </>
             ) : (
               <>
-                <Link to="/login" className="btn-outline w-full justify-center">
+                <Link
+                  to="/login"
+                  className={`btn-outline w-full justify-center ${isRoleWithDarkNavbar
+                      ? "border-white text-white hover:bg-primary-800"
+                      : ""
+                    }`}
+                >
                   Đăng nhập
                 </Link>
-                <Link to="/register" className="btn-primary w-full justify-center">
+                <Link
+                  to="/register"
+                  className={`btn-primary w-full justify-center ${isRoleWithDarkNavbar
+                      ? "bg-white text-primary-900 hover:bg-gray-200"
+                      : ""
+                    }`}
+                >
                   Đăng Ký
                 </Link>
               </>
