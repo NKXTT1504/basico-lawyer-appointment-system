@@ -21,9 +21,23 @@ const AppointmentForm = ({
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [lawyers, setLawyers] = useState<any[]>([]);
   const [workSlots, setWorkSlots] = useState<any[]>([]);
+  const [selectedSpec, setSelectedSpec] = useState<string>('');
 
   const availableTimes = [
     '08:00', '09:00', '10:00', '11:00', '13:00', '14:00', '15:00', '16:00'
+  ];
+
+  const specs = [
+    "Dân sự",
+    "Hợp đồng",
+    "Hình sự",
+    "Tố tụng",
+    "Đất đai",
+    "Bất động sản",
+    "Doanh nghiệp",
+    "Hôn nhân",
+    "Ly hôn",
+    "Nuôi con"
   ];
 
   // Lấy thông tin user từ localStorage
@@ -123,8 +137,8 @@ const AppointmentForm = ({
       const slot = formData.time;
       const note = formData.notes;
       const selectedService = services.find(s => s.id === formData.service);
-      const spec = selectedService?.title || '';
-      const servicesArr = [formData.service];
+      const spec = selectedSpec || selectedService?.title || '';
+      const servicesArr = selectedService ? [selectedService.title] : [];
 
       try {
         await api.appointment.post('/api/Appointment/CREATE', {
@@ -169,6 +183,19 @@ const AppointmentForm = ({
       .filter(slot => slot.dayOfWeek === dayName && slot.isActive)
       .flatMap(slot => slotToTimes[slot.slot] || []);
   };
+
+  const filteredLawyers = selectedSpec
+    ? lawyers.filter(lawyer => {
+        const spec = lawyer.lawyerProfile?.spec;
+        if (typeof spec === "string") {
+          return spec.split(",").map((s: string) => s.trim()).includes(selectedSpec);
+        }
+        if (Array.isArray(spec)) {
+          return spec.map((s: string) => s.trim()).includes(selectedSpec);
+        }
+        return false;
+      })
+    : [];
 
   if (submitSuccess) {
     return (
@@ -264,22 +291,40 @@ const AppointmentForm = ({
               </select>
               {errors.service && <p className="text-red-500 text-sm mt-1">{errors.service}</p>}
             </div>
-            <div className="mb-6">
-              <label className="block text-gray-700 font-medium mb-2">Chọn luật sư</label>
+            <div className="mb-4">
+              <label className="block mb-2 font-semibold">Chọn lĩnh vực</label>
               <select
-                value={formData.lawyer}
-                onChange={e => updateFormData('lawyer', e.target.value)}
-                className="w-full border-gray-300 rounded-md shadow-sm"
+                value={selectedSpec}
+                onChange={e => {
+                  setSelectedSpec(e.target.value);
+                  updateFormData("lawyer", ""); // reset chọn luật sư khi đổi lĩnh vực
+                }}
+                className="w-full border-gray-300 rounded-md shadow-sm mb-4"
               >
-                <option value="">Chọn luật sư...</option>
-                {lawyers.map(lawyer => (
-                  <option key={lawyer.lawyerProfile.id} value={lawyer.lawyerProfile.id}>
-                    {lawyer.user.fullName}
-                  </option>
+                <option value="">-- Chọn lĩnh vực --</option>
+                {specs.map(spec => (
+                  <option key={spec} value={spec}>{spec}</option>
                 ))}
               </select>
-              {errors.lawyer && <p className="text-red-500 text-sm mt-1">{errors.lawyer}</p>}
             </div>
+
+            {selectedSpec && (
+              <div className="mb-4">
+                <label className="block mb-2 font-semibold">Chọn luật sư</label>
+                <select
+                  value={formData.lawyer}
+                  onChange={e => updateFormData("lawyer", e.target.value)}
+                  className="w-full border-gray-300 rounded-md shadow-sm"
+                >
+                  <option value="">Chọn luật sư...</option>
+                  {filteredLawyers.map(lawyer => (
+                    <option key={lawyer.lawyerProfile.id} value={lawyer.lawyerProfile.id}>
+                      {lawyer.user.fullName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
             {/* Thông tin dịch vụ đã chọn */}
             {selectedService && (
               <div className="mb-6 p-4 bg-gray-50 rounded-lg">
