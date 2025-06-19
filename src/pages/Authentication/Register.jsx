@@ -44,7 +44,6 @@ const Register = () => {
         role: "Customer"
       });
       console.log(response.data);
-      toast.success("Đăng kí tài khoản thành công! Vui lòng nhập mã OTP đã được gửi đến email của bạn."); // thông báo đăng kí thành công
       setRegisteredEmail(formData.email);
       setShowOtpForm(true);
     } catch (err) {

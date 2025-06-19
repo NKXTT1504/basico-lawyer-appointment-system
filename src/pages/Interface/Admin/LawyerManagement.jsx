@@ -1,7 +1,11 @@
-import React, { useState } from "react";
+import { useState, useEffect } from "react";
 import api from "../../../config/axios";
 
+
 const LawyerManagement = () => {
+  const [lawyers, setLawyers] = useState([]);
+  const [selectedLawyerId, setSelectedLawyerId] = useState('');
+  const [selectedLawyer, setSelectedLawyer] = useState(null);
   const [lawyerId, setLawyerId] = useState("");
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -17,10 +21,14 @@ const LawyerManagement = () => {
   const slotOptions = ["1", "2", "3", "4"];
 
   const handleSearch = async () => {
+    if (!selectedLawyer?.lawyerProfile?.id) {
+      setError("Vui lòng chọn luật sư");
+      return;
+    }
     setLoading(true);
     setError("");
     try {
-      const res = await api.lawyer.get(`/api/lawyers/${lawyerId}/workslots`);
+      const res = await api.lawyer.get(`/api/lawyers/${selectedLawyer.lawyerProfile.id}/workslots`);
       setSlots(res.data.result || res.data);
     } catch (err) {
       setSlots([]);
@@ -30,13 +38,13 @@ const LawyerManagement = () => {
   };
 
   const handleCreate = async () => {
-    if (!lawyerId || !newSlot.dayOfWeek || !newSlot.slot) {
+    if (!selectedLawyer?.lawyerProfile?.id || !newSlot.dayOfWeek || !newSlot.slot) {
       setError("Vui lòng nhập đầy đủ thông tin.");
       return;
     }
     setError("");
     try {
-      await api.lawyer.post(`/api/lawyers/${lawyerId}/workslots`, { ...newSlot, isActive: true });
+      await api.lawyer.post(`/api/lawyers/${selectedLawyer.lawyerProfile.id}/workslots`, { ...newSlot, isActive: true });
       setNewSlot({ dayOfWeek: "", slot: "" });
       handleSearch();
     } catch {
@@ -44,9 +52,13 @@ const LawyerManagement = () => {
     }
   };
 
-  const handleDelete = async  (lawyerId, slotId) => {
+  const handleDelete = async (slotId) => {
+    if (!selectedLawyer?.lawyerProfile?.id) {
+      setError("Không tìm thấy thông tin luật sư");
+      return;
+    }
     try {
-      await api.lawyer.delete(`/api/lawyers/${lawyerId}/workslots/${slotId}`);
+      await api.lawyer.delete(`/api/lawyers/${selectedLawyer.lawyerProfile.id}/workslots/${slotId}`);
       setSlots((prev) => prev.filter((s) => s.id !== slotId));
     } catch {
       setError("Xóa ca làm thất bại!");
@@ -54,13 +66,38 @@ const LawyerManagement = () => {
   };
 
   const handleEdit = async (slot) => {
+    if (!selectedLawyer?.lawyerProfile?.id) {
+      setError("Không tìm thấy thông tin luật sư");
+      return;
+    }
     try {
-      await api.lawyer.put(`/api/lawyers/${lawyerId}/workslots/`, { ...slot, isActive: true });
+      await api.lawyer.put(`/api/lawyers/${selectedLawyer.lawyerProfile.id}/workslots/`, { ...slot, isActive: true });
       handleSearch();
     } catch {
       setError("Cập nhật ca làm thất bại!");
     }
   };
+
+  useEffect(() => {
+    const fetchLawyers = async () => {
+      try {
+        const response = await api.auth.get('/api/UserWithLawyerProfile/only-lawyers'); // Adjust the API endpoint
+        console.log('Lawyers data:', response.data);
+        const lawyersData = response.data.result || response.data || [];
+        setLawyers(lawyersData);
+        if (lawyersData.length > 0) {
+          console.log('First lawyer structure:', lawyersData[0]);
+        }
+      } catch (error) {
+        console.error('Error fetching lawyers:', error);
+      }
+    };
+    fetchLawyers();
+  }, []);
+
+  useEffect(() => {
+    setSlots([]);
+  }, [selectedLawyer]);
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
@@ -68,13 +105,32 @@ const LawyerManagement = () => {
         Quản lý ca làm luật sư
       </h2>
       <div className="flex flex-col sm:flex-row gap-3 mb-6 justify-center items-center">
-        <input
-          type="text"
-          placeholder="Nhập Lawyer ID"
-          value={lawyerId}
-          onChange={(e) => setLawyerId(e.target.value)}
+        <select
+          value={selectedLawyer?.lawyerProfile?.id || ''}
+          onChange={(e) => {
+            const selectedId = e.target.value;
+            const lawyer = lawyers.find(l => String(l.lawyerProfile?.id) === String(selectedId));
+            console.log('Selected ID:', selectedId);
+            console.log('Found lawyer:', lawyer);
+            setSelectedLawyer(lawyer);
+          }}
           className="border px-2 py-2 rounded w-full sm:w-auto"
-        />
+        >
+          <option value="" disabled>
+            Chọn luật sư
+          </option>
+          {Array.isArray(lawyers) && lawyers.length > 0 ? (
+            lawyers.map((lawyer) => (
+              lawyer?.lawyerProfile?.id ? (
+                <option key={lawyer.lawyerProfile.id} value={lawyer.lawyerProfile.id}>
+                  {lawyer.user?.fullName || 'Unnamed Lawyer'}
+                </option>
+              ) : null
+            ))
+          ) : (
+            <option value="">No lawyers available</option>
+          )}
+        </select>
         <button onClick={handleSearch} className={buttonStyle}>
           Tìm
         </button>
@@ -173,7 +229,7 @@ const LawyerManagement = () => {
                       Lưu
                     </button>
                     <button
-                      onClick={() => handleDelete(lawyerId, slot.id)}
+                      onClick={() => handleDelete(slot.id)}
                       className={buttonStyle}
                     >
                       Xóa
