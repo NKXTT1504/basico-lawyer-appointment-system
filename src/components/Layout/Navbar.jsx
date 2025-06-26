@@ -126,16 +126,16 @@ const Navbar = () => {
             ) : (
               <div className="flex items-center space-x-4">
                 <Link
-                  to="/login"
+                  to="/register"
                   className={`btn-outline ${isRoleWithDarkNavbar ? "border-white text-white hover:bg-primary-800" : ""}`}
                 >
-                  Đăng nhập
+                  Đăng ký
                 </Link>
                 <Link
-                  to="/register"
+                  to="/login"
                   className={`btn-primary ${isRoleWithDarkNavbar ? "bg-white text-primary-900 hover:bg-gray-200" : ""}`}
                 >
-                  Đăng Ký
+                  Đăng nhập
                 </Link>
               </div>
             )}

@@ -1,12 +1,9 @@
 import { useState, useEffect } from "react";
 import api from "../../../config/axios";
 
-
 const LawyerManagement = () => {
   const [lawyers, setLawyers] = useState([]);
-  const [selectedLawyerId, setSelectedLawyerId] = useState('');
   const [selectedLawyer, setSelectedLawyer] = useState(null);
-  const [lawyerId, setLawyerId] = useState("");
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
