@@ -4,74 +4,74 @@ import { BookOpen, Building, FileText, Home, Scale, Shield, Users, Briefcase } f
 export const services: Service[] = [
   {
     id: "1",
-    title: "Corporate Law",
+    title: "Luật Doanh Nghiệp",
     icon: "Building",
-    description: "Expert guidance on business formation, governance, compliance, and corporate transactions to help your business thrive while staying legally protected.",
+    description: "Tư vấn chuyên sâu về thành lập doanh nghiệp, quản trị, tuân thủ pháp luật và giao dịch để giúp doanh nghiệp phát triển bền vững.",
     price: "$200-$350",
-    duration: "60 min",
+    duration: "60 phút",
     category: "Business"
   },
   {
     id: "2",
-    title: "Intellectual Property",
+    title: "Sở Hữu Trí Tuệ",
     icon: "Shield",
-    description: "Protect your innovations, creative works, and brand identity through patents, trademarks, copyrights, and trade secrets management.",
+    description: "Bảo vệ sáng chế, tác phẩm sáng tạo và thương hiệu của bạn thông qua bằng sáng chế, nhãn hiệu, bản quyền và bí mật thương mại.",
     price: "$250-$400",
-    duration: "60 min",
+    duration: "60 phút",
     category: "Business"
   },
   {
     id: "3",
-    title: "Family Law",
+    title: "Luật Gia Đình",
     icon: "Users",
-    description: "Compassionate legal guidance for divorce, child custody, adoption, and other family matters during life's most challenging transitions.",
+    description: "Tư vấn pháp lý tận tâm về ly hôn, quyền nuôi con, nhận con nuôi và các vấn đề gia đình khác trong thời điểm khó khăn.",
     price: "$180-$300",
-    duration: "90 min",
+    duration: "90 phút",
     category: "Personal"
   },
   {
     id: "4",
-    title: "Real Estate Law",
+    title: "Luật Bất Động Sản",
     icon: "Home",
-    description: "Comprehensive legal services for property transactions, tenant disputes, zoning issues, and real estate development projects.",
+    description: "Dịch vụ pháp lý toàn diện về giao dịch bất động sản, tranh chấp thuê nhà, quy hoạch và các dự án phát triển bất động sản.",
     price: "$200-$350",
-    duration: "60 min",
+    duration: "60 phút",
     category: "Property"
   },
   {
     id: "5",
-    title: "Criminal Defense",
+    title: "Bào Chữa Hình Sự",
     icon: "Scale",
-    description: "Strategic defense representation for those facing criminal charges, from minor offenses to complex federal cases.",
+    description: "Đại diện bào chữa chiến lược cho những người bị buộc tội, từ vi phạm nhẹ đến các vụ án hình sự phức tạp cấp liên bang.",
     price: "$300-$500",
-    duration: "120 min",
+    duration: "120 phút",
     category: "Personal"
   },
   {
     id: "6",
-    title: "Contract Review",
+    title: "Xem Xét Hợp Đồng",
     icon: "FileText",
-    description: "Thorough analysis and revision of contracts to protect your interests and ensure favorable terms before signing any agreement.",
+    description: "Phân tích kỹ lưỡng và chỉnh sửa hợp đồng để bảo vệ quyền lợi của bạn và đảm bảo điều khoản có lợi trước khi ký kết.",
     price: "$150-$250",
-    duration: "45 min",
+    duration: "45 phút",
     category: "Business"
   },
   {
     id: "7",
-    title: "Estate Planning",
+    title: "Lập Kế Hoạch Di Sản",
     icon: "BookOpen",
-    description: "Create comprehensive wills, trusts, and estate plans to protect your assets and ensure your wishes are carried out.",
+    description: "Lập di chúc, quỹ tín thác và kế hoạch tài sản để bảo vệ tài sản và đảm bảo mong muốn của bạn được thực hiện.",
     price: "$200-$350",
-    duration: "90 min",
+    duration: "90 phút",
     category: "Personal"
   },
   {
     id: "8",
-    title: "Employment Law",
+    title: "Luật Lao Động",
     icon: "Briefcase",
-    description: "Legal counsel on workplace issues, including discrimination, harassment, wrongful termination, and employment contracts.",
+    description: "Tư vấn pháp lý về các vấn đề tại nơi làm việc như phân biệt đối xử, quấy rối, sa thải sai luật và hợp đồng lao động.",
     price: "$200-$350",
-    duration: "60 min",
+    duration: "60 phút",
     category: "Business"
   }
 ];
@@ -91,8 +91,8 @@ export const getIconComponent = (iconName: string) => {
 };
 
 export const serviceCategories = [
-  { id: 'all', name: 'All Services' },
-  { id: 'business', name: 'Business' },
-  { id: 'personal', name: 'Personal' },
-  { id: 'property', name: 'Property' }
+  { id: 'all', name: 'Tất cả Dịch vụ' },
+  { id: 'business', name: 'Doanh nghiệp' },
+  { id: 'personal', name: 'Cá nhân' },
+  { id: 'property', name: 'Bất động sản' }
 ];
