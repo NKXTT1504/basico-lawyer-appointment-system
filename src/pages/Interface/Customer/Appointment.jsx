@@ -1,15 +1,32 @@
+import { message } from 'antd';
 import AppointmentForm from '../../../components/AppointmentForm';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useRef } from 'react';
+
 
 const Appointment = () => {
+  const navigate = useNavigate();
+  const hasShowMessage = useRef(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if(!token && !hasShowMessage.current) {
+      message.warning('Vui lòng đăng nhập để đặt lịch hẹn.');
+      navigate('/login');
+      hasShowMessage.current = true;
+    }
+  }, [navigate]);
+
   return (
     <main>
       <section className="bg-primary-700 py-16">
         <div className="container mx-auto px-4">
           <div className="max-w-3xl">
-            <h1 className="text-4xl font-bold text-white mb-6">Book an Appointment</h1>
+            <h1 className="text-4xl font-bold text-white mb-6">Đặt Lịch Hẹn</h1>
             <p className="text-gray-200 text-lg">
-              Schedule a consultation with our experienced legal team to discuss your specific needs
-              and find the right solutions for your legal matters.
+              Hãy đặt lịch tư vấn với đội ngũ luật sư giàu kinh nghiệm của chúng tôi để thảo luận về nhu cầu cụ thể
+              và tìm ra giải pháp phù hợp cho các vấn đề pháp lý của bạn.
             </p>
           </div>
         </div>
@@ -22,7 +39,7 @@ const Appointment = () => {
           </div>
           
           <div className="max-w-4xl mx-auto mt-12">
-            <h3 className="text-xl font-bold text-gray-900 mb-4">What to Expect</h3>
+            <h3 className="text-xl font-bold text-gray-900 mb-4">Bạn Sẽ Nhận Được Gì</h3>
             
             <div className="bg-white rounded-lg shadow-md p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -30,9 +47,9 @@ const Appointment = () => {
                   <div className="h-12 w-12 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center mx-auto mb-4">
                     <span className="text-xl font-bold">1</span>
                   </div>
-                  <h4 className="font-medium text-gray-900 mb-2">Initial Consultation</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">Tư Vấn Ban Đầu</h4>
                   <p className="text-gray-600 text-sm">
-                    Discuss your legal needs with an attorney who specializes in your area of concern.
+                    Thảo luận nhu cầu pháp lý của bạn với luật sư chuyên môn trong lĩnh vực liên quan.
                   </p>
                 </div>
                 
@@ -40,9 +57,9 @@ const Appointment = () => {
                   <div className="h-12 w-12 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center mx-auto mb-4">
                     <span className="text-xl font-bold">2</span>
                   </div>
-                  <h4 className="font-medium text-gray-900 mb-2">Case Assessment</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">Đánh Giá Hồ Sơ</h4>
                   <p className="text-gray-600 text-sm">
-                    Receive a comprehensive evaluation of your case and potential legal strategies.
+                    Nhận đánh giá toàn diện về vụ việc của bạn và các chiến lược pháp lý khả thi.
                   </p>
                 </div>
                 
@@ -50,9 +67,9 @@ const Appointment = () => {
                   <div className="h-12 w-12 bg-primary-100 text-primary-700 rounded-full flex items-center justify-center mx-auto mb-4">
                     <span className="text-xl font-bold">3</span>
                   </div>
-                  <h4 className="font-medium text-gray-900 mb-2">Custom Solution</h4>
+                  <h4 className="font-medium text-gray-900 mb-2">Giải Pháp Cá Nhân Hóa</h4>
                   <p className="text-gray-600 text-sm">
-                    Get a personalized plan tailored to your specific legal needs and objectives.
+                    Nhận được kế hoạch cá nhân hóa phù hợp với nhu cầu và mục tiêu pháp lý cụ thể của bạn.
                   </p>
                 </div>
               </div>
