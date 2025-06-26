@@ -17,12 +17,12 @@ const Hero = () => {
             một cách tự tin và an tâm.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Link to="/appointment" className="btn-primary">
+            <Link to="/appointment" className="group bg-primary-900 btn text-white hover:bg-white hover:text-primary-700 transition-all">
               Đặt lịch tư vấn
             </Link>
             <Link
               to="/services"
-              className="group btn border-2 border-white text-white hover:bg-white hover:text-primary-700 transition-all"
+              className="group bg-primary-900 btn border-2 border-white text-white hover:bg-white hover:text-primary-700 transition-all"
             >
               <span>Khám phá dịch vụ</span>
               <ArrowRight className="ml-2 h-5 w-5 transform group-hover:translate-x-1 transition-transform" />
