@@ -57,6 +57,15 @@ const Navbar = () => {
     { name: "Liên hệ", path: "/contact" },
   ];
 
+  const customerNavItems = [
+    { name: "Trang chủ", path: "/" },
+    { name: "Cuộc hẹn", path: "/appointments" },
+    { name: "Dịch vụ", path: "/services" },
+    { name: "Luật sư", path: "/lawyers" },
+    { name: "Giới thiệu", path: "/about" },
+    { name: "Liên hệ", path: "/contact" },
+  ];
+
   const lawyerNavItems = [
     { name: "Quản lí lịch hẹn", path: "/manageappointment" },
     { name: "Ca làm", path: "/lawyershift" },
@@ -73,6 +82,8 @@ const Navbar = () => {
     navItems = [...lawyerNavItems];
   } else if (userRole === "Admin") {
     navItems = [...adminNavItems];
+  } else if (userRole === "Customer") {
+    navItems = [...customerNavItems];
   }
 
   // Định nghĩa màu sắc tùy vào role
