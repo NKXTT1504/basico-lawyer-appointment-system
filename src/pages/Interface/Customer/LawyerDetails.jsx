@@ -1,170 +1,105 @@
 import { useParams, Link } from 'react-router-dom';
-import { lawyers } from '../../../data/lawyers';
-import { Star, Calendar, ArrowLeft } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import api from '../../../config/axios';
+
+const slugify = (name) => {
+  return name
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-');
+};
 
 const LawyerDetails = () => {
-  const { id } = useParams();
-  const lawyer = lawyers.find(l => l.id === id);
+  const { slug } = useParams();
+  const [lawyer, setLawyer] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!lawyer) {
+  useEffect(() => {
+    api.auth.get('/api/UserWithLawyerProfile/only-lawyers')
+      .then(res => {
+        const list = res.data.result || [];
+        const found = list.find(lawyer => slugify(lawyer.user.fullName) === slug);
+        setLawyer(found || null);
+      })
+      .catch(() => setLawyer(null))
+      .finally(() => setLoading(false));
+  }, [slug]);
+
+  if (loading) {
+    return <div className="container mx-auto px-4 py-16 text-center text-gray-600">Đang tải dữ liệu...</div>;
+  }
+
+  if (!lawyer || !lawyer.lawyerProfile || !lawyer.user) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Attorney Not Found</h2>
-        <p className="text-gray-600 mb-6">The attorney you're looking for doesn't exist or has been removed.</p>
-        <Link to="/lawyers" className="btn-primary">
-          View All Attorneys
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">Không tìm thấy luật sư</h2>
+        <Link to="/lawyers" className="inline-block px-4 py-2 bg-primary-900 text-white rounded hover:opacity-90">
+          Quay lại danh sách luật sư
         </Link>
       </div>
     );
   }
 
+  const { lawyerProfile, user } = lawyer;
+
   return (
-    <main>
-      <section className="bg-primary-700 py-16">
-        <div className="container mx-auto px-4">
-          <Link to="/lawyers" className="inline-flex items-center text-white hover:text-accent-300 mb-6 transition-colors">
-            <ArrowLeft className="h-5 w-5 mr-2" />
-            <span>Back to All Attorneys</span>
-          </Link>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-center">
-            <div>
-              <div className="relative overflow-hidden rounded-lg shadow-lg h-96 max-w-sm mx-auto">
-                <img 
-                  src={lawyer.photo} 
-                  alt={`Attorney ${lawyer.name}`} 
-                  className="w-full h-full object-cover object-center"
-                />
-              </div>
+    <main className="bg-white py-16">
+      <div className="container mx-auto px-4 max-w-6xl">
+        <Link
+          to="/lawyers"
+          className="text-sm text-primary-900 hover:underline inline-flex items-center mb-6"
+        >
+          &larr; Quay lại danh sách
+        </Link>
+
+        <div className="bg-white rounded-2xl shadow-lg p-6 md:p-10 grid grid-cols-1 md:grid-cols-3 gap-10">
+          <div className="flex justify-center md:justify-start">
+            <img
+              src={lawyerProfile.img ? `/images/${lawyerProfile.img}` : '/default-avatar.png'}
+              alt={user.fullName}
+              className="w-64 h-64 rounded-xl object-cover shadow-md"
+            />
+          </div>
+
+          <div className="md:col-span-2 text-gray-800">
+            <h1 className="text-3xl font-bold mb-2">{user.fullName}</h1>
+            <p className="text-gray-500 mb-4">{lawyerProfile.bio}</p>
+
+            <div className="flex flex-wrap gap-2 mb-4">
+              {(lawyerProfile.spec || []).map((spec, idx) => (
+                <span
+                  key={idx}
+                  className="inline-block bg-primary-100 text-primary-900 text-sm font-medium px-3 py-1 rounded-full"
+                >
+                  {spec}
+                </span>
+              ))}
             </div>
-            <div className="md:col-span-2 text-white">
-              <h1 className="text-4xl font-bold text-white mb-2">{lawyer.name}</h1>
-              
-              <div className="flex flex-wrap gap-2 mb-4">
-                {lawyer.specialization.map((spec, index) => (
-                  <span key={index} className="badge bg-accent-300 text-primary-800 font-medium">
-                    {spec}
-                  </span>
-                ))}
-              </div>
-              
-              <div className="flex items-center mb-4">
-                <div className="flex items-center">
-                  <Star className="h-5 w-5 text-yellow-400 fill-current" />
-                  <span className="ml-1 font-medium">{lawyer.rating}</span>
-                </div>
-                <span className="text-gray-300 text-sm ml-2">({lawyer.reviewCount} reviews)</span>
-              </div>
-              
-              <p className="text-gray-200 mb-6 text-lg">{lawyer.description}</p>
-              
-              <Link 
-                to={`/appointment?lawyer=${lawyer.id}`} 
-                className="btn bg-accent-300 text-primary-800 hover:bg-accent-400 font-medium inline-flex items-center"
+
+            <ul className="space-y-2 text-sm">
+              <li><strong>📍 Địa chỉ:</strong> {lawyerProfile.description}</li>
+              <li><strong>🎓 Kinh nghiệm:</strong> {lawyerProfile.expYears} năm</li>
+              <li><strong>⭐ Đánh giá:</strong> {lawyerProfile.rating} ★</li>
+              <li><strong>💰 Giá/giờ:</strong> {lawyerProfile.pricePerHour?.toLocaleString()} VNĐ</li>
+              <li><strong>🧾 Số hiệu hành nghề:</strong> {lawyerProfile.licenseNum}</li>
+              <li><strong>📧 Email:</strong> {user.email}</li>
+              <li><strong>📞 SĐT:</strong> {user.phoneNumber}</li>
+            </ul>
+
+            <div className="mt-6">
+              <Link
+                to={`/appointment?lawyer=${lawyerProfile.id}`}
+                className="inline-block bg-primary-700 text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition"
               >
-                <Calendar className="mr-2 h-5 w-5" />
-                <span>Schedule Consultation</span>
+                Đặt lịch tư vấn
               </Link>
             </div>
           </div>
         </div>
-      </section>
-
-      <section className="py-16">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="md:col-span-2">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">About {lawyer.name}</h2>
-              
-              <div className="prose max-w-none">
-                <p className="mb-4">
-                  With {lawyer.experience} years of experience in {lawyer.specialization.join(' and ')}, 
-                  {lawyer.name} has established a reputation for excellence and dedication to client success. 
-                </p>
-                <p className="mb-4">
-                  Their approach combines deep legal knowledge with a commitment to understanding each client's 
-                  unique circumstances and goals. This client-centered philosophy has resulted in numerous favorable 
-                  outcomes and long-lasting client relationships.
-                </p>
-                <p>
-                  {lawyer.name} is known for their thorough preparation, strategic thinking, and 
-                  exceptional advocacy skills both in and out of the courtroom.
-                </p>
-              </div>
-              
-              <div className="mt-8">
-                <h3 className="text-xl font-medium text-gray-900 mb-4">Areas of Expertise</h3>
-                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
-                  {lawyer.specialization.map((spec, index) => (
-                    <li key={index} className="flex items-center">
-                      <svg className="h-5 w-5 text-primary-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      {spec}
-                    </li>
-                  ))}
-                  <li className="flex items-center">
-                    <svg className="h-5 w-5 text-primary-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Case Analysis & Strategy
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="h-5 w-5 text-primary-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Client Advocacy
-                  </li>
-                  <li className="flex items-center">
-                    <svg className="h-5 w-5 text-primary-600 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Negotiation
-                  </li>
-                </ul>
-              </div>
-            </div>
-            
-            <div>
-              <div className="bg-gray-50 rounded-lg p-6 shadow-md">
-                <h3 className="text-xl font-medium text-gray-900 mb-4">Attorney Profile</h3>
-                
-                <div className="space-y-4">
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500">Education</h4>
-                    <p className="text-gray-900">{lawyer.education}</p>
-                  </div>
-                  
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500">Experience</h4>
-                    <p className="text-gray-900">{lawyer.experience} years</p>
-                  </div>
-                  
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500">Languages</h4>
-                    <p className="text-gray-900">{lawyer.languages.join(', ')}</p>
-                  </div>
-                  
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-500">Contact</h4>
-                    <a href="mailto:contact@legalconsult.com" className="text-primary-700 hover:text-primary-800">
-                      contact@legalconsult.com
-                    </a>
-                  </div>
-                </div>
-                
-                <div className="mt-8">
-                  <Link 
-                    to={`/appointment?lawyer=${lawyer.id}`}
-                    className="btn-primary w-full justify-center"
-                  >
-                    Book Appointment
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      </div>
     </main>
   );
 };
