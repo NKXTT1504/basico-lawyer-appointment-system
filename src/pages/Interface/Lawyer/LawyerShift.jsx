@@ -45,35 +45,47 @@ const LawyerShift = () => {
   };
 
   return (
-    <main className="bg-700 py-16 text-white">
+    <main className="bg-gray-100 py-16">
       <div className="container mx-auto px-4">
-        <h1 className="text-4xl font-bold text-center mb-10 text-primary">LỊCH LÀM VIỆC CỦA BẠN</h1>
-        <div className="overflow-x-auto bg-white text-black rounded-lg shadow-md">
-          <table className="min-w-full text-sm table-fixed">
-            <thead className="bg-primary-800 text-white">
-              <tr>
-                <th className="px-2 py-2 text-center">Slot</th>
-                <th className="px-4 py-2 text-center">Khung giờ</th>
+        <h1 className="text-4xl font-bold text-center mb-10 text-primary-800">LỊCH LÀM VIỆC CỦA BẠN</h1>
+
+        <div className="overflow-x-auto bg-white rounded-lg shadow-lg">
+          <table className="min-w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-primary-800 text-white">
+                <th className="px-4 py-3 text-left border border-primary-700">Slot</th>
+                <th className="px-4 py-3 text-left border border-primary-700">Khung giờ</th>
                 {Object.entries(dayLabels).map(([key, label]) => (
-                  <th key={key} className="px-2 py-2 text-center">{label}</th>
+                  <th key={key} className="px-4 py-3 text-center border border-primary-700">
+                    {label}
+                  </th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {slotLabels.map((slotLabel, index) => (
-                <tr key={index} className="border-t">
-                  <td className="px-2 py-2 font-semibold text-center">{slotNames[index]}</td>
-                  <td className="px-4 py-2 font-semibold text-center">{slotLabel}</td>
-                  {Object.keys(dayLabels).map(day => {
+                <tr key={index} className={index % 2 === 0 ? 'bg-gray-50' : 'bg-white'}>
+                  <td className="px-4 py-3 font-semibold border border-gray-200">{slotNames[index]}</td>
+                  <td className="px-4 py-3 font-semibold border border-gray-200">{slotLabel}</td>
+                  {Object.keys(dayLabels).map((day, dayIndex) => {
                     const available = getSlotAvailability(index, day);
                     return (
                       <td
                         key={day}
-                        className={`px-2 py-2 text-center font-medium ${
-                          available ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'
-                        }`}
+                        className={`px-4 py-3 text-center border border-gray-200 ${available
+                          ? 'bg-[#E6F0F8] text-[#0D63A5]'
+                          : 'bg-gray-100 text-gray-500'
+                          }${dayIndex !== 6 ? 'border-r border-gray-200' : ''}`}
                       >
-                        {available ? '√' : '☓'}
+                        {available ? (
+                          <span className="inline-flex items-center justify-center w-6 h-6  bg-[#0D63A5] rounded-full text-white">
+                            ✓
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center justify-center w-6 h-6 bg-gray-400 rounded-full text-white">
+                            ✗
+                          </span>
+                        )}
                       </td>
                     );
                   })}

@@ -8,6 +8,7 @@ const CustomerProfile = () => {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
     const [updating, setUpdating] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
     const [userData, setUserData] = useState(null);
     const [formData, setFormData] = useState({
         fullName: '',
@@ -17,58 +18,69 @@ const CustomerProfile = () => {
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
-    useEffect(() => {
-        const fetchUserData = async () => {
-            try {
-                const token = localStorage.getItem('token');
-                if (!token) {
-                    navigate('/login');
-                    return;
-                }
+    const fetchUserData = async (userId) => {
+        setLoading(true);
+        try {
+            console.log('Fetching user data for userId:', userId);
+            const response = await api.auth.get(`/api/User/${userId}`);
+            console.log('API response:', response);
 
-                // Get user ID from localStorage
-                const userId = localStorage.getItem('userId');
-                if (!userId) {
-                    // If userId is not in localStorage, try to get it from user object
-                    const userStr = localStorage.getItem('user');
-                    if (userStr) {
-                        const user = JSON.parse(userStr);
-                        if (user.id) {
-                            localStorage.setItem('userId', user.id);
-                        } else {
-                            throw new Error('User ID not found. Please login again.');
-                        }
-                    } else {
-                        throw new Error('User information not found. Please login again.');
-                    }
-                }
-
-                // Fetch user data using the API
-                const response = await api.user.get(`/api/User/${userId}`);
-
-                if (response.data && response.data.result) {
-                    const user = response.data.result;
-                    setUserData(user);
-
-                    setFormData({
-                        fullName: user.fullName || '',
-                        email: user.email || '',
-                        phoneNumber: user.phoneNumber || ''
-                    });
-                } else {
-                    throw new Error('Failed to load user data');
-                }
-            } catch (error) {
-                console.error('Error fetching user data:', error);
-                setError(error.message || 'Failed to load profile data');
-                toast.error('Failed to load profile data. Please try again.');
-            } finally {
-                setLoading(false);
+            if (response.data && response.data.result) {
+                const userData = response.data.result;
+                setUserData(userData);
+                setFormData({
+                    fullName: userData.fullName || '',
+                    email: userData.email || '',
+                    phoneNumber: userData.phoneNumber || '',
+                });
+                return response.data
+            } else {
+                throw new Error(response.data.message || 'Failed to load user data');
             }
+        } catch (error) {
+            console.error('Error fetching user data:', error);
+            setError(error.message || 'Failed to load profile data');
+            toast.error('Failed to load profile data. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        const loadUserData = async () => {
+            const userStr = localStorage.getItem('user');
+            if (!userStr) {
+                setError('User information not found');
+                setLoading(false);
+                return;
+            }
+
+            const user = JSON.parse(userStr);
+            const userId = user.id;
+
+            if (!userId) {
+                setError('User ID not found');
+                setLoading(false);
+                return;
+            }
+
+            const result = await fetchUserData(userId);
+            console.log('Fetch result:', result);
+            if (result && result.result) {
+                setSuccess('Profile loaded successfully');
+                setShowSuccess(true);
+                setTimeout(() => {
+                    setShowSuccess(false);
+                    setSuccess('');
+                }, 5000);
+            } else {
+                setError(result.message || 'Failed to load profile data');
+            }
+            setLoading(false);
         };
 
-        fetchUserData();
-    }, [navigate]);
+        loadUserData();
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -85,37 +97,42 @@ const CustomerProfile = () => {
         setUpdating(true);
 
         try {
-            const userId = localStorage.getItem('userId');
+            const userStr = localStorage.getItem('user');
+            if (!userStr) {
+                throw new Error('User information not found');
+            }
+
+            const user = JSON.parse(userStr);
+            const userId = user.id;
+
             if (!userId) {
                 throw new Error('User ID not found');
             }
 
-            // Prepare data for update
             const updateData = {
                 id: userId,
                 fullName: formData.fullName,
                 email: formData.email,
+                password: formData.password,
                 phoneNumber: formData.phoneNumber,
-                dateOfBirth: formData.dateOfBirth || null,
-                address: formData.address,
-                role: userData.role || 'Customer',
-                isActive: userData.isActive !== undefined ? userData.isActive : true
+                role: user.role || 'Customer',
+                isActive: true
             };
 
             // Update user data
-            const response = await api.put(`/api/User/${userId}`, updateData);
+            const response = await api.auth.put(`/api/User/${userId}`, updateData);
 
             if (response.data && response.data.isSuccess) {
                 setSuccess('Profile updated successfully!');
-                toast.success('Profile updated successfully!');
+                setShowSuccess(true);
+                setTimeout(() => {
+                    setShowSuccess(false);
+                    setSuccess('');
+                }, 5000);
 
                 // Update local storage with new user data
-                const userStr = localStorage.getItem('user');
-                if (userStr) {
-                    const user = JSON.parse(userStr);
-                    const updatedUser = { ...user, ...updateData };
-                    localStorage.setItem('user', JSON.stringify(updatedUser));
-                }
+                const updatedUser = { ...user, ...updateData };
+                localStorage.setItem('user', JSON.stringify(updatedUser));
             } else {
                 throw new Error(response.data.message || 'Failed to update profile');
             }
@@ -176,7 +193,7 @@ const CustomerProfile = () => {
                         )}
 
                         <form onSubmit={handleSubmit} className="p-6">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 gap-6">
                                 <div className="input-group">
                                     <label htmlFor="fullName" className="block text-sm font-medium text-gray-700">Họ và tên</label>
                                     <div className="mt-1 relative rounded-md shadow-sm">
@@ -230,50 +247,6 @@ const CustomerProfile = () => {
                                         />
                                     </div>
                                 </div>
-
-                                <div className="input-group">
-                                    <label htmlFor="dateOfBirth" className="block text-sm font-medium text-gray-700">Ngày sinh</label>
-                                    <div className="mt-1 relative rounded-md shadow-sm">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <Calendar className="h-5 w-5 text-gray-400" />
-                                        </div>
-                                        <input
-                                            type="date"
-                                            id="dateOfBirth"
-                                            name="dateOfBirth"
-                                            value={formData.dateOfBirth}
-                                            onChange={handleChange}
-                                            className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="md:col-span-2">
-                                    <label htmlFor="address" className="block text-sm font-medium text-gray-700">Địa chỉ</label>
-                                    <div className="mt-1 relative rounded-md shadow-sm">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <MapPin className="h-5 w-5 text-gray-400" />
-                                        </div>
-                                        <input
-                                            type="text"
-                                            id="address"
-                                            name="address"
-                                            value={formData.address}
-                                            onChange={handleChange}
-                                            className="pl-10 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                                            placeholder="123 Đường ABC, Quận XYZ, Thành phố..."
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="md:col-span-2">
-                                    <div className="flex items-center">
-                                        <Shield className="h-5 w-5 text-primary-600 mr-2" />
-                                        <span className="text-sm font-medium text-gray-700">
-                                            Vai trò: <span className="font-semibold text-primary-700">{userData?.role || 'Customer'}</span>
-                                        </span>
-                                    </div>
-                                </div>
                             </div>
 
                             <div className="mt-8 flex justify-end">
@@ -294,29 +267,14 @@ const CustomerProfile = () => {
                                         'Lưu thay đổi'
                                     )}
                                 </button>
-                            </div>
-                        </form>
-                    </div>
-
-                    <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden">
-                        <div className="bg-primary-700 px-6 py-4">
-                            <h2 className="text-2xl font-bold text-white">Bảo mật</h2>
-                        </div>
-
-                        <div className="p-6">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h3 className="text-lg font-medium text-gray-900">Đổi mật khẩu</h3>
-                                    <p className="text-gray-500">Cập nhật mật khẩu để bảo vệ tài khoản của bạn</p>
-                                </div>
                                 <button
                                     onClick={() => navigate('/change-password')}
-                                    className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                                    className="inline-flex items-center px-4 py-2 ml-4 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
                                 >
                                     Đổi mật khẩu
                                 </button>
                             </div>
-                        </div>
+                        </form>
                     </div>
 
                     <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden">
