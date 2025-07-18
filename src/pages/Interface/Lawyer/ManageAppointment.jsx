@@ -74,6 +74,13 @@ const ManageAppointment = () => {
     currentPage * itemsPerPage
   );
 
+  const slotToTime = {
+    "1": "08:00 ~ 10:00",
+    "2": "10:00 ~ 12:00",
+    "3": "13:00 ~ 15:00",
+    "4": "15:00 ~ 17:00"
+  };
+
   return (
     <div className="p-4">
       <h1 className="text-4xl font-bold text-center mt-10 text-primary">Danh sách cuộc hẹn</h1>
@@ -114,10 +121,17 @@ const ManageAppointment = () => {
             {paginatedAppointments.map((app, index) => {
               const slot = app.slot;
               const scheduledAt = app.scheduledAt;
-              const dateTimeStr = `${scheduledAt.slice(0, 10)}T${slot}:00`;
-              const dateObj = parseISO(dateTimeStr);
-              const formatted = `${slot}, ${format(dateObj, "EEEE, dd/MM/yyyy", { locale: vi })}`;
-
+              const timeRange = slotToTime[slot];
+              let formatted = "Không xác định";
+              if (scheduledAt && timeRange) {
+                // Lấy giờ bắt đầu từ timeRange, ví dụ "08:00 ~ 10:00" => "08:00"
+                const startTime = timeRange.split("~")[0].trim();
+                const dateTimeStr = `${scheduledAt.slice(0, 10)}T${startTime}:00`;
+                const dateObj = parseISO(dateTimeStr);
+                if (!isNaN(dateObj)) {
+                  formatted = `${timeRange}, ${format(dateObj, "EEEE, dd/MM/yyyy", { locale: vi })}`;
+                }
+              }
               return (
                 <tr key={app.id} className="text-center">
                   <td className="py-2 px-4 border">{(currentPage - 1) * itemsPerPage + index + 1}</td>

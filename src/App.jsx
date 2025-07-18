@@ -24,6 +24,7 @@ import Profile from './pages/Profiles/CustomerProfile';
 import ManageAccount from './pages/ManageAccount'; 
 import ManageLawyer from './pages/Interface/Admin/LawyerManagement'; 
 import CustomerAppointment from './pages/Interface/Customer/CustomerAppointment';
+import ReviewManagement from './pages/Interface/Admin/ReviewManagement';
 
 function App() {
   const [role, setRole] = useState(localStorage.getItem("role"));
@@ -60,6 +61,7 @@ function App() {
             <Route path="/manageaccount" element={<ManageAccount />} />
             <Route path="/lawyermanagement" element={<ManageLawyer />} />
             <Route path="/appointments" element={<CustomerAppointment />} />
+            <Route path="/reviewmanagement" element={<ReviewManagement />} />
           </Routes>
         </div>
         <Footer />
