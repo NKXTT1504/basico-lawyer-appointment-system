@@ -276,58 +276,6 @@ const CustomerProfile = () => {
                             </div>
                         </form>
                     </div>
-
-                    <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden">
-                        <div className="bg-primary-700 px-6 py-4">
-                            <h2 className="text-2xl font-bold text-white">Lịch sử cuộc hẹn</h2>
-                        </div>
-
-                        <div className="p-6">
-                            <div className="flex flex-col">
-                                <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                                    <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                                        <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                                            <table className="min-w-full divide-y divide-gray-200">
-                                                <thead className="bg-gray-50">
-                                                    <tr>
-                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            Luật sư
-                                                        </th>
-                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            Ngày
-                                                        </th>
-                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            Trạng thái
-                                                        </th>
-                                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            Hành động
-                                                        </th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="bg-white divide-y divide-gray-200">
-                                                    {/* Placeholder for appointment history - will be implemented later */}
-                                                    <tr>
-                                                        <td colSpan="4" className="px-6 py-4 text-center text-sm text-gray-500">
-                                                            Chưa có cuộc hẹn nào
-                                                        </td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="mt-4 flex justify-center">
-                                <button
-                                    onClick={() => navigate('/appointment')}
-                                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-700 hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-                                >
-                                    Đặt lịch hẹn mới
-                                </button>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
         </main>

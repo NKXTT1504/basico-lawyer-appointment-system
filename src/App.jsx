@@ -20,7 +20,7 @@ import ManageAppointment from './pages/Interface/Lawyer/ManageAppointment';
 import LawyerShift from './pages/Interface/Lawyer/LawyerShift';
 import LawyerProfile from './pages/Profiles/LawyerProfile';
 import AdminProfile from './pages/Profiles/AdminProfile';
-import Profile from './pages/Profiles/CustomerProfile'; 
+import CustomerProfile from './pages/Profiles/CustomerProfile'; 
 import ManageAccount from './pages/ManageAccount'; 
 import ManageLawyer from './pages/Interface/Admin/LawyerManagement'; 
 import CustomerAppointment from './pages/Interface/Customer/CustomerAppointment';
@@ -51,16 +51,16 @@ function App() {
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/appointment" element={<Appointment />} />
-             <Route path="/login" element={<Login setRole={setRole} />} />
+            <Route path="/login" element={<Login setRole={setRole} />} />
             <Route path="/register" element={<Register />} />
             <Route path="/manageappointment" element={<ManageAppointment />} />
             <Route path="/lawyershift" element={<LawyerShift />} />
             <Route path="/lawyerprofile" element={<LawyerProfile />} />
-            <Route path="/customerprofile" element={<Profile />} />
+            <Route path="/customer-profile" element={<CustomerProfile />} />
             <Route path="/adminprofile" element={<AdminProfile />} />
             <Route path="/manageaccount" element={<ManageAccount />} />
             <Route path="/lawyermanagement" element={<ManageLawyer />} />
-            <Route path="/appointments" element={<CustomerAppointment />} />
+            <Route path="/history-appointments" element={<CustomerAppointment />} />
             <Route path="/reviewmanagement" element={<ReviewManagement />} />
           </Routes>
         </div>

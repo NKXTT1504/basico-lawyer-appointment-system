@@ -1,47 +1,44 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from '../../config/axios';
-
-const defaultFormData = {
-  id: 0,
-  bio: "",
-  spec: [],
-  licenseNum: "",
-  expYears: 0,
-  description: "",
-  rating: 0,
-  pricePerHour: 0,
-  img: "",
-  dayOfWeek: "",
-  workTime: "",
-  fullName: "",
-  email: "",
-  phoneNumber: ""
-};
+import { Dialog, Transition } from '@headlessui/react';
+import { Fragment } from 'react';
 
 const LawyerProfile = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState(defaultFormData);
-
+  const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
   const [success, setSuccess] = useState("");
+  const [showSuccess, setShowSuccess] = useState(false);
   const [error, setError] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editableData, setEditableData] = useState({});
   const user = JSON.parse(localStorage.getItem("user"));
   const userId = user?.id;
 
-  // Lấy thông tin user + lawyer profile chỉ qua 1 API
+  const customStyles = {
+    content: {
+      top: '50%',
+      left: '50%',
+      right: 'auto',
+      bottom: 'auto',
+      marginRight: '-50%',
+      transform: 'translate(-50%, -50%)',
+      maxWidth: '500px',
+      width: '90%',
+    },
+    overlay: {
+      backgroundColor: 'rgba(0, 0, 0, 0.75)'
+    }
+  };
   useEffect(() => {
     const fetchProfile = async () => {
       setLoading(true);
       try {
         const res = await api.auth.get(`/api/UserWithLawyerProfile/${userId}`);
-        console.log("API response:", res.data);
-        // Nếu response là { result: {...} } thì lấy res.data.result
         const data = res.data.result;
-
         setFormData({
-          ...defaultFormData,
           ...data.lawyerProfile,
           ...data.user,
           spec: Array.isArray(data.lawyerProfile.spec)
@@ -49,6 +46,13 @@ const LawyerProfile = () => {
             : (data.lawyerProfile.spec
               ? data.lawyerProfile.spec.split(",").map((s) => s.trim())
               : []),
+          role: data.user.role,
+        });
+        setEditableData({
+          fullName: data.user.fullName,
+          email: data.user.email,
+          phoneNumber: data.user.phoneNumber,
+          description: data.lawyerProfile.description,
         });
       } catch (err) {
         setError("Không thể tải thông tin người dùng/luật sư.");
@@ -65,14 +69,7 @@ const LawyerProfile = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: name === "spec"
-        ? value.split(",").map((item) => item.trim())
-        : ["rating", "expYears", "pricePerHour"].includes(name)
-          ? Number(value)
-          : value,
-    }));
+    setEditableData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
@@ -82,13 +79,22 @@ const LawyerProfile = () => {
     setSuccess("");
 
     try {
-      // Update thông tin user + lawyer qua API auth
-      await api.auth.put(`/api/Auth/update/${userId}`, {
-        ...formData,
-        spec: Array.isArray(formData.spec) ? formData.spec : (formData.spec ? formData.spec.split(",").map(s => s.trim()) : []),
-      });
+      const updateData = {
+        fullName: editableData.fullName,
+        email: editableData.email,
+        phoneNumber: editableData.phoneNumber,
+        role: formData.role, // Giữ nguyên role hiện tại
+        isActive: true // Giả sử người dùng luôn active
+      };
 
+      await api.auth.put(`/api/Auth/update/${userId}`, updateData);
       setSuccess("Cập nhật thông tin thành công!");
+      setTimeout(() => {
+        setShowSuccess(false);
+        setSuccess('');
+      }, 5000);
+      setFormData(prev => ({ ...prev, ...editableData }));
+      setIsModalOpen(false);
     } catch (err) {
       setError("Lỗi khi cập nhật thông tin.");
     } finally {
@@ -96,7 +102,13 @@ const LawyerProfile = () => {
     }
   };
 
-  if (loading) return <p className="text-center mt-10 font-bold text-lg">Đang tải thông tin...</p>;
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-700"></div>
+      </div>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gray-50 py-16 pt-28">
@@ -114,164 +126,137 @@ const LawyerProfile = () => {
           {error && <div className="bg-red-50 border-l-4 border-red-400 p-4 m-6 font-bold text-base">{error}</div>}
           {success && <div className="bg-green-50 border-l-4 border-green-400 p-4 m-6 font-bold text-base">{success}</div>}
 
-          <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* User Info */}
-            <div>
-              <label className="block text-base font-bold text-gray-700">Họ và tên</label>
-              <input
-                type="text"
-                name="fullName"
-                value={formData.fullName}
-                onChange={handleChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm pl-2 font-semibold"
-              />
-            </div>
-            <div>
-              <label className="block text-base font-bold text-gray-700">Email</label>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm pl-2 font-semibold"
-              />
-            </div>
-            <div>
-              <label className="block text-base font-bold text-gray-700">Số điện thoại</label>
-              <input
-                type="text"
-                name="phoneNumber"
-                value={formData.phoneNumber}
-                onChange={handleChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm pl-2 font-semibold"
-              />
-            </div>
-
-            {/* Lawyer Info */}
-            <div>
-              <label className="block text-base font-bold text-gray-700">Bio</label>
-              <input
-                type="text"
-                name="bio"
-                value={formData.bio}
-                onChange={handleChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm pl-2 font-semibold"
-              />
-            </div>
-            <div>
-              <label className="block text-base font-bold text-gray-700">Chuyên môn (dùng dấu phẩy)</label>
-              <input
-                type="text"
-                name="spec"
-                value={Array.isArray(formData.spec) ? formData.spec.join(", ") : ""}
-                onChange={handleChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm pl-2 font-semibold"
-              />
-            </div>
-            <div>
-              <label className="block text-base font-bold text-gray-700">Số giấy phép</label>
-              <input
-                type="text"
-                name="licenseNum"
-                value={formData.licenseNum}
-                onChange={handleChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm pl-2 font-semibold"
-              />
-            </div>
-            <div>
-              <label className="block text-base font-bold text-gray-700">Số năm kinh nghiệm</label>
-              <input
-                type="number"
-                name="expYears"
-                value={formData.expYears}
-                onChange={handleChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm pl-2 font-semibold"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-base font-bold text-gray-700">Mô tả</label>
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                rows="3"
-                className="block w-full rounded-md border-gray-300 shadow-sm pl-2 font-semibold"
-              />
-            </div>
-            <div>
-              <label className="block text-base font-bold text-gray-700">Đánh giá</label>
-              <input
-                type="number"
-                name="rating"
-                value={formData.rating}
-                onChange={handleChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm pl-2 font-semibold"
-              />
-            </div>
-            <div>
-              <label className="block text-base font-bold text-gray-700">Giá/giờ (VNĐ)</label>
-              <input
-                type="number"
-                name="pricePerHour"
-                value={formData.pricePerHour}
-                onChange={handleChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm pl-2 font-semibold"
-              />
-            </div>
-            <div>
-              <label className="block text-base font-bold text-gray-700">Ngày làm việc</label>
-              <input
-                type="text"
-                name="dayOfWeek"
-                value={formData.dayOfWeek}
-                onChange={handleChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm pl-2 font-semibold"
-              />
-            </div>
-            <div>
-              <label className="block text-base font-bold text-gray-700">Giờ làm việc</label>
-              <input
-                type="text"
-                name="workTime"
-                value={formData.workTime}
-                onChange={handleChange}
-                className="block w-full rounded-md border-gray-300 shadow-sm pl-2 font-semibold"
-              />
-            </div>
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+            <InfoItem label="Họ và tên" value={formData.fullName} />
+            <InfoItem label="Email" value={formData.email} />
+            <InfoItem label="Số điện thoại" value={formData.phoneNumber} />
+            <InfoItem label="Bio" value={formData.bio} />
+            <InfoItem label="Chuyên môn" value={Array.isArray(formData.spec) ? formData.spec.join(", ") : formData.spec} />
+            <InfoItem label="Số giấy phép" value={formData.licenseNum} />
+            <InfoItem label="Số năm kinh nghiệm" value={formData.expYears} />
+            <InfoItem label="Mô tả" value={formData.description} />
+            <InfoItem label="Đánh giá" value={formData.rating} />
+            <InfoItem label="Giá/giờ (VNĐ)" value={formData.pricePerHour} />
+            <InfoItem label="Ngày làm việc" value={formData.dayOfWeek} />
+            <InfoItem label="Giờ làm việc" value={formData.workTime} />
 
             <div className="md:col-span-2 flex justify-end mt-4">
               <button
-                type="submit"
-                disabled={updating}
-                className="px-4 py-2 bg-primary-700 text-white rounded-md hover:bg-primary-800 disabled:opacity-50 font-bold text-base"
+                onClick={() => setIsModalOpen(true)}
+                className="px-4 py-2 bg-primary-700 text-white rounded-md hover:bg-primary-800 font-bold text-base"
               >
-                {updating ? "Đang cập nhật..." : "Lưu thay đổi"}
+                Thay đổi
               </button>
             </div>
-          </form>
-        </div>
-
-        {/* Security */}
-        <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden">
-          <div className="bg-primary-700 px-6 py-4">
-            <h2 className="text-2xl font-bold text-white">Bảo mật</h2>
-          </div>
-          <div className="p-6 flex justify-between items-center">
-            <div>
-              <h3 className="text-lg font-bold">Đổi mật khẩu</h3>
-              <p className="text-gray-500">Cập nhật mật khẩu để bảo vệ tài khoản của bạn</p>
-            </div>
-            <button
-              onClick={() => navigate("/change-password")}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 font-bold"
-            >
-              Đổi mật khẩu
-            </button>
           </div>
         </div>
       </div>
+
+      <Transition appear show={isModalOpen} as={Fragment}>
+        <Dialog as="div" className="relative z-10" onClose={() => setIsModalOpen(false)}>
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <div className="fixed inset-0 bg-black bg-opacity-25" />
+          </Transition.Child>
+
+          <div className="fixed inset-0 overflow-y-auto">
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+              <Transition.Child
+                as={Fragment}
+                enter="ease-out duration-300"
+                enterFrom="opacity-0 scale-95"
+                enterTo="opacity-100 scale-100"
+                leave="ease-in duration-200"
+                leaveFrom="opacity-100 scale-100"
+                leaveTo="opacity-0 scale-95"
+              >
+                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all">
+                  <Dialog.Title
+                    as="h3"
+                    className="text-lg font-medium leading-6 text-gray-900"
+                  >
+                    Chỉnh sửa thông tin
+                  </Dialog.Title>
+                  <form onSubmit={handleSubmit}>
+                    <div className="mb-4 mt-4">
+                      <label className="block text-sm font-medium text-gray-700">Họ và tên</label>
+                      <input
+                        type="text"
+                        name="fullName"
+                        value={editableData.fullName}
+                        onChange={handleChange}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700">Email</label>
+                      <input
+                        type="email"
+                        name="email"
+                        value={editableData.email}
+                        onChange={handleChange}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700">Số điện thoại</label>
+                      <input
+                        type="text"
+                        name="phoneNumber"
+                        value={editableData.phoneNumber}
+                        onChange={handleChange}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      />
+                    </div>
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700">Mô tả</label>
+                      <textarea
+                        name="description"
+                        value={editableData.description}
+                        onChange={handleChange}
+                        rows="3"
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50"
+                      />
+                    </div>
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={() => setIsModalOpen(false)}
+                        className="mr-2 px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        Hủy
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={updating}
+                        className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                      >
+                        {updating ? "Đang cập nhật..." : "Lưu thay đổi"}
+                      </button>
+                    </div>
+                  </form>
+                </Dialog.Panel>
+              </Transition.Child>
+            </div>
+          </div>
+        </Dialog>
+      </Transition>
     </main>
   );
 };
+
+const InfoItem = ({ label, value }) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-700">{label}</label>
+    <p className="mt-1 block w-full rounded-md border-gray-300 shadow-sm bg-gray-50 p-2">{value}</p>
+  </div>
+);
 
 export default LawyerProfile;
