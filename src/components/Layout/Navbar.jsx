@@ -42,7 +42,7 @@ const Navbar = () => {
   const getProfileLink = () => {
     switch (userRole) {
       case "Customer":
-        return "/customerprofile";
+        return "/customer-profile";
       case "Lawyer":
         return "/lawyerprofile";
       case "Admin":
@@ -149,13 +149,13 @@ const Navbar = () => {
                       className="absolute mt-2 w-40 bg-white rounded-md shadow-lg z-10"
                     >
                       <Link
-                        to="/customerprofile"
+                        to="/customer-profile"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
                         Cài đặt
                       </Link>
                       <Link
-                        to="/appointments"
+                        to="/history-appointments"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
                         Cuộc hẹn
