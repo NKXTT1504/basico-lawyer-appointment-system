@@ -4,12 +4,15 @@ import { useSelector, useDispatch } from "react-redux";
 import { logout } from "../../redux/features/userSlice";
 import { Menu, X, Scale, User } from "lucide-react";
 
+
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
 
   const user = useSelector((state) => state.user);
   const isLoggedIn = !!user?.token;
@@ -59,7 +62,6 @@ const Navbar = () => {
 
   const customerNavItems = [
     { name: "Trang chủ", path: "/" },
-    { name: "Cuộc hẹn", path: "/appointments" },
     { name: "Dịch vụ", path: "/services" },
     { name: "Luật sư", path: "/lawyers" },
     { name: "Giới thiệu", path: "/about" },
@@ -82,15 +84,25 @@ const Navbar = () => {
     navItems = [...lawyerNavItems];
   } else if (userRole === "Admin") {
     navItems = [...adminNavItems];
-  } else if (userRole === "Customer") {
-    navItems = [...customerNavItems];
-  }
+  } 
 
   // Định nghĩa màu sắc tùy vào role
   const isRoleWithDarkNavbar = userRole === "Lawyer" || userRole === "Admin";
   const navbarBgClass = isRoleWithDarkNavbar ? "bg-primary-900" : "bg-white";
   const textColor = isRoleWithDarkNavbar ? "text-white" : "text-primary-900";
   const iconColor = isRoleWithDarkNavbar ? "#fff" : "#1e3353";
+
+  useEffect(() => {
+    const closeDropdown = (e) => {
+      if (!e.target.closest('.dropdown-container')) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('click', closeDropdown);
+
+    return () => document.removeEventListener('click', closeDropdown);
+  }, []);
 
   return (
     <nav
@@ -120,19 +132,42 @@ const Navbar = () => {
 
             {isLoggedIn ? (
               <div className="flex items-center space-x-4">
-                <Link
-                  to={getProfileLink()}
-                  className={`btn-primary ${isRoleWithDarkNavbar ? "bg-white text-primary-900 hover:bg-gray-200" : ""}`}
+                <div className="relative dropdown-container"
+                  onClick={toggleDropdown}
+                  onMouseEnter={() => setIsDropdownOpen(true)}
+                  // onMouseLeave={() => setIsDropdownOpen(false)}
                 >
-                  <User className="h-5 w-5 mr-2" />
-                  Tài khoản
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className={`btn-outline ${isRoleWithDarkNavbar ? "border-white text-white hover:bg-primary-800" : ""}`}
-                >
-                  Đăng xuất
-                </button>
+                  <button
+                    className={`btn-primary ${isRoleWithDarkNavbar ? "bg-white text-primary-900 hover:bg-gray-200" : ""}`}
+                  >
+                    <User className="h-5 w-5 mr-2" />
+                    Tài khoản
+                  </button>
+                  {isDropdownOpen && (
+                    <div
+                      className="absolute mt-2 w-40 bg-white rounded-md shadow-lg z-10"
+                    >
+                      <Link
+                        to="/customerprofile"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Cài đặt
+                      </Link>
+                      <Link
+                        to="/appointments"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      >
+                        Cuộc hẹn
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:rounded-md"
+                      >
+                        Đăng xuất
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="flex items-center space-x-4">
@@ -180,8 +215,8 @@ const Navbar = () => {
                 key={item.name}
                 to={item.path}
                 className={`font-medium px-4 py-2 rounded-md ${isRoleWithDarkNavbar
-                    ? "text-white hover:bg-primary-800"
-                    : "text-gray-700 hover:bg-gray-50"
+                  ? "text-white hover:bg-primary-800"
+                  : "text-gray-700 hover:bg-gray-50"
                   }`}
               >
                 {item.name}
@@ -193,8 +228,8 @@ const Navbar = () => {
                 <Link
                   to={getProfileLink()}
                   className={`btn-primary w-full justify-center ${isRoleWithDarkNavbar
-                      ? "bg-white text-primary-900 hover:bg-gray-200"
-                      : ""
+                    ? "bg-white text-primary-900 hover:bg-gray-200"
+                    : ""
                     }`}
                 >
                   <User className="h-5 w-5 mr-2" />
@@ -203,8 +238,8 @@ const Navbar = () => {
                 <button
                   onClick={handleLogout}
                   className={`btn-outline w-full justify-center ${isRoleWithDarkNavbar
-                      ? "border-white text-white hover:bg-primary-800"
-                      : ""
+                    ? "border-white text-white hover:bg-primary-800"
+                    : ""
                     }`}
                 >
                   Đăng xuất
@@ -215,8 +250,8 @@ const Navbar = () => {
                 <Link
                   to="/login"
                   className={`btn-outline w-full justify-center ${isRoleWithDarkNavbar
-                      ? "border-white text-white hover:bg-primary-800"
-                      : ""
+                    ? "border-white text-white hover:bg-primary-800"
+                    : ""
                     }`}
                 >
                   Đăng nhập
@@ -224,8 +259,8 @@ const Navbar = () => {
                 <Link
                   to="/register"
                   className={`btn-primary w-full justify-center ${isRoleWithDarkNavbar
-                      ? "bg-white text-primary-900 hover:bg-gray-200"
-                      : ""
+                    ? "bg-white text-primary-900 hover:bg-gray-200"
+                    : ""
                     }`}
                 >
                   Đăng Ký
