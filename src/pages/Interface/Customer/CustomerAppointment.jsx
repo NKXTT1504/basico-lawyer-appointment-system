@@ -60,7 +60,15 @@ const CustomerAppointment = () => {
 
     return appointments
       .filter(filterFn)
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      .sort((a, b) => {
+        const getDateTime = (app) => {
+          if (!app.scheduledAt || !app.slot) return new Date(0);
+          return new Date(`${app.scheduledAt}T${app.slot}:00`);
+        };
+        const aDate = getDateTime(a);
+        const bDate = getDateTime(b);
+        return tab === "upcoming" ? aDate - bDate : bDate - aDate;
+      });
   };
 
   const paginated = (data) => {
@@ -123,7 +131,6 @@ const CustomerAppointment = () => {
           </table>
         </div>
 
-        {/* Pagination */}
         {data.length > PAGE_SIZE && (
           <div className="flex justify-center items-center gap-4 mt-6">
             <button
@@ -153,7 +160,7 @@ const CustomerAppointment = () => {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <h1 className="text-4xl font-bold text-primary-900 text-center mb-10">Lịch hẹn của bạn</h1>
+      <h1 className="text-4xl font-bold text-primary-900 text-center mb-10">LỊCH HẸN CỦA BẠN</h1>
 
       <div className="flex justify-center gap-4 mb-8">
         <button

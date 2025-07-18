@@ -2,6 +2,9 @@ import { Link } from 'react-router-dom';
 import { Star, ArrowRight } from 'lucide-react';
 
 const LawyerCard = ({ lawyer }) => {
+  const reviewCount = lawyer.reviewCount || 0;
+  console.log(lawyer);
+
   return (
     <div className="card h-full flex flex-col">
       <div className="relative h-64 overflow-hidden">
@@ -29,21 +32,21 @@ const LawyerCard = ({ lawyer }) => {
             <Star className="h-5 w-5 text-yellow-500 fill-current" />
             <span className="ml-1 font-medium">{lawyer.rating}</span>
           </div>
-          <span className="text-gray-500 text-sm ml-2">({lawyer.reviewCount} reviews)</span>
+          <span className="text-gray-500 text-sm ml-2">({reviewCount} đánh giá)</span>
         </div>
         
         <p className="text-gray-600 mb-4 line-clamp-3">{lawyer.description}</p>
         
         <div className="mt-auto">
           <p className="text-sm font-medium text-gray-700 mb-4">
-            <span className="font-bold">Experience:</span> {lawyer.experience} years
+            <span className="font-bold">Kinh nghiệm:</span> {lawyer.experience} năm
           </p>
           
           <Link 
-            to={`/lawyers/${lawyer.id}`}
+            to={`/lawyers/${lawyer.slug}`}
             className="group inline-flex items-center text-primary-700 font-medium hover:text-primary-800"
           >
-            <span>View profile</span>
+            <span>Xem hồ sơ</span>
             <ArrowRight className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>

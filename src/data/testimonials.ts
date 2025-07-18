@@ -3,34 +3,34 @@ import { Testimonial } from '../types';
 export const testimonials: Testimonial[] = [
   {
     id: "1",
-    name: "Alex Thompson",
-    position: "CEO, Thompson Enterprises",
+    name: "Văn Phú Quốc Thịnh",
+    position: "Giám đốc điều hành công ty Nhật Bản",
     photo: "https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-    content: "The corporate legal team at this firm was instrumental in our successful merger. Their attention to detail and strategic guidance saved us from potential pitfalls.",
+    content: "Dịch vụ pháp lý của chị Nguyễn Văn A đã giúp doanh nghiệp tôi vượt qua những thách thức pháp lý phức tạp. Chị ấy không chỉ am hiểu luật mà còn rất tận tâm với khách hàng. Thật là hữu ích và đúng như tôi mong đợi!",
     rating: 5
   },
   {
     id: "2",
-    name: "Maria Garcia",
-    position: "Homeowner",
+    name: "Trần Thị Mai",
+    position: "Chủ nhà",
     photo: "https://images.pexels.com/photos/774909/pexels-photo-774909.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-    content: "Jennifer helped us navigate a complex real estate transaction with ease. Her expertise made what could have been a stressful process smooth and straightforward.",
+    content: "Chị Nguyễn Văn B đã giúp gia đình tôi xử lý giao dịch bất động sản phức tạp một cách dễ dàng. Kiến thức chuyên môn của chị đã khiến quá trình này trở nên đơn giản và suôn sẻ. Quá là tuyệt vời!",
     rating: 5
   },
   {
     id: "3",
-    name: "James Wilson",
-    position: "Tech Entrepreneur",
+    name: "Lê Minh Tuấn",
+    position: "Nhà sáng lập công nghệ",
     photo: "https://images.pexels.com/photos/614810/pexels-photo-614810.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-    content: "Michael's insights into patent law were invaluable for our startup. He helped us protect our innovations and navigate the complex world of intellectual property.",
+    content: "Những hiểu biết của anh Nguyễn Văn C về luật sáng chế đã rất hữu ích cho startup của tôi. Anh ấy đã giúp chúng tôi bảo vệ các ý tưởng đổi mới và định hướng trong thế giới sở hữu trí tuệ đầy phức tạp.",
     rating: 4
   },
   {
     id: "4",
-    name: "Rebecca Johnson",
-    position: "Small Business Owner",
+    name: "Phạm Thu Hương",
+    position: "Chủ doanh nghiệp nhỏ",
     photo: "https://images.pexels.com/photos/3763188/pexels-photo-3763188.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2",
-    content: "The contract review service saved my business from entering a potentially damaging agreement. Their thorough analysis highlighted issues I hadn't even considered.",
+    content: "Dịch vụ rà soát hợp đồng đã cứu doanh nghiệp tôi khỏi một thỏa thuận có thể gây tổn hại. Họ đã phân tích kỹ lưỡng và chỉ ra những điểm quan trọng mà tôi chưa từng nghĩ tới. Dịch vụ của trang web này rất xuất sắc!",
     rating: 5
   }
 ];

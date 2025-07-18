@@ -122,19 +122,23 @@ const AppointmentForm = ({
     window.scrollTo(0, 0);
   };
 
+  const getStartTime = (timeRange: string) => timeRange.split("~")[0].trim();
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (validateStep(3)) {
       setIsSubmitting(true);
 
-      // Chuẩn bị dữ liệu gửi API
       const userId = user?.id || user?.userId || 0;
       const lawyerId = formData.lawyer;
-      const scheduledAt = formData.date && formData.time
-        ? new Date(`${formData.date}T${formData.time}:00`).toISOString()
-        : null;
-      const slot = formData.time;
+      // Lấy giờ bắt đầu từ time range
+      const startTime = getStartTime(formData.time);
+      const scheduledAt =
+        formData.date && formData.time
+          ? new Date(`${formData.date}T${startTime}:00`).toISOString()
+          : null;
+      const slot = timeToSlot[formData.time];
       const note = formData.notes;
       const selectedService = services.find(s => s.id === formData.service);
       const spec = selectedSpec || selectedService?.title || '';
@@ -145,7 +149,7 @@ const AppointmentForm = ({
           userId,
           lawyerId,
           scheduledAt,
-          slot,
+          slot: String(slot), // slot là string
           note,
           spec,
           services: servicesArr
@@ -168,11 +172,18 @@ const AppointmentForm = ({
     "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
   ];
 
-  const slotToTimes: { [key: string]: string[] } = {
-    1: ["8:00", "9:00"],
-    2: ["10:00", "11:00"],
-    3: ["13:00", "14:00"],
-    4: ["15:00", "16:00"],
+  const timeToSlot: { [key: string]: number } = {
+    "08:00 ~ 10:00": 1,
+    "10:00 ~ 12:00": 2,
+    "13:00 ~ 15:00": 3,
+    "15:00 ~ 17:00": 4,
+  };
+
+  const slotToTimes: { [key: number]: string[] } = {
+    1: ["08:00 ~ 10:00"],
+    2: ["10:00 ~ 12:00"],
+    3: ["13:00 ~ 15:00"],
+    4: ["15:00 ~ 17:00"],
   };
 
   const getAvailableTimes = () => {

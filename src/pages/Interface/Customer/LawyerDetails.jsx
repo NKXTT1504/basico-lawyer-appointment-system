@@ -1,6 +1,7 @@
 import { useParams, Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import api from '../../../config/axios';
+import ReviewForm from '../../../components/Testimonial/ReviewForm';
 
 const slugify = (name) => {
   return name
@@ -15,17 +16,29 @@ const slugify = (name) => {
 const LawyerDetails = () => {
   const { slug } = useParams();
   const [lawyer, setLawyer] = useState(null);
+  const [averageRating, setAverageRating] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.auth.get('/api/UserWithLawyerProfile/only-lawyers')
-      .then(res => {
+    const fetchLawyer = async () => {
+      try {
+        const res = await api.auth.get('/api/UserWithLawyerProfile/only-lawyers');
         const list = res.data.result || [];
         const found = list.find(lawyer => slugify(lawyer.user.fullName) === slug);
         setLawyer(found || null);
-      })
-      .catch(() => setLawyer(null))
-      .finally(() => setLoading(false));
+        if (found?.lawyerProfile?.id) {
+          const ratingRes = await api.auth.get(`/api/Review/lawyer/${found.lawyerProfile.id}/average-rating`);
+          setAverageRating(ratingRes.data);
+        }
+      } catch {
+        setLawyer(null);
+        setAverageRating(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLawyer();
   }, [slug]);
 
   if (loading) {
@@ -80,13 +93,16 @@ const LawyerDetails = () => {
             </div>
 
             <ul className="space-y-2 text-sm">
-              <li><strong>📍 Địa chỉ:</strong> {lawyerProfile.description}</li>
-              <li><strong>🎓 Kinh nghiệm:</strong> {lawyerProfile.expYears} năm</li>
-              <li><strong>⭐ Đánh giá:</strong> {lawyerProfile.rating} ★</li>
-              <li><strong>💰 Giá/giờ:</strong> {lawyerProfile.pricePerHour?.toLocaleString()} VNĐ</li>
-              <li><strong>🧾 Số hiệu hành nghề:</strong> {lawyerProfile.licenseNum}</li>
-              <li><strong>📧 Email:</strong> {user.email}</li>
-              <li><strong>📞 SĐT:</strong> {user.phoneNumber}</li>
+              <li><strong> Địa chỉ:</strong> {lawyerProfile.description}</li>
+              <li><strong> Kinh nghiệm:</strong> {lawyerProfile.expYears} năm</li>
+              <li>
+                <strong> Đánh giá:</strong>{" "}
+                {averageRating !== null ? `${averageRating.toFixed(1)} ⭐` : "Chưa có"}
+              </li>
+              <li><strong>Giá/giờ:</strong> {lawyerProfile.pricePerHour?.toLocaleString()} VNĐ</li>
+              <li><strong>Số hiệu hành nghề:</strong> {lawyerProfile.licenseNum}</li>
+              <li><strong>Email:</strong> {user.email}</li>
+              <li><strong>SĐT:</strong> {user.phoneNumber}</li>
             </ul>
 
             <div className="mt-6">
@@ -99,6 +115,11 @@ const LawyerDetails = () => {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Form đánh giá */}
+      <div className="container mx-auto px-4 max-w-6xl mt-12">
+        <ReviewForm lawyerId={lawyerProfile.id} onSuccess={() => {}} />
       </div>
     </main>
   );
