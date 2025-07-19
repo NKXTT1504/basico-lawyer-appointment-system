@@ -74,9 +74,10 @@ const Navbar = () => {
   ];
 
   const adminNavItems = [
-    { name: "Quản lí tài khoản", path: "/manageaccount" },
     { name: "Thống kê", path: "/dashboard" },
+    { name: "Quản lí tài khoản", path: "/manageaccount" },
     { name: "Quản lí luật sư", path: "/lawyermanagement" },
+    { name: "Quản lí lịch hẹn", path: "/appointmentmanagement" },
     { name: "Quản lí đánh giá", path: "/reviewmanagement" },
   ];
 
@@ -145,21 +146,21 @@ const Navbar = () => {
                     Tài khoản
                   </button>
                   {isDropdownOpen && (
-                    <div
-                      className="absolute mt-2 w-40 bg-white rounded-md shadow-lg z-10"
-                    >
+                    <div className="absolute mt-2 w-40 bg-white rounded-md shadow-lg z-10">
                       <Link
-                        to="/customer-profile"
+                        to={getProfileLink()}
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       >
                         Cài đặt
                       </Link>
-                      <Link
-                        to="/history-appointments"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        Cuộc hẹn
-                      </Link>
+                      {userRole === "Customer" && (
+                        <Link
+                          to="/history-appointments"
+                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                        >
+                          Cuộc hẹn
+                        </Link>
+                      )}
                       <button
                         onClick={handleLogout}
                         className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:rounded-md"

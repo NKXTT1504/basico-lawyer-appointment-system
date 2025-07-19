@@ -21,9 +21,7 @@ const CustomerProfile = () => {
     const fetchUserData = async (userId) => {
         setLoading(true);
         try {
-            console.log('Fetching user data for userId:', userId);
             const response = await api.auth.get(`/api/User/${userId}`);
-            console.log('API response:', response);
 
             if (response.data && response.data.result) {
                 const userData = response.data.result;
@@ -65,7 +63,6 @@ const CustomerProfile = () => {
             }
 
             const result = await fetchUserData(userId);
-            console.log('Fetch result:', result);
             if (result && result.result) {
                 setSuccess('Profile loaded successfully');
                 setShowSuccess(true);

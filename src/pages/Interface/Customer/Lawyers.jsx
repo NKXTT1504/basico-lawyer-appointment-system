@@ -20,6 +20,7 @@ const Lawyers = () => {
   const [allSpecializations, setAllSpecializations] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [ratingMap, setRatingMap] = useState({});
+  const [reviewCountMap, setReviewCountMap] = useState({});
 
   useEffect(() => {
     setIsLoading(true);
@@ -34,17 +35,24 @@ const Lawyers = () => {
         setAllSpecializations(specs);
 
         const ratings = {};
+        const reviewCounts = {};
         await Promise.all(
           list.map(async l => {
             try {
-              const res = await api.auth.get(`/api/Review/lawyer/${l.lawyerProfile.id}/average-rating`);
-              ratings[l.lawyerProfile.id] = res.data;
+              const [ratingRes, reviewRes] = await Promise.all([
+                api.auth.get(`/api/Review/lawyer/${l.lawyerProfile.id}/average-rating`),
+                api.auth.get(`/api/Review/lawyer/${l.lawyerProfile.id}`)
+              ]);
+              ratings[l.lawyerProfile.id] = ratingRes.data;
+              reviewCounts[l.lawyerProfile.id] = Array.isArray(reviewRes.data) ? reviewRes.data.length : 0;
             } catch {
               ratings[l.lawyerProfile.id] = null;
+              reviewCounts[l.lawyerProfile.id] = 0;
             }
           })
         );
         setRatingMap(ratings);
+        setReviewCountMap(reviewCounts);
       })
       .catch(err => {
         console.error('Lỗi khi tải danh sách luật sư:', err);
@@ -160,7 +168,12 @@ const Lawyers = () => {
                       <p>
                         <span className="font-semibold">Đánh giá:</span>{' '}
                         {rating !== null ? (
-                          <span className="text-yellow-600 font-semibold">{rating.toFixed(1)} ★</span>
+                          <span className="text-yellow-600 font-semibold">
+                            {rating.toFixed(1)} ★
+                            <span className="ml-2 text-gray-500 text-xs">
+                              ({reviewCountMap[lawyerProfile.id] || 0} lượt đánh giá)
+                            </span>
+                          </span>
                         ) : (
                           'Chưa có'
                         )}

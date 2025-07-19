@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { addDays } from 'date-fns';
 import { services } from '../data/services';
 import { Star, Calendar, Clock } from 'lucide-react';
 import api from '../config/axios';
@@ -60,7 +61,6 @@ const AppointmentForm = ({
     const fetchLawyers = async () => {
       try {
         const res = await api.auth.get('/api/UserWithLawyerProfile/only-lawyers');
-        console.log("Lawyers API:", res.data);
         setLawyers(res.data.result || res.data);
       } catch {
         setLawyers([]);
@@ -197,15 +197,15 @@ const AppointmentForm = ({
 
   const filteredLawyers = selectedSpec
     ? lawyers.filter(lawyer => {
-        const spec = lawyer.lawyerProfile?.spec;
-        if (typeof spec === "string") {
-          return spec.split(",").map((s: string) => s.trim()).includes(selectedSpec);
-        }
-        if (Array.isArray(spec)) {
-          return spec.map((s: string) => s.trim()).includes(selectedSpec);
-        }
-        return false;
-      })
+      const spec = lawyer.lawyerProfile?.spec;
+      if (typeof spec === "string") {
+        return spec.split(",").map((s: string) => s.trim()).includes(selectedSpec);
+      }
+      if (Array.isArray(spec)) {
+        return spec.map((s: string) => s.trim()).includes(selectedSpec);
+      }
+      return false;
+    })
     : [];
 
   if (submitSuccess) {
@@ -404,6 +404,7 @@ const AppointmentForm = ({
                 value={formData.date}
                 onChange={(e) => updateFormData('date', e.target.value)}
                 min={format(new Date(), 'yyyy-MM-dd')}
+                max={format(addDays(new Date(), 6), 'yyyy-MM-dd')} // giới hạn tối đa là 7 ngày kể từ hôm nay
               />
               {errors.date && <p className="text-red-500 text-sm mt-1">{errors.date}</p>}
             </div>
@@ -420,11 +421,10 @@ const AppointmentForm = ({
                     <button
                       key={time}
                       type="button"
-                      className={`py-2 px-4 rounded-md text-center transition-colors ${
-                        formData.time === time
+                      className={`py-2 px-4 rounded-md text-center transition-colors ${formData.time === time
                           ? "bg-primary-600 text-white"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                      }`}
+                        }`}
                       onClick={() => updateFormData("time", time)}
                     >
                       {time}

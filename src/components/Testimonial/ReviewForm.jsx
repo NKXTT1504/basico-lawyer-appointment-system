@@ -29,10 +29,15 @@ const ReviewForm = ({ lawyerId, onSuccess }) => {
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
   const userId = user?.id || user?.userId || 0;
+  const isCustomer = user?.role === "Customer";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErr("");
+     if (!isCustomer) {
+      setErr("Vui lòng đăng nhập vào tài khoản để đánh giá!");
+      return;
+    }
     if (!comment.trim()) {
       setErr("Vui lòng nhập nội dung đánh giá.");
       return;

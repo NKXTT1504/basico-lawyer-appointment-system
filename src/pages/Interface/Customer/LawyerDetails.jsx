@@ -17,6 +17,7 @@ const LawyerDetails = () => {
   const { slug } = useParams();
   const [lawyer, setLawyer] = useState(null);
   const [averageRating, setAverageRating] = useState(null);
+  const [reviewCount, setReviewCount] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -29,10 +30,17 @@ const LawyerDetails = () => {
         if (found?.lawyerProfile?.id) {
           const ratingRes = await api.auth.get(`/api/Review/lawyer/${found.lawyerProfile.id}/average-rating`);
           setAverageRating(ratingRes.data);
+
+          // Lấy số lượt đánh giá
+          const reviewRes = await api.auth.get("/api/Review");
+          const allReviews = Array.isArray(reviewRes.data) ? reviewRes.data : [];
+          const count = allReviews.filter(r => r.lawyerId === found.lawyerProfile.id).length;
+          setReviewCount(count);
         }
       } catch {
         setLawyer(null);
         setAverageRating(null);
+        setReviewCount(0);
       } finally {
         setLoading(false);
       }
@@ -98,6 +106,9 @@ const LawyerDetails = () => {
               <li>
                 <strong> Đánh giá:</strong>{" "}
                 {averageRating !== null ? `${averageRating.toFixed(1)} ⭐` : "Chưa có"}
+                <span className="ml-2 text-gray-500 text-sm">
+                  ({reviewCount} lượt đánh giá)
+                </span>
               </li>
               <li><strong>Giá/giờ:</strong> {lawyerProfile.pricePerHour?.toLocaleString()} VNĐ</li>
               <li><strong>Số hiệu hành nghề:</strong> {lawyerProfile.licenseNum}</li>
