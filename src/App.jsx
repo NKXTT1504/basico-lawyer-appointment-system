@@ -21,10 +21,12 @@ import LawyerShift from './pages/Interface/Lawyer/LawyerShift';
 import LawyerProfile from './pages/Profiles/LawyerProfile';
 import AdminProfile from './pages/Profiles/AdminProfile';
 import CustomerProfile from './pages/Profiles/CustomerProfile'; 
-import ManageAccount from './pages/ManageAccount'; 
+import ManageAccount from './pages/Interface/Admin/ManageAccount'; 
 import ManageLawyer from './pages/Interface/Admin/LawyerManagement'; 
 import CustomerAppointment from './pages/Interface/Customer/CustomerAppointment';
 import ReviewManagement from './pages/Interface/Admin/ReviewManagement';
+import AppointmentManagement from './pages/Interface/Admin/AppointmentManagement';
+import Dashboard from './pages/Interface/Admin/Dashboard';
 
 function App() {
   const [role, setRole] = useState(localStorage.getItem("role"));
@@ -62,6 +64,8 @@ function App() {
             <Route path="/lawyermanagement" element={<ManageLawyer />} />
             <Route path="/history-appointments" element={<CustomerAppointment />} />
             <Route path="/reviewmanagement" element={<ReviewManagement />} />
+            <Route path="/appointmentmanagement" element={<AppointmentManagement />} />
+            <Route path="/dashboard" element={<Dashboard />} />
           </Routes>
         </div>
         <Footer />

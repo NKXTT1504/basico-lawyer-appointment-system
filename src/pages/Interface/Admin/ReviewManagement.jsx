@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "../../../config/axios";
 import { format } from "date-fns";
+import * as XLSX from "xlsx";
 
 const ReviewManagement = () => {
   const [reviews, setReviews] = useState([]);
@@ -9,7 +10,10 @@ const ReviewManagement = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const PAGE_SIZE = 10;
+  const [selectedLawyer, setSelectedLawyer] = useState("all");
+  const [sortOrder, setSortOrder] = useState("desc");
+
+  const PAGE_SIZE = 5;
 
   useEffect(() => {
     const fetchData = async () => {
@@ -27,7 +31,6 @@ const ReviewManagement = () => {
           if (r.lawyerId) uniqueLawyerIds.add(r.lawyerId);
         });
 
-        // Fetch user info for both customers and lawyers
         const userFetches = [...uniqueUserIds].map((id) =>
           api.auth.get(`/api/UserWithLawyerProfile/${id}`).then((res) => ({
             id,
@@ -66,28 +69,56 @@ const ReviewManagement = () => {
     fetchData();
   }, []);
 
-  const filtered = reviews.filter((r) => {
-    const keyword = search.toLowerCase();
-    const lawyerName = (lawyerMap[r.lawyerId] || "").toLowerCase();
-    const userName = (userMap[r.userId] || "").toLowerCase();
-    return (
-      lawyerName.includes(keyword) ||
-      userName.includes(keyword) ||
-      r.comment.toLowerCase().includes(keyword)
-    );
-  });
+  const filtered = reviews
+    .filter((r) => {
+      const keyword = search.toLowerCase();
+      const lawyerName = (lawyerMap[r.lawyerId] || "").toLowerCase();
+      const userName = (userMap[r.userId] || "").toLowerCase();
+      const matchLawyer =
+        selectedLawyer === "all" || r.lawyerId === Number(selectedLawyer);
+      return (
+        matchLawyer &&
+        (lawyerName.includes(keyword) ||
+          userName.includes(keyword) ||
+          r.comment.toLowerCase().includes(keyword))
+      );
+    })
+    .sort((a, b) => {
+      if (sortOrder === "asc") return a.rating - b.rating;
+      if (sortOrder === "desc") return b.rating - a.rating;
+      return new Date(b.createdAt) - new Date(a.createdAt);
+    });
 
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   const paged = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
+  const exportToExcel = () => {
+    const data = filtered.map((r, idx) => ({
+      STT: idx + 1,
+      "Luật sư": lawyerMap[r.lawyerId] || r.lawyerId,
+      "Khách hàng": userMap[r.userId] || r.userId,
+      "Số sao": r.rating,
+      "Nội dung": r.comment,
+      "Ngày tạo": format(new Date(r.createdAt), "dd/MM/yyyy"),
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "DanhGia");
+
+    XLSX.writeFile(wb, "danh_gia_khach_hang.xlsx");
+  };
+
   return (
     <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-4xl text-center font-bold mt-10 text-primary-900">Quản lý đánh giá khách hàng</h1>
+      <h1 className="text-4xl text-center font-bold mt-10 text-primary-900">
+        QUẢN LÍ ĐÁNH GIÁ KHÁCH HÀNG
+      </h1>
 
-      <div className="mt-10 flex items-center gap-4">
+      <div className="mt-10 flex flex-wrap items-center gap-4 justify-center">
         <input
           type="text"
-          placeholder="Tìm kiếm theo tên luật sư, khách hàng hoặc nội dung..."
+          placeholder="Tìm kiếm tên, nội dung..."
           className="border rounded px-4 py-2 w-full max-w-md"
           value={search}
           onChange={(e) => {
@@ -95,27 +126,64 @@ const ReviewManagement = () => {
             setCurrentPage(1);
           }}
         />
+
+        <select
+          className="border rounded px-3 py-2"
+          value={selectedLawyer}
+          onChange={(e) => {
+            setSelectedLawyer(e.target.value);
+            setCurrentPage(1);
+          }}
+        >
+          <option value="all">Tất cả luật sư</option>
+          {Object.entries(lawyerMap).map(([id, name]) => (
+            <option key={id} value={id}>
+              {name}
+            </option>
+          ))}
+        </select>
+
+        <select
+          className="border rounded px-3 py-2"
+          value={sortOrder}
+          onChange={(e) => setSortOrder(e.target.value)}
+        >
+          <option value="">Sắp xếp theo ngày</option>
+          <option value="asc">Số sao tăng dần</option>
+          <option value="desc">Số sao giảm dần</option>
+        </select>
+
+        <button
+          onClick={exportToExcel}
+          className="bg-primary-700 text-white px-4 py-2 rounded hover:bg-primary-800 transition duration-200"
+        >
+          Xuất Excel
+        </button>
       </div>
 
       <div className="mt-10 overflow-x-auto rounded shadow border">
-        <table className="min-w-full bg-white">
+        <table className="min-w-full bg-white text-center">
           <thead>
             <tr className="bg-gray-100 text-gray-700">
               <th className="py-2 px-4 border">STT</th>
               <th className="py-2 px-4 border">Luật sư</th>
               <th className="py-2 px-4 border">Khách hàng</th>
               <th className="py-2 px-4 border">Số sao</th>
-              <th className="py-2 px-4 border">Nội dung</th>
+              <th className="py-2 px-4 border text-left">Nội dung</th>
               <th className="py-2 px-4 border">Ngày tạo</th>
             </tr>
           </thead>
           <tbody>
             {paged.map((r, idx) => (
-              <tr key={r.id} className="text-center">
-                <td className="py-2 px-4 border">{(currentPage - 1) * PAGE_SIZE + idx + 1}</td>
+              <tr key={r.id}>
+                <td className="py-2 px-4 border">
+                  {(currentPage - 1) * PAGE_SIZE + idx + 1}
+                </td>
                 <td className="py-2 px-4 border">{lawyerMap[r.lawyerId] || r.lawyerId}</td>
                 <td className="py-2 px-4 border">{userMap[r.userId] || r.userId}</td>
-                <td className="py-2 px-4 border text-yellow-500 font-bold">{r.rating} ★</td>
+                <td className="py-2 px-4 border text-yellow-500 font-bold">
+                  {r.rating} ★
+                </td>
                 <td className="py-2 px-4 border text-left">{r.comment}</td>
                 <td className="py-2 px-4 border">{format(new Date(r.createdAt), "dd/MM/yyyy")}</td>
               </tr>

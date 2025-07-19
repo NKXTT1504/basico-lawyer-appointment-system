@@ -3,8 +3,7 @@ import { Star, ArrowRight } from 'lucide-react';
 
 const LawyerCard = ({ lawyer }) => {
   const reviewCount = lawyer.reviewCount || 0;
-  console.log(lawyer);
-
+  
   return (
     <div className="card h-full flex flex-col">
       <div className="relative h-64 overflow-hidden">

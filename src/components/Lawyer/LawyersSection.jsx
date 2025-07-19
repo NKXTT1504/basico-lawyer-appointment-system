@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import api from "../../config/axios";
 import LawyerCard from "./LawyerCard";
 
-// Tạo slug từ tên
+// Hàm tạo slug từ tên
 const slugify = (name) => {
   return name
     .toLowerCase()
@@ -29,36 +29,33 @@ const LawyersSection = () => {
         const res = await api.auth.get("/api/UserWithLawyerProfile/only-lawyers");
         const list = res.data?.result || [];
 
-        // 2. Gọi API lấy đánh giá trung bình từng luật sư
+        // 2. Lấy rating trung bình cho từng luật sư
         const ratings = {};
         await Promise.all(
           list.map(async (item) => {
+            const id = item.lawyerProfile.id;
             try {
-              const lawyerId = item.lawyerProfile.id;
-              const res = await api.auth.get(`/api/Review/lawyer/${lawyerId}/average-rating`);
-              ratings[lawyerId] = res.data;
+              const r = await api.auth.get(`/api/Review/lawyer/${id}/average-rating`);
+              ratings[id] = r.data;
             } catch {
-              ratings[item.lawyerProfile.id] = null;
+              ratings[id] = null;
             }
           })
         );
-
         setRatingMap(ratings);
 
-        // 3. Gọi API lấy tất cả reviews để tính reviewCount
+        // 3. Lấy tất cả reviews để đếm số lượt review
         const reviewRes = await api.auth.get("/api/Review");
         const allReviews = reviewRes.data || [];
-
-        // 4. Đếm số lượng đánh giá theo lawyerId
         const countMap = {};
-        allReviews.forEach((review) => {
-          const id = review.lawyerId;
-          if (id) {
-            countMap[id] = (countMap[id] || 0) + 1;
+        allReviews.forEach((rev) => {
+          if (rev.lawyerId) {
+            countMap[rev.lawyerId] = (countMap[rev.lawyerId] || 0) + 1;
           }
         });
-
         setReviewCounts(countMap);
+
+        // 4. Set danh sách luật sư
         setLawyers(list);
       } catch (err) {
         console.error("Lỗi khi tải dữ liệu luật sư:", err);
@@ -80,6 +77,19 @@ const LawyersSection = () => {
     );
   }
 
+  // 5. Sắp xếp danh sách theo rating, sau đó theo số lượt review
+  const sortedLawyers = [...lawyers].sort((a, b) => {
+    const idA = a.lawyerProfile.id;
+    const idB = b.lawyerProfile.id;
+    const ratingA = ratingMap[idA] || 0;
+    const ratingB = ratingMap[idB] || 0;
+    if (ratingB !== ratingA) return ratingB - ratingA;
+
+    const countA = reviewCounts[idA] || 0;
+    const countB = reviewCounts[idB] || 0;
+    return countB - countA;
+  });
+
   return (
     <section className="py-16 bg-gray-50">
       <div className="container mx-auto px-4">
@@ -91,7 +101,7 @@ const LawyersSection = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {lawyers.slice(0, 4).map((item) => {
+          {sortedLawyers.slice(0, 4).map((item) => {
             const { user, lawyerProfile } = item;
             const slug = slugify(user.fullName);
             const rating = ratingMap[lawyerProfile.id];
@@ -110,7 +120,7 @@ const LawyersSection = () => {
                   specialization: lawyerProfile.spec || [],
                   experience: lawyerProfile.expYears,
                   description: lawyerProfile.description,
-                  rating: rating ? rating.toFixed(1) : "Chưa có",
+                  rating: rating != null ? rating.toFixed(1) : "Chưa có",
                   reviewCount,
                 }}
               />

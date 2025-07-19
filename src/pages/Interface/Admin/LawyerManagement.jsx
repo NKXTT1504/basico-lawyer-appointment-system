@@ -1,21 +1,23 @@
 import { useState, useEffect } from "react";
+import * as XLSX from "xlsx";
 import api from "../../../config/axios";
+
+const PAGE_SIZE = 5;
+
+const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+const slotOptions = ["1", "2", "3", "4"];
+const buttonStyle = "bg-primary-700 text-white px-4 py-2 rounded hover:bg-primary-800 transition";
 
 const LawyerManagement = () => {
   const [lawyers, setLawyers] = useState([]);
   const [selectedLawyer, setSelectedLawyer] = useState(null);
   const [slots, setSlots] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [filteredSlots, setFilteredSlots] = useState([]);
+  const [dayFilter, setDayFilter] = useState("");
+  const [newSlot, setNewSlot] = useState({ dayOfWeek: "", slot: "" });
   const [error, setError] = useState("");
-  const [newSlot, setNewSlot] = useState({
-    dayOfWeek: "",
-    slot: "",
-  });
-
-  const buttonStyle = "bg-primary-700 text-white px-4 py-2 rounded hover:bg-primary-800 transition";
-
-  const daysOfWeek = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-  const slotOptions = ["1", "2", "3", "4"];
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const handleSearch = async () => {
     if (!selectedLawyer?.lawyerProfile?.id) {
@@ -26,8 +28,13 @@ const LawyerManagement = () => {
     setError("");
     try {
       const res = await api.lawyer.get(`/api/lawyers/${selectedLawyer.lawyerProfile.id}/workslots`);
-      setSlots(res.data.result || res.data);
-    } catch (err) {
+      const sorted = [...(res.data.result || res.data || [])].sort((a, b) => {
+        const dayA = daysOfWeek.indexOf(a.dayOfWeek);
+        const dayB = daysOfWeek.indexOf(b.dayOfWeek);
+        return dayA === dayB ? a.slot - b.slot : dayA - dayB;
+      });
+      setSlots(sorted);
+    } catch {
       setSlots([]);
       setError("Không tìm thấy ca làm hoặc lỗi server.");
     }
@@ -39,9 +46,11 @@ const LawyerManagement = () => {
       setError("Vui lòng nhập đầy đủ thông tin.");
       return;
     }
-    setError("");
     try {
-      await api.lawyer.post(`/api/lawyers/${selectedLawyer.lawyerProfile.id}/workslots`, { ...newSlot, isActive: true });
+      await api.lawyer.post(`/api/lawyers/${selectedLawyer.lawyerProfile.id}/workslots`, {
+        ...newSlot,
+        isActive: true,
+      });
       setNewSlot({ dayOfWeek: "", slot: "" });
       handleSearch();
     } catch {
@@ -50,10 +59,6 @@ const LawyerManagement = () => {
   };
 
   const handleDelete = async (slotId) => {
-    if (!selectedLawyer?.lawyerProfile?.id) {
-      setError("Không tìm thấy thông tin luật sư");
-      return;
-    }
     try {
       await api.lawyer.delete(`/api/lawyers/${selectedLawyer.lawyerProfile.id}/workslots/${slotId}`);
       setSlots((prev) => prev.filter((s) => s.id !== slotId));
@@ -63,186 +68,193 @@ const LawyerManagement = () => {
   };
 
   const handleEdit = async (slot) => {
-    if (!selectedLawyer?.lawyerProfile?.id) {
-      setError("Không tìm thấy thông tin luật sư");
-      return;
-    }
     try {
-      await api.lawyer.put(`/api/lawyers/${selectedLawyer.lawyerProfile.id}/workslots/`, { ...slot, isActive: true });
+      await api.lawyer.put(`/api/lawyers/${selectedLawyer.lawyerProfile.id}/workslots/`, {
+        ...slot,
+        isActive: true,
+      });
       handleSearch();
     } catch {
       setError("Cập nhật ca làm thất bại!");
     }
   };
 
+  const exportToExcel = () => {
+    const data = filteredSlots.map((s) => ({
+      "Thứ": s.dayOfWeek,
+      "Slot": s.slot,
+    }));
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "CaLam");
+    XLSX.writeFile(workbook, `calam-${selectedLawyer?.user?.fullName || "lawyer"}.xlsx`);
+  };
+
   useEffect(() => {
     const fetchLawyers = async () => {
       try {
-        const response = await api.auth.get('/api/UserWithLawyerProfile/only-lawyers'); // Adjust the API endpoint
-        console.log('Lawyers data:', response.data);
-        const lawyersData = response.data.result || response.data || [];
-        setLawyers(lawyersData);
-        if (lawyersData.length > 0) {
-          console.log('First lawyer structure:', lawyersData[0]);
-        }
-      } catch (error) {
-        console.error('Error fetching lawyers:', error);
+        const res = await api.auth.get('/api/UserWithLawyerProfile/only-lawyers');
+        setLawyers(res.data.result || []);
+      } catch {
+        setLawyers([]);
       }
     };
     fetchLawyers();
   }, []);
 
   useEffect(() => {
+    const filtered = dayFilter ? slots.filter(s => s.dayOfWeek === dayFilter) : slots;
+    setFilteredSlots(filtered);
+    setCurrentPage(1);
+  }, [dayFilter, slots]);
+
+  useEffect(() => {
+  if (selectedLawyer?.lawyerProfile?.id) {
+    handleSearch();
+  } else {
     setSlots([]);
-  }, [selectedLawyer]);
+    setFilteredSlots([]);
+    setDayFilter("");
+  }
+}, [selectedLawyer]);
+
+
+  const totalPages = Math.ceil(filteredSlots.length / PAGE_SIZE);
+  const paginatedSlots = filteredSlots.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <h2 className="text-3xl md:text-4xl uppercase font-bold text-center mt-10 mb-8 tracking-wider">
-        Quản lý ca làm luật sư
+        QUẢN LÍ CA LÀM CỦA LUẬT SƯ
       </h2>
-      <div className="flex flex-col sm:flex-row gap-3 mb-6 justify-center items-center">
+
+      <div className="flex flex-wrap gap-3 mb-6 justify-center items-center">
         <select
           value={selectedLawyer?.lawyerProfile?.id || ''}
           onChange={(e) => {
-            const selectedId = e.target.value;
-            const lawyer = lawyers.find(l => String(l.lawyerProfile?.id) === String(selectedId));
-            console.log('Selected ID:', selectedId);
-            console.log('Found lawyer:', lawyer);
+            const id = e.target.value;
+
+            if (!id) {
+              setSelectedLawyer(null);
+              setSlots([]);
+              setFilteredSlots([]);
+              setDayFilter("");
+              return;
+            }
+
+            const lawyer = lawyers.find(l => String(l.lawyerProfile?.id) === id);
             setSelectedLawyer(lawyer);
           }}
-          className="border px-2 py-2 rounded w-full sm:w-auto"
+          className="border px-3 py-2 rounded"
         >
-          <option value="" disabled>
-            Chọn luật sư
-          </option>
-          {Array.isArray(lawyers) && lawyers.length > 0 ? (
-            lawyers.map((lawyer) => (
-              lawyer?.lawyerProfile?.id ? (
-                <option key={lawyer.lawyerProfile.id} value={lawyer.lawyerProfile.id}>
-                  {lawyer.user?.fullName || 'Unnamed Lawyer'}
-                </option>
-              ) : null
-            ))
-          ) : (
-            <option value="">No lawyers available</option>
-          )}
+          <option value="">Chọn luật sư</option>
+          {lawyers.map((l) => (
+            <option key={l.lawyerProfile.id} value={l.lawyerProfile.id}>
+              {l.user?.fullName}
+            </option>
+          ))}
         </select>
-        <button onClick={handleSearch} className={buttonStyle}>
-          Tìm
-        </button>
+
+        <select
+          value={dayFilter}
+          onChange={(e) => setDayFilter(e.target.value)}
+          className="border px-3 py-2 rounded"
+        >
+          <option value="">Lọc theo ngày</option>
+          {daysOfWeek.map((day) => (
+            <option key={day} value={day}>{day}</option>
+          ))}
+        </select>
+
+        {filteredSlots.length > 0 && (
+          <button onClick={exportToExcel} className={buttonStyle}>Xuất Excel</button>
+        )}
       </div>
-      {error && <div className="text-red-600 mb-2 text-center">{error}</div>}
-      <div className="mb-6 flex flex-col items-center">
-        <h3 className="text-xl font-bold mb-2">Tạo ca làm mới</h3>
-        <div className="flex flex-col sm:flex-row gap-2 items-center">
-          <select
-            value={newSlot.dayOfWeek}
-            onChange={(e) =>
-              setNewSlot((s) => ({ ...s, dayOfWeek: e.target.value }))
-            }
-            className="border px-2 py-2 rounded w-full sm:w-auto"
-          >
-            <option value="">Chọn Thứ</option>
-            {daysOfWeek.map((day) => (
-              <option key={day} value={day}>{day}</option>
-            ))}
-          </select>
-          <select
-            value={newSlot.slot}
-            onChange={(e) =>
-              setNewSlot((s) => ({ ...s, slot: e.target.value }))
-            }
-            className="border px-2 py-2 rounded w-full sm:w-auto"
-          >
-            <option value="">Chọn Slot</option>
-            {slotOptions.map((s) => (
-              <option key={s} value={s}>{s}</option>
-            ))}
-          </select>
-          <button onClick={handleCreate} className={buttonStyle}>
-            Tạo
-          </button>
-        </div>
+
+      <div className="flex flex-col sm:flex-row justify-center items-center gap-4 mb-4">
+        <select
+          value={newSlot.dayOfWeek}
+          onChange={(e) => setNewSlot({ ...newSlot, dayOfWeek: e.target.value })}
+          className="border px-3 py-2 rounded"
+        >
+          <option value="">Chọn thứ</option>
+          {daysOfWeek.map((day) => (
+            <option key={day} value={day}>{day}</option>
+          ))}
+        </select>
+        <select
+          value={newSlot.slot}
+          onChange={(e) => setNewSlot({ ...newSlot, slot: e.target.value })}
+          className="border px-3 py-2 rounded"
+        >
+          <option value="">Chọn slot</option>
+          {slotOptions.map((s) => <option key={s} value={s}>{s}</option>)}
+        </select>
+        <button onClick={handleCreate} className={buttonStyle}>Tạo</button>
       </div>
-      {loading ? (
-        <p className="text-center">Đang tải...</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full border rounded-lg overflow-hidden text-center">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border px-4 py-2">Ngày</th>
-                <th className="border px-4 py-2">Slot</th>
-                <th className="border px-4 py-2">Thao tác</th>
+
+      {error && <div className="text-red-600 text-center mb-2">{error}</div>}
+
+      <div className="overflow-x-auto">
+        <table className="min-w-full border rounded-lg text-center">
+          <thead className="bg-gray-100">
+            <tr>
+              <th className="border px-4 py-2">Thứ</th>
+              <th className="border px-4 py-2">Slot</th>
+              <th className="border px-4 py-2">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+            {paginatedSlots.map((slot) => (
+              <tr key={slot.id}>
+                <td className="border px-3 py-2">
+                  <select
+                    value={slot.dayOfWeek}
+                    onChange={(e) =>
+                      setSlots(prev => prev.map(s => s.id === slot.id ? { ...s, dayOfWeek: e.target.value } : s))
+                    }
+                    className="border px-2 py-1 rounded"
+                  >
+                    {daysOfWeek.map(day => <option key={day} value={day}>{day}</option>)}
+                  </select>
+                </td>
+                <td className="border px-3 py-2">
+                  <select
+                    value={slot.slot}
+                    onChange={(e) =>
+                      setSlots(prev => prev.map(s => s.id === slot.id ? { ...s, slot: e.target.value } : s))
+                    }
+                    className="border px-2 py-1 rounded"
+                  >
+                    {slotOptions.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </td>
+                <td className="border px-3 py-2 flex justify-center gap-2">
+                  <button onClick={() => handleEdit(slot)} className={buttonStyle}>Lưu</button>
+                  <button onClick={() => handleDelete(slot.id)} className={buttonStyle}>Xóa</button>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {slots.map((slot) => (
-                <tr key={slot.id}>
-                  <td className="border px-2 py-2">
-                    <select
-                      value={slot.dayOfWeek}
-                      onChange={(e) =>
-                        setSlots((prev) =>
-                          prev.map((s) =>
-                            s.id === slot.id
-                              ? { ...s, dayOfWeek: e.target.value }
-                              : s
-                          )
-                        )
-                      }
-                      className="border px-2 py-1 rounded w-full sm:w-28"
-                    >
-                      {daysOfWeek.map((day) => (
-                        <option key={day} value={day}>{day}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="border px-2 py-2">
-                    <select
-                      value={slot.slot}
-                      onChange={(e) =>
-                        setSlots((prev) =>
-                          prev.map((s) =>
-                            s.id === slot.id
-                              ? { ...s, slot: e.target.value }
-                              : s
-                          )
-                        )
-                      }
-                      className="border px-2 py-1 rounded w-full sm:w-12"
-                    >
-                      {slotOptions.map((s) => (
-                        <option key={s} value={s}>{s}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="border px-2 py-2 flex gap-2 justify-center">
-                    <button
-                      onClick={() => handleEdit(slot)}
-                      className={buttonStyle}
-                    >
-                      Lưu
-                    </button>
-                    <button
-                      onClick={() => handleDelete(slot.id)}
-                      className={buttonStyle}
-                    >
-                      Xóa
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {slots.length === 0 && (
-                <tr>
-                  <td colSpan={3} className="text-center py-4">
-                    Không có ca làm nào.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+            ))}
+            {paginatedSlots.length === 0 && (
+              <tr><td colSpan={3} className="text-center py-4">Không có ca làm nào.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center gap-4 mt-6 text-lg">
+          <button
+            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="p-2 border rounded hover:bg-gray-200 disabled:opacity-50"
+          >←</button>
+          <span>Trang {currentPage} / {totalPages}</span>
+          <button
+            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="p-2 border rounded hover:bg-gray-200 disabled:opacity-50"
+          >→</button>
         </div>
       )}
     </div>

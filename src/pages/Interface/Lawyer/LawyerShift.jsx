@@ -41,7 +41,7 @@ const LawyerShift = () => {
 
   const getSlotAvailability = (slotIndex, day) => {
     const shift = shifts.find(s => s.dayOfWeek === day && s.slot === (slotIndex + 1).toString());
-    return shift?.isActive;
+    return shift;
   };
 
   return (
