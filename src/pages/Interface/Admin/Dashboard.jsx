@@ -138,7 +138,7 @@ const Dashboard = () => {
   return (
     <div className="p-6 max-w-6xl mx-auto">
       <h1 className="text-4xl font-bold text-center mt-10 mb-10 text-primary-900">
-        DASHBOARD THỐNG KÊ THÁNG {month + 1}/{year}
+        THỐNG KÊ TỔNG QUÁT
       </h1>
 
       {loading ? (
