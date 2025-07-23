@@ -19,6 +19,7 @@ const LawyerDetails = () => {
   const [lawyer, setLawyer] = useState(null);
   const [averageRating, setAverageRating] = useState(null);
   const [reviewCount, setReviewCount] = useState(0);
+  const [reviewCountMap, setReviewCountMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [reviews, setReviews] = useState([]);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
@@ -51,9 +52,11 @@ const LawyerDetails = () => {
 
       setUserMap(newUserMap);
       setReviews(reviewsData);
+      setReviewCount(reviewsData.length); // Thêm dòng này
     } catch (error) {
       console.error("Error fetching reviews:", error);
       setReviews([]);
+      setReviewCount(0); // Thêm dòng này
     }
   };
 
@@ -75,6 +78,7 @@ const LawyerDetails = () => {
         setLawyer(null);
         setAverageRating(null);
         setReviewCount(0);
+        setReviewCountMap(reviewCounts);
         setReviews([]);
       } finally {
         setLoading(false);

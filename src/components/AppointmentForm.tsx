@@ -190,9 +190,28 @@ const AppointmentForm = ({
     if (!formData.date) return [];
     const dateObj = new Date(formData.date);
     const dayName = dayIndexToName[dateObj.getDay()];
-    return workSlots
+    let times = workSlots
       .filter(slot => slot.dayOfWeek === dayName && slot.isActive)
       .flatMap(slot => slotToTimes[slot.slot] || []);
+
+    // Nếu là hôm nay, lọc bỏ các slot đã qua
+    const today = new Date();
+    const isToday =
+      dateObj.getFullYear() === today.getFullYear() &&
+      dateObj.getMonth() === today.getMonth() &&
+      dateObj.getDate() === today.getDate();
+
+    if (isToday) {
+      const nowMinutes = today.getHours() * 60 + today.getMinutes();
+      times = times.filter(timeRange => {
+        const start = timeRange.split("~")[0].trim(); // "08:00"
+        const [h, m] = start.split(":").map(Number);
+        const slotMinutes = h * 60 + m;
+        return slotMinutes > nowMinutes;
+      });
+    }
+
+    return times;
   };
 
   const filteredLawyers = selectedSpec
@@ -219,7 +238,7 @@ const AppointmentForm = ({
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">Đặt lịch thành công!</h2>
           <p className="text-gray-600 mb-6">
-            Cảm ơn bạn đã đặt lịch. Chúng tôi đã gửi email xác nhận tới {user?.email}.
+            Cảm ơn bạn đã đặt lịch. Chúng tôi sẽ gửi email sau khi luật sư  {selectedLawyer?.user.fullName} xác nhận tới {user?.email}.
           </p>
           <div className="bg-gray-50 rounded-lg p-6 mb-6 text-left">
             <h3 className="text-lg font-medium text-gray-900 mb-4">Chi tiết lịch hẹn:</h3>

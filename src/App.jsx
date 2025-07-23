@@ -34,6 +34,7 @@ import ManageDiploma from './pages/Interface/Lawyer/ManageDiploma';
 import Unauthorized from './pages/Authentication/Unauthorized';
 import ForgotPassword from './pages/Authentication/ForgotPassword';
 import ChangePassword from './pages/Authentication/ChangePassword';
+import AppointmentManagement from './pages/Interface/Admin/AppointmentManagement';
 
 function App() {
   const [role, setRole] = useState(localStorage.getItem("role"));
@@ -63,7 +64,7 @@ function App() {
               <Route path="/adminprofile" element={<AdminProfile />} />
               <Route path="/reviewmanagement" element={<ReviewManagement />} />
               <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/manageappointment" element={<ManageAppointment />} />
+              <Route path="/appointmentmanagement" element={<AppointmentManagement />} />
               <Route path="/lawyermanagement" element={<ManageLawyer />} />
               <Route path="/manageaccount" element={<ManageAccount />} />
               <Route path="/formmanagement" element={<FormManagement />} />

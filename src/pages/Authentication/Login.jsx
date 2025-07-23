@@ -45,17 +45,69 @@ const Login = () => {
       });
   }, []);
 
-const handleLogin = async (e) => {
-  e.preventDefault();
-  setIsLoading(true);
-  setError('');
-  try {
-    const response = await api.auth.post("/api/Auth/login", { email, password });
-    const { token, tokenExpiration, user } = response.data;
+// const handleLogin = async (e) => {
+//   e.preventDefault();
+//   setIsLoading(true);
+//   setError('');
+//   try {
+//     const response = await api.auth.post("/api/Auth/login", { email, password });
+//     const { token, tokenExpiration, user } = response.data;
 
-    // 👉 Kiểm tra tài khoản bị khóa
+//     // 👉 Kiểm tra tài khoản bị khóa
+//     if (user.isActive === false || user.isActive === 0) {
+//       setError("Tài khoản của bạn đã bị khóa.");
+//       localStorage.setItem("token", token);
+//       localStorage.setItem("tokenExpiration", tokenExpiration);
+//       localStorage.setItem("role", role);
+
+//       if (user) {
+//         localStorage.setItem('user', JSON.stringify(user));
+//       }
+
+//       // if (rememberMe) {
+//       //   localStorage.setItem('rememberedEmail', email);
+//       // } else {
+//       //   localStorage.removeItem('rememberedEmail');
+//       // }
+
+//       // const redirectPath = sessionStorage.getItem("redirectPath") || "/";
+//       // sessionStorage.removeItem("redirectPath");
+
+//       switch (role) {
+//         case 'Customer':
+//           navigate('/');
+//           break;
+//         case 'Lawyer':
+//           navigate('/manageappointment');
+//           break;
+//         case 'Admin':
+//           navigate('/dashboard');
+//           break;
+//         default:
+//           navigate('/');
+//       }
+//     }}catch (err) {
+//       setError(err.response?.data?.message || 'Đăng nhập thất bại');
+//     } finally {
+//       setIsLoading(false);
+//     }
+// };
+const handleLogin = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+    try {
+      const response = await api.auth.post("/api/Auth/login", { email, password });
+      const { token, tokenExpiration, user } = response.data;
+      const role = user.role;
+      console.log("Đăng nhập role:", role);
+      dispatch(login(response.data));
+
+      //     // 👉 Kiểm tra tài khoản bị khóa
     if (user.isActive === false || user.isActive === 0) {
       setError("Tài khoản của bạn đã bị khóa.");
+      return;
+    }
       localStorage.setItem("token", token);
       localStorage.setItem("tokenExpiration", tokenExpiration);
       localStorage.setItem("role", role);
@@ -86,13 +138,12 @@ const handleLogin = async (e) => {
         default:
           navigate('/');
       }
+    } catch (err) {
+      setError(err.response?.data?.message || 'An error occurred during login');
+    } finally {
+      setIsLoading(false);
     }
-  } catch (err) {
-    setError(err.response?.data?.message || 'Đăng nhập thất bại');
-  } finally {
-    setIsLoading(false);
-  }
-};
+  };
 
 
   const handleGoogleLogin = () => {
