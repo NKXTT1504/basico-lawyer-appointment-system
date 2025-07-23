@@ -1,8 +1,8 @@
-import Hero from '../../../components/Hero';
+import Hero from '../../../components/Layout/Hero';
 import ServicesSection from '../../../components/Service/ServicesSection';
 import LawyersSection from '../../../components/Lawyer/LawyersSection';
 import TestimonialsSection from '../../../components/Testimonial/TestimonialsSection';
-import ContactSection from '../../../components/ContactSection';
+import ContactSection from '../../../components/Layout/ContactSection';
 
 const Home = () => {
   return (

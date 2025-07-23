@@ -11,8 +11,14 @@ const Navbar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const toggleDropdown = () => setIsDropdownOpen(!isDropdownOpen);
+  const [openDropdowns, setOpenDropdowns] = useState({});
+
+  const toggleDropdown = (name) => {
+    setOpenDropdowns(prev => ({
+      ...prev,
+      [name]: !prev[name]
+    }));
+  };
 
   const user = useSelector((state) => state.user);
   const isLoggedIn = !!user?.token;
@@ -75,10 +81,15 @@ const Navbar = () => {
 
   const adminNavItems = [
     { name: "Thống kê", path: "/dashboard" },
-    { name: "Quản lí tài khoản", path: "/manageaccount" },
-    { name: "Quản lí luật sư", path: "/lawyermanagement" },
-    { name: "Quản lí lịch hẹn", path: "/appointmentmanagement" },
-    { name: "Quản lí đánh giá", path: "/reviewmanagement" },
+    {
+      name: "Quản lý",
+      children: [
+        { name: "Tài khoản", path: "/manageaccount" },
+        { name: "Luật sư", path: "/lawyermanagement" },
+        { name: "Lịch hẹn", path: "/appointmentmanagement" },
+        { name: "Đánh giá", path: "/reviewmanagement" },
+      ]
+    }
   ];
 
   let navItems = commonNavItems;
@@ -86,7 +97,7 @@ const Navbar = () => {
     navItems = [...lawyerNavItems];
   } else if (userRole === "Admin") {
     navItems = [...adminNavItems];
-  } 
+  }
 
   // Định nghĩa màu sắc tùy vào role
   const isRoleWithDarkNavbar = userRole === "Lawyer" || userRole === "Admin";
@@ -95,15 +106,15 @@ const Navbar = () => {
   const iconColor = isRoleWithDarkNavbar ? "#fff" : "#1e3353";
 
   useEffect(() => {
-    const closeDropdown = (e) => {
+    const closeDropdowns = (e) => {
       if (!e.target.closest('.dropdown-container')) {
-        setIsDropdownOpen(false);
+        setOpenDropdowns({});
       }
     };
 
-    document.addEventListener('click', closeDropdown);
+    document.addEventListener('click', closeDropdowns);
 
-    return () => document.removeEventListener('click', closeDropdown);
+    return () => document.removeEventListener('click', closeDropdowns);
   }, []);
 
   return (
@@ -123,29 +134,57 @@ const Navbar = () => {
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             {navItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.path}
-                className={`font-medium ${textColor}`}
-              >
-                {item.name}
-              </Link>
+              <div key={item.name} className="relative dropdown-container">
+                {item.children ? (
+                  <>
+                    <button
+                      onClick={() => toggleDropdown(item.name)}
+                      className={`font-medium ${textColor} flex items-center`}
+                    >
+                      {item.name}
+                      <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    {openDropdowns[item.name] && (
+                      <div className="absolute left-0 mt-2 w-28 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5">
+                        <div className="py-1 whitespace-nowrap" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                          {item.children.map((child) => (
+                            <Link
+                              key={child.name}
+                              to={child.path}
+                              className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              role="menuitem"
+                            >
+                              {child.name}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <Link
+                    to={item.path}
+                    className={`font-medium ${textColor}`}
+                  >
+                    {item.name}
+                  </Link>
+                )}
+              </div>
             ))}
-
+            <div className="flex-grow"></div>
             {isLoggedIn ? (
               <div className="flex items-center space-x-4">
-                <div className="relative dropdown-container"
-                  onClick={toggleDropdown}
-                  onMouseEnter={() => setIsDropdownOpen(true)}
-                  // onMouseLeave={() => setIsDropdownOpen(false)}
-                >
+                <div className="relative dropdown-container">
                   <button
+                    onClick={() => toggleDropdown('account')}
                     className={`btn-primary ${isRoleWithDarkNavbar ? "bg-white text-primary-900 hover:bg-gray-200" : ""}`}
                   >
                     <User className="h-5 w-5 mr-2" />
                     Tài khoản
                   </button>
-                  {isDropdownOpen && (
+                  {openDropdowns['account'] && (
                     <div className="absolute mt-2 w-40 bg-white rounded-md shadow-lg z-10">
                       <Link
                         to={getProfileLink()}
@@ -213,16 +252,47 @@ const Navbar = () => {
               }`}
           >
             {navItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.path}
-                className={`font-medium px-4 py-2 rounded-md ${isRoleWithDarkNavbar
-                  ? "text-white hover:bg-primary-800"
-                  : "text-gray-700 hover:bg-gray-50"
-                  }`}
-              >
-                {item.name}
-              </Link>
+              <div key={item.name}>
+                {item.children ? (
+                  <>
+                    <button
+                      onClick={() => toggleDropdown(item.name)}
+                      className={`font-medium w-full text-left px-4 py-2 rounded-md ${isRoleWithDarkNavbar
+                        ? "text-white hover:bg-primary-800"
+                        : "text-gray-700 hover:bg-gray-50"
+                        }`}
+                    >
+                      {item.name}
+                    </button>
+                    {openDropdowns[item.name] && (
+                      <div className="pl-4">
+                        {item.children.map((child) => (
+                          <Link
+                            key={child.name}
+                            to={child.path}
+                            className={`block px-4 py-2 text-sm rounded-md ${isRoleWithDarkNavbar
+                              ? "text-white hover:bg-primary-800"
+                              : "text-gray-700 hover:bg-gray-50"
+                              }`}
+                          >
+                            {child.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <Link
+                    to={item.path}
+                    className={`font-medium block px-4 py-2 rounded-md ${isRoleWithDarkNavbar
+                      ? "text-white hover:bg-primary-800"
+                      : "text-gray-700 hover:bg-gray-50"
+                      }`}
+                  >
+                    {item.name}
+                  </Link>
+                )}
+              </div>
             ))}
 
             {isLoggedIn ? (

@@ -5,18 +5,14 @@ import api from "../../config/axios";
 const StarRating = ({ value, onChange }) => (
   <div className="flex items-center gap-1 mb-2">
     {[1, 2, 3, 4, 5].map((star) => (
-      <button
-        key={star}
-        type="button"
-        className="focus:outline-none"
-        onClick={() => onChange(star)}
-      >
         <Star
-          className={`h-6 w-6 ${star <= value ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
-          fill={star <= value ? "#facc15" : "none"}
+          key={star}
+          className={`w-8 h-8 cursor-pointer transition-all duration-200 ${
+            star <= value ? 'text-yellow-400 fill-current' : 'text-gray-300'
+          }`}
+          onClick={() => onChange(star)}
         />
-      </button>
-    ))}
+      ))}
   </div>
 );
 
@@ -44,17 +40,17 @@ const ReviewForm = ({ lawyerId, onSuccess }) => {
     }
     setLoading(true);
     try {
-      await api.auth.post("/api/Review", {
-        lawyerId,
-        userId,
-        rating,
-        comment,
-      });
-      setComment("");
-      setRating(5);
-      setSuccess(true);
-      if (onSuccess) onSuccess();
-      setTimeout(() => setSuccess(false), 4000);
+    const response = await api.auth.post("/api/Review", {
+      lawyerId,
+      userId,
+      rating,
+      comment,
+    });
+    setComment("");
+    setRating(0);
+    setSuccess(true);
+    if (onSuccess) onSuccess(response.data); // Gọi callback với đánh giá mới
+    setTimeout(() => setSuccess(false), 4000);
     } catch {
       setErr("Gửi đánh giá thất bại. Vui lòng thử lại.");
     } finally {
@@ -64,8 +60,8 @@ const ReviewForm = ({ lawyerId, onSuccess }) => {
 
   return (
     <div className="relative">
-      {/* ✅ Animated success message */}
-      {success && (
+
+      {/* {success && (
         <div className="absolute inset-x-0 -top-24 z-10 flex justify-center">
           <div className="flex items-center gap-3 bg-green-100 border border-green-300 text-green-800 px-6 py-3 rounded-xl shadow-lg animate-fade-bounce">
             <img
@@ -76,11 +72,11 @@ const ReviewForm = ({ lawyerId, onSuccess }) => {
             <span className="font-medium">Đánh giá của bạn đã được gửi thành công!</span>
           </div>
         </div>
-      )}
+      )} */}
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded-xl shadow p-6 mt-8 border border-gray-100 max-w-xl mx-auto relative"
+        className="bg-white rounded-xl shadow p-6 mt-8 border border-gray-100 w-full relative"
       >
         <h3 className="text-2xl font-semibold mb-3 text-primary-900">Đánh giá luật sư</h3>
 
