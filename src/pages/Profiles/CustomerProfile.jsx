@@ -110,7 +110,7 @@ const CustomerProfile = () => {
                 id: userId,
                 fullName: formData.fullName,
                 email: formData.email,
-                password: formData.password,
+                password: user.password || '', 
                 phoneNumber: formData.phoneNumber,
                 role: user.role || 'Customer',
                 isActive: true

@@ -12,10 +12,19 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const dispatch = useDispatch(); // Store data to redux
+
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    if (rememberedEmail) {
+      setEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   useEffect(() => {
     const auth = getAuth();
@@ -49,11 +58,16 @@ const Login = () => {
 
       localStorage.setItem("token", token);
       localStorage.setItem("tokenExpiration", tokenExpiration);
-
       localStorage.setItem("role", role);
 
       if (user) {
         localStorage.setItem('user', JSON.stringify(user));
+      }
+
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', email);
+      } else {
+        localStorage.removeItem('rememberedEmail');
       }
 
       const redirectPath = sessionStorage.getItem("redirectPath") || "/";
@@ -189,6 +203,8 @@ const Login = () => {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   className="h-5 w-5 text-primary-700 focus:ring-primary-500 border-gray-300 rounded"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-base text-gray-900">
