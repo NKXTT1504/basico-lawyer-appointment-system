@@ -12,10 +12,19 @@ const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const dispatch = useDispatch(); // Store data to redux
+
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem('rememberedEmail');
+    if (rememberedEmail) {
+      setEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+  }, []);
 
   useEffect(() => {
     const auth = getAuth();
@@ -47,33 +56,36 @@ const handleLogin = async (e) => {
     // 👉 Kiểm tra tài khoản bị khóa
     if (user.isActive === false || user.isActive === 0) {
       setError("Tài khoản của bạn đã bị khóa.");
-      setIsLoading(false);
-      return;
-    }
+      localStorage.setItem("token", token);
+      localStorage.setItem("tokenExpiration", tokenExpiration);
+      localStorage.setItem("role", role);
 
-    const role = user.role;
-    dispatch(login(response.data));
+      if (user) {
+        localStorage.setItem('user', JSON.stringify(user));
+      }
 
-    localStorage.setItem("token", token);
-    localStorage.setItem("tokenExpiration", tokenExpiration);
-    localStorage.setItem("role", role);
-    if (user) localStorage.setItem('user', JSON.stringify(user));
+      if (rememberMe) {
+        localStorage.setItem('rememberedEmail', email);
+      } else {
+        localStorage.removeItem('rememberedEmail');
+      }
 
-    const redirectPath = sessionStorage.getItem("redirectPath") || "/";
-    sessionStorage.removeItem("redirectPath");
+      const redirectPath = sessionStorage.getItem("redirectPath") || "/";
+      sessionStorage.removeItem("redirectPath");
 
-    switch (role) {
-      case 'Customer':
-        navigate('/');
-        break;
-      case 'Lawyer':
-        navigate('/manageappointment');
-        break;
-      case 'Admin':
-        navigate('/dashboard');
-        break;
-      default:
-        navigate('/');
+      switch (role) {
+        case 'Customer':
+          navigate('/');
+          break;
+        case 'Lawyer':
+          navigate('/manageappointment');
+          break;
+        case 'Admin':
+          navigate('/dashboard');
+          break;
+        default:
+          navigate('/');
+      }
     }
   } catch (err) {
     setError(err.response?.data?.message || 'Đăng nhập thất bại');
@@ -193,6 +205,8 @@ const handleLogin = async (e) => {
                   id="remember-me"
                   name="remember-me"
                   type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
                   className="h-5 w-5 text-primary-700 focus:ring-primary-500 border-gray-300 rounded"
                 />
                 <label htmlFor="remember-me" className="ml-2 block text-base text-gray-900">

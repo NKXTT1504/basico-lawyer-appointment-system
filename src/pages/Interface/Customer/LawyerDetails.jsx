@@ -1,5 +1,6 @@
 import { useParams, Link } from 'react-router-dom';
 import { useEffect, useState } from 'react';
+import { ArrowLeft, Star } from 'lucide-react';
 import api from '../../../config/axios';
 import ReviewForm from '../../../components/Testimonial/ReviewForm';
 
@@ -19,6 +20,42 @@ const LawyerDetails = () => {
   const [averageRating, setAverageRating] = useState(null);
   const [reviewCount, setReviewCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [reviews, setReviews] = useState([]);
+  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [userMap, setUserMap] = useState({});
+
+  const fetchReviews = async (lawyerId) => {
+    try {
+      const reviewRes = await api.auth.get(`/api/Review/lawyer/${lawyerId}`);
+      const reviewsData = reviewRes.data || [];
+      console.log("Response headers:", reviewRes.headers);
+      console.log("Raw review data:", reviewsData);
+
+      // Lấy danh sách unique userIds
+      const userIds = [...new Set(reviewsData.map(review => review.userId))];
+
+      // Fetch thông tin người dùng
+      const userPromises = userIds.map(userId =>
+        api.auth.get(`/api/UserWithLawyerProfile/${userId}`)
+      );
+      const userResponses = await Promise.all(userPromises);
+
+      // Tạo map từ userId đến fullName
+      const newUserMap = {};
+      userResponses.forEach(response => {
+        const userData = response.data.result;
+        if (userData && userData.user) {
+          newUserMap[userData.user.id] = userData.user.fullName;
+        }
+      });
+
+      setUserMap(newUserMap);
+      setReviews(reviewsData);
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      setReviews([]);
+    }
+  };
 
   useEffect(() => {
     const fetchLawyer = async () => {
@@ -31,16 +68,14 @@ const LawyerDetails = () => {
           const ratingRes = await api.auth.get(`/api/Review/lawyer/${found.lawyerProfile.id}/average-rating`);
           setAverageRating(ratingRes.data);
 
-          // Lấy số lượt đánh giá
-          const reviewRes = await api.auth.get("/api/Review");
-          const allReviews = Array.isArray(reviewRes.data) ? reviewRes.data : [];
-          const count = allReviews.filter(r => r.lawyerId === found.lawyerProfile.id).length;
-          setReviewCount(count);
+          // Fetch reviews
+          await fetchReviews(found.lawyerProfile.id);
         }
       } catch {
         setLawyer(null);
         setAverageRating(null);
         setReviewCount(0);
+        setReviews([]);
       } finally {
         setLoading(false);
       }
@@ -64,16 +99,40 @@ const LawyerDetails = () => {
     );
   }
 
+  const updateReviews = (newReview) => {
+    setReviews(prevReviews => [newReview, ...prevReviews]);
+    setReviewCount(prevCount => prevCount + 1);
+    setAverageRating(prevRating => {
+      const totalRating = (prevRating * reviewCount) + newReview.rating;
+      return totalRating / (reviewCount + 1);
+    });
+    setShowSuccessMessage(true);
+    setTimeout(() => setShowSuccessMessage(false), 4000);
+  };
+
   const { lawyerProfile, user } = lawyer;
 
   return (
     <main className="bg-white py-16">
+      {showSuccessMessage && (
+        <div className="fixed inset-x-0 top-20 z-50 flex justify-center">
+          <div className="flex items-center gap-3 bg-green-100 border border-green-300 text-green-800 px-6 py-3 rounded-xl shadow-lg animate-fade-bounce">
+            <img
+              src="https://cdn-icons-png.flaticon.com/512/190/190411.png"
+              alt="Success"
+              className="w-6 h-6 animate-scale-pop"
+            />
+            <span className="font-medium">Đánh giá của bạn đã được gửi thành công!</span>
+          </div>
+        </div>
+      )}
       <div className="container mx-auto px-4 max-w-6xl">
         <Link
           to="/lawyers"
-          className="text-sm text-primary-900 hover:underline inline-flex items-center mb-6"
+          className="inline-flex items-center text-sm font-medium text-primary-700 hover:text-primary-900 transition-colors duration-200 mb-6"
         >
-          &larr; Quay lại danh sách
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Quay lại danh sách luật sư
         </Link>
 
         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-10 grid grid-cols-1 md:grid-cols-3 gap-10">
@@ -115,22 +174,52 @@ const LawyerDetails = () => {
               <li><strong>Email:</strong> {user.email}</li>
               <li><strong>SĐT:</strong> {user.phoneNumber}</li>
             </ul>
-
-            <div className="mt-6">
-              <Link
-                to={`/appointment?lawyer=${lawyerProfile.id}`}
-                className="inline-block bg-primary-700 text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition"
-              >
-                Đặt lịch tư vấn
-              </Link>
-            </div>
           </div>
         </div>
       </div>
 
+      {/* Phần hiển thị đánh giá */}
+      <div className="container mx-auto px-4 max-w-6xl mt-12">
+        <h2 className="text-2xl font-bold mb-6">Đánh giá từ khách hàng</h2>
+        {reviews.length > 0 ? (
+          <div className="space-y-6">
+            {reviews
+              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+              .map((review) => {
+                return (
+                  <div key={review.id} className="bg-gray-50 p-6 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <h3 className="text-xl text-gray-800">
+                          {userMap[review.userId] || 'Ẩn danh'}                        
+                          </h3>
+                        <div className="flex items-center mt-1">
+                          {[...Array(5)].map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-4 h-4 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                                }`}
+                            />
+                          ))}
+                          <span className="ml-2 text-sm text-gray-600">
+                            {new Date(review.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-gray-700 mt-2">{review.comment}</p>
+                  </div>
+                );
+              })}
+          </div>
+        ) : (
+          <p className="text-gray-500">Chưa có đánh giá nào cho luật sư này.</p>
+        )}
+      </div>
+
       {/* Form đánh giá */}
       <div className="container mx-auto px-4 max-w-6xl mt-12">
-        <ReviewForm lawyerId={lawyerProfile.id} onSuccess={() => {}} />
+        <ReviewForm lawyerId={lawyerProfile.id} onSuccess={updateReviews} />
       </div>
     </main>
   );
