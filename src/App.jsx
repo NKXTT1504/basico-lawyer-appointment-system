@@ -27,6 +27,10 @@ import CustomerAppointment from './pages/Interface/Customer/CustomerAppointment'
 import ReviewManagement from './pages/Interface/Admin/ReviewManagement';
 import AppointmentManagement from './pages/Interface/Admin/AppointmentManagement';
 import Dashboard from './pages/Interface/Admin/Dashboard';
+import FormManagement from './pages/Interface/Admin/FormManagement';
+import Form from './pages/Interface/Customer/Form'
+import FormDetails from './pages/Interface/Customer/FormDetails';
+import ManageDiploma from './pages/Interface/Lawyer/ManageDiploma';
 
 function App() {
   const [role, setRole] = useState(localStorage.getItem("role"));
@@ -66,6 +70,10 @@ function App() {
             <Route path="/reviewmanagement" element={<ReviewManagement />} />
             <Route path="/appointmentmanagement" element={<AppointmentManagement />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/formmanagement" element={<FormManagement />} />
+            <Route path="/form" element={<Form />} />
+            <Route path="/forms/:id" element={<FormDetails />} />
+            <Route path="/manage-diploma" element={<ManageDiploma />} />
           </Routes>
         </div>
         <Footer />

@@ -56,6 +56,7 @@ const Navbar = () => {
     { name: "Trang chủ", path: "/" },
     { name: "Dịch vụ", path: "/services" },
     { name: "Luật sư", path: "/lawyers" },
+    { name: "Văn bản", path: "/form" },
     { name: "Giới thiệu", path: "/about" },
     { name: "Liên hệ", path: "/contact" },
   ];
@@ -64,13 +65,16 @@ const Navbar = () => {
     { name: "Trang chủ", path: "/" },
     { name: "Dịch vụ", path: "/services" },
     { name: "Luật sư", path: "/lawyers" },
+    { name: "Văn bản", path: "/form" },
     { name: "Giới thiệu", path: "/about" },
     { name: "Liên hệ", path: "/contact" },
+
   ];
 
   const lawyerNavItems = [
     { name: "Quản lí lịch hẹn", path: "/manageappointment" },
     { name: "Ca làm", path: "/lawyershift" },
+    { name: "Quản lí bằng cấp", path: "/manage-diploma" },
   ];
 
   const adminNavItems = [
@@ -79,6 +83,7 @@ const Navbar = () => {
     { name: "Quản lí luật sư", path: "/lawyermanagement" },
     { name: "Quản lí lịch hẹn", path: "/appointmentmanagement" },
     { name: "Quản lí đánh giá", path: "/reviewmanagement" },
+    { name: "Quản lí form", path: "/formmanagement" },
   ];
 
   let navItems = commonNavItems;

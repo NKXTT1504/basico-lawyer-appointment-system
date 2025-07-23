@@ -3,6 +3,7 @@ import api from "../../../config/axios";
 import { format, parseISO } from "date-fns";
 import vi from "date-fns/locale/vi";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { toast } from "react-toastify"; // Nếu bạn dùng react-toastify để thông báo
 
 const statusMap = {
   0: { label: "Đang chờ", color: "text-yellow-600" },
@@ -83,6 +84,23 @@ const CustomerAppointment = () => {
     return data.slice(start, start + PAGE_SIZE);
   };
 
+  // Hàm xử lý hủy cuộc hẹn
+  const handleCancel = async (id) => {
+    if (!window.confirm("Bạn có chắc chắn muốn hủy cuộc hẹn này?")) return;
+    try {
+      await api.appointment.put(`/api/Appointment/${id}/cancel`);
+      toast?.success?.("Hủy cuộc hẹn thành công!"); // Nếu dùng toast
+      // Reload lại danh sách
+      setLoading(true);
+      const appsRes = await api.appointment.get(`/api/AppointmentWithUserLawyer/by-user/${userId}`);
+      setAppointments(Array.isArray(appsRes.data) ? appsRes.data : []);
+    } catch (err) {
+      toast?.error?.("Hủy cuộc hẹn thất bại!");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -121,9 +139,6 @@ const CustomerAppointment = () => {
 
       <div className="mt-8 bg-white rounded-lg shadow-md overflow-hidden">
         <div className="bg-primary-700 px-6 py-5">
-          <h2 className="text-3xl font-bold text-white text-center">
-            {activeTab === "upcoming" ? "Cuộc hẹn sắp tới" : "Lịch sử cuộc hẹn"}
-          </h2>
         </div>
 
         <div className="p-6">
@@ -135,6 +150,7 @@ const CustomerAppointment = () => {
                   <th className="px-6 py-4 text-center font-bold text-gray-700 uppercase tracking-wider">Ngày</th>
                   <th className="px-6 py-4 text-center font-bold text-gray-700 uppercase tracking-wider">Dịch vụ</th>
                   <th className="px-6 py-4 text-center font-bold text-gray-700 uppercase tracking-wider">Trạng thái</th>
+                  <th className="px-6 py-4 text-center font-bold text-gray-700 uppercase tracking-wider">Thao tác</th> {/* Thêm cột thao tác */}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -163,11 +179,23 @@ const CustomerAppointment = () => {
                         {statusMap[app.status].label}
                       </span>
                     </td>
+                    <td className="px-6 py-4 text-center font-bold">
+                      {(activeTab === "upcoming" && (app.status === 0 || app.status === 1)) ? (
+                        <button
+                          onClick={() => handleCancel(app.id)}
+                          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                        >
+                          Hủy
+                        </button>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
                 {paginated(filteredAppointments(activeTab)).length === 0 && (
                   <tr>
-                    <td colSpan="4" className="px-6 py-6 text-center text-base text-gray-500 font-semibold">
+                    <td colSpan="5" className="px-6 py-6 text-center text-base text-gray-500 font-semibold">
                       {activeTab === "upcoming" ? "Không có cuộc hẹn sắp tới." : "Chưa có lịch sử cuộc hẹn."}
                     </td>
                   </tr>

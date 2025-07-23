@@ -25,12 +25,13 @@ const ManageAccount = () => {
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [roleFilter, setRoleFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
 
   const fetchAccounts = async () => {
     setLoading(true);
     try {
-      const res = await api.auth.get("/api/UserWithLawyerProfile");
+      const res = await api.auth.get("/api/UserWithLawyerProfile/user-including-inactiveStatus");
       setAllAccounts(Array.isArray(res.data.result) ? res.data.result : []);
     } catch (err) {
       console.error("Fetch error:", err);
@@ -45,24 +46,49 @@ const ManageAccount = () => {
   }, []);
 
   const filteredAccounts = allAccounts.filter((acc) => {
-    const roleMatch = roleFilter
-      ? acc.user.role?.toLowerCase() === roleFilter
-      : true;
+    const roleMatch = roleFilter ? acc.user.role?.toLowerCase() === roleFilter : true;
     const searchMatch = searchTerm
       ? acc.user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         acc.user.email?.toLowerCase().includes(searchTerm.toLowerCase())
       : true;
-    return roleMatch && searchMatch;
+    const statusMatch =
+      statusFilter === ""
+        ? true
+        : statusFilter === "active"
+        ? acc.user.isActive
+        : !acc.user.isActive;
+
+    return roleMatch && searchMatch && statusMatch;
   });
+
+  const handleLock = async (id) => {
+    const confirmed = window.confirm("Bạn có chắc chắn muốn KHÓA tài khoản này?");
+    if (!confirmed) return;
+
+    try {
+      await api.auth.delete(`/api/User/soft/${id}`);
+      fetchAccounts();
+    } catch (err) {
+      console.error("Lock error:", err);
+    }
+  };
+
+  const handleRestore = async (id) => {
+    const confirmed = window.confirm("Bạn có chắc chắn muốn MỞ KHÓA tài khoản này?");
+    if (!confirmed) return;
+
+    try {
+      await api.auth.post(`/api/User/restore/${id}`);
+      fetchAccounts();
+    } catch (err) {
+      console.error("Restore error:", err);
+    }
+  };
 
   const total = filteredAccounts.length;
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const currentAccounts = filteredAccounts.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE
-  );
+  const currentAccounts = filteredAccounts.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  // ✅ Hàm xuất Excel
   const exportToExcel = () => {
     const data = filteredAccounts.map((acc, idx) => ({
       STT: idx + 1,
@@ -70,7 +96,7 @@ const ManageAccount = () => {
       Email: acc.user.email || "",
       "Số điện thoại": acc.user.phoneNumber || "Chưa cập nhật",
       "Vai trò": translateRole(acc.user.role),
-      "Trạng thái": acc.user.isActive ? "Hoạt động" : "Khóa",
+      "Trạng thái": acc.user.isActive ? "Bình thường" : "Khóa",
     }));
 
     const ws = XLSX.utils.json_to_sheet(data);
@@ -84,12 +110,11 @@ const ManageAccount = () => {
       <div className="container mx-auto px-4">
         <div className="bg-white rounded-lg shadow-md p-6">
           <h1 className="text-4xl text-center font-bold mb-10 text-primary-900">
-            QUẢN LÍ TÀI KHOẢN
+            QUẢN LÝ TÀI KHOẢN
           </h1>
 
-          {/* Thanh lọc và tìm kiếm */}
+          {/* Bộ lọc */}
           <div className="mb-6 flex flex-col md:flex-row items-center justify-center gap-4">
-            {/* Lọc role */}
             <div className="flex items-center gap-2">
               <label className="text-sm font-semibold">VAI TRÒ:</label>
               <select
@@ -107,7 +132,22 @@ const ManageAccount = () => {
               </select>
             </div>
 
-            {/* Tìm kiếm */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-semibold">TRẠNG THÁI:</label>
+              <select
+                className="border px-3 py-2 rounded"
+                value={statusFilter}
+                onChange={(e) => {
+                  setStatusFilter(e.target.value);
+                  setPage(1);
+                }}
+              >
+                <option value="">Tất cả</option>
+                <option value="active">Bình thường</option>
+                <option value="inactive">Khóa</option>
+              </select>
+            </div>
+
             <div className="flex items-center gap-2">
               <label className="text-sm font-semibold">TÌM KIẾM:</label>
               <input
@@ -122,7 +162,6 @@ const ManageAccount = () => {
               />
             </div>
 
-            {/* Nút xuất Excel */}
             <button
               onClick={exportToExcel}
               className="bg-primary-700 text-white px-4 py-2 rounded hover:bg-primary-800 transition"
@@ -131,7 +170,7 @@ const ManageAccount = () => {
             </button>
           </div>
 
-          {/* Bảng dữ liệu */}
+          {/* Bảng danh sách */}
           {loading ? (
             <div className="text-center py-10">Đang tải dữ liệu...</div>
           ) : (
@@ -166,15 +205,27 @@ const ManageAccount = () => {
                           <td className="px-4 py-2">{translateRole(acc.user.role)}</td>
                           <td className="px-4 py-2">
                             {acc.user.isActive ? (
-                              <span className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-semibold">Hoạt động</span>
+                              <span className="px-2 py-1 rounded bg-green-100 text-green-700 text-xs font-semibold">Bình thường</span>
                             ) : (
                               <span className="px-2 py-1 rounded bg-red-100 text-red-700 text-xs font-semibold">Khóa</span>
                             )}
                           </td>
                           <td className="px-4 py-2">
-                            <button className="text-red-600 hover:underline">
-                              {acc.user.isActive ? "Khóa" : "Mở khóa"}
-                            </button>
+                            {acc.user.isActive ? (
+                              <button
+                                onClick={() => handleLock(acc.user.id)}
+                                className="text-red-600 hover:underline"
+                              >
+                                Khóa
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleRestore(acc.user.id)}
+                                className="text-blue-600 hover:underline"
+                              >
+                                Mở khóa
+                              </button>
+                            )}
                           </td>
                         </tr>
                       ))
