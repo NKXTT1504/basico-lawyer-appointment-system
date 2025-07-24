@@ -1,0 +1,22 @@
+<!-- public/google-callback.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Google Callback</title>
+</head>
+<body>
+  <script>
+    const params = new URLSearchParams(window.location.hash.substring(1));
+    const idToken = params.get('id_token');
+
+    if (window.opener && idToken) {
+      // Gửi idToken về frontend chính
+      window.opener.postMessage({ idToken }, "*"); 
+    }
+
+    // Tùy chọn: hiện thông báo, rồi đóng
+    document.body.innerText = "Đang xử lý đăng nhập...";
+    setTimeout(() => window.close(), 1000);
+  </script>
+</body>
+</html>

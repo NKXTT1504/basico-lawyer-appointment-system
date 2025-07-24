@@ -141,7 +141,7 @@ const Lawyers = () => {
                 return (
                   <div key={lawyerProfile.id} className="bg-white rounded-xl shadow-md p-6 flex flex-col items-center text-center transition hover:shadow-lg duration-300">
                     <img
-                      src={lawyerProfile.img ? `/images/${lawyerProfile.img}` : '/default-avatar.png'}
+                      src={lawyerProfile.img}
                       alt={user.fullName}
                       className="w-28 h-28 rounded-full object-cover mb-4 border-4 border-primary-700"
                     />

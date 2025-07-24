@@ -35,6 +35,7 @@ import Unauthorized from './pages/Authentication/Unauthorized';
 import ForgotPassword from './pages/Authentication/ForgotPassword';
 import ChangePassword from './pages/Authentication/ChangePassword';
 import AppointmentManagement from './pages/Interface/Admin/AppointmentManagement';
+import Diploma from './pages/Interface/Customer/Diploma';
 
 function App() {
   const [role, setRole] = useState(localStorage.getItem("role"));
@@ -68,8 +69,6 @@ function App() {
               <Route path="/lawyermanagement" element={<ManageLawyer />} />
               <Route path="/manageaccount" element={<ManageAccount />} />
               <Route path="/formmanagement" element={<FormManagement />} />
-              <Route path="/change-password" element={<ChangePassword />} />
-
             </Route>
 
             {/* Routes cho Lawyer */}
@@ -87,9 +86,6 @@ function App() {
               <Route path="/appointment" element={<Appointment />} />
               <Route path="/history-appointments" element={<CustomerAppointment />} />
               <Route path="/customer-profile" element={<CustomerProfile />} />
-              <Route path="/change-password" element={<ChangePassword />} />
-
-
             </Route>
 
             {/* Public routes */}
@@ -106,6 +102,8 @@ function App() {
             <Route path="/form" element={<Form />} />
             <Route path="/forms/:id" element={<FormDetails />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/lawyers/:slug/diploma" element={<Diploma />} />
+             <Route path="/change-password" element={<ChangePassword />} />
           </Routes>
         </div>
         <Footer />

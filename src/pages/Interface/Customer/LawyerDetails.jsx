@@ -29,8 +29,6 @@ const LawyerDetails = () => {
     try {
       const reviewRes = await api.auth.get(`/api/Review/lawyer/${lawyerId}`);
       const reviewsData = reviewRes.data || [];
-      console.log("Response headers:", reviewRes.headers);
-      console.log("Raw review data:", reviewsData);
 
       // Lấy danh sách unique userIds
       const userIds = [...new Set(reviewsData.map(review => review.userId))];
@@ -142,7 +140,7 @@ const LawyerDetails = () => {
         <div className="bg-white rounded-2xl shadow-lg p-6 md:p-10 grid grid-cols-1 md:grid-cols-3 gap-10">
           <div className="flex justify-center md:justify-start">
             <img
-              src={lawyerProfile.img ? `/images/${lawyerProfile.img}` : '/default-avatar.png'}
+              src={lawyerProfile.img}
               alt={user.fullName}
               className="w-64 h-64 rounded-xl object-cover shadow-md"
             />
@@ -178,6 +176,15 @@ const LawyerDetails = () => {
               <li><strong>Email:</strong> {user.email}</li>
               <li><strong>SĐT:</strong> {user.phoneNumber}</li>
             </ul>
+            {/* Thêm nút xem bằng cấp */}
+            <div className="mt-4">
+              <Link
+                to={`/lawyers/${slugify(user.fullName)}/diploma`}
+                className="inline-block px-4 py-2 bg-primary-700 text-white rounded hover:bg-primary-800 transition"
+              >
+                Xem bằng cấp của luật sư
+              </Link>
+            </div>
           </div>
         </div>
       </div>

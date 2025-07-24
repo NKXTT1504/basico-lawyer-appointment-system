@@ -30,68 +30,20 @@ const Login = () => {
     const auth = getAuth();
     getRedirectResult(auth)
       .then((result) => {
-        if (result) {
-          const user = result.user;
-          console.log(user);
-          handleGoogleLoginSuccess(user);
+        console.log("Google redirect result:", result);
+        if (result && result.user) {
+          handleGoogleLoginSuccess(result.user);
+        } else {
+          console.log("No user returned from Google redirect.");
         }
       })
       .catch((error) => {
-        console.error('Error during redirect result:', error);
         setError(error.message);
-      })
-      .finally(() => {
         setIsGoogleLoading(false);
+        console.log("Google login error:", error);
       });
   }, []);
 
-// const handleLogin = async (e) => {
-//   e.preventDefault();
-//   setIsLoading(true);
-//   setError('');
-//   try {
-//     const response = await api.auth.post("/api/Auth/login", { email, password });
-//     const { token, tokenExpiration, user } = response.data;
-
-//     // 👉 Kiểm tra tài khoản bị khóa
-//     if (user.isActive === false || user.isActive === 0) {
-//       setError("Tài khoản của bạn đã bị khóa.");
-//       localStorage.setItem("token", token);
-//       localStorage.setItem("tokenExpiration", tokenExpiration);
-//       localStorage.setItem("role", role);
-
-//       if (user) {
-//         localStorage.setItem('user', JSON.stringify(user));
-//       }
-
-//       // if (rememberMe) {
-//       //   localStorage.setItem('rememberedEmail', email);
-//       // } else {
-//       //   localStorage.removeItem('rememberedEmail');
-//       // }
-
-//       // const redirectPath = sessionStorage.getItem("redirectPath") || "/";
-//       // sessionStorage.removeItem("redirectPath");
-
-//       switch (role) {
-//         case 'Customer':
-//           navigate('/');
-//           break;
-//         case 'Lawyer':
-//           navigate('/manageappointment');
-//           break;
-//         case 'Admin':
-//           navigate('/dashboard');
-//           break;
-//         default:
-//           navigate('/');
-//       }
-//     }}catch (err) {
-//       setError(err.response?.data?.message || 'Đăng nhập thất bại');
-//     } finally {
-//       setIsLoading(false);
-//     }
-// };
 const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -146,28 +98,104 @@ const handleLogin = async (e) => {
   };
 
 
-  const handleGoogleLogin = () => {
-    const auth = getAuth();
-    signInWithPopup(auth, googleProvider)
-      .then((result) => {
-        // This gives you a Google Access Token. You can use it to access the Google API.
-        const credential = GoogleAuthProvider.credentialFromResult(result);
-        const token = credential.accessToken;
-        // The signed-in user info.
-        const user = result.user;
-        console.log(user);
-        // IdP data available using getAdditionalUserInfo(result)
-      })
-      .catch((error) => {
-        // Handle Errors here.
-        console.log(error);
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        // The email of the user's account used.
-        const email = error.customData.email;
-        // The AuthCredential type that was used.
-        const credential = GoogleAuthProvider.credentialFromError(error);
-      });
+  const handleGoogleLogin = async () => {
+  setIsGoogleLoading(true);
+  try {
+    const response = await api.auth.get("/api/Auth/google-login");
+    const { url } = response.data;
+
+    // 👉 Mở popup
+    const width = 500;
+    const height = 600;
+    const left = window.screenX + (window.innerWidth - width) / 2;
+    const top = window.screenY + (window.innerHeight - height) / 2;
+
+    const popup = window.open(
+      url,
+      "GoogleLogin",
+      `width=${width},height=${height},left=${left},top=${top}`
+    );
+
+    if (!popup) {
+      throw new Error("Không thể mở cửa sổ đăng nhập Google.");
+    }
+
+    // Đợi response từ popup (dùng postMessage)
+    window.addEventListener("message", async (event) => {
+      if (event.origin !== window.location.origin) return;
+
+      const { idToken } = event.data;
+
+      if (idToken) {
+        // Gửi ID token về backend để login
+        const loginRes = await api.auth.post("/api/Auth/google-callback", {
+          idToken,
+        });
+
+        const { token, tokenExpiration, user } = loginRes.data;
+        dispatch(login(loginRes.data));
+        localStorage.setItem("token", token);
+        localStorage.setItem("tokenExpiration", tokenExpiration);
+        localStorage.setItem("user", JSON.stringify(user));
+        localStorage.setItem("role", user.role);
+
+        switch (user.role) {
+          case "Customer":
+            navigate("/");
+            break;
+          case "Lawyer":
+            navigate("/manageappointment");
+            break;
+          case "Admin":
+            navigate("/dashboard");
+            break;
+          default:
+            navigate("/");
+        }
+      }
+
+      popup.close();
+    });
+  } catch (error) {
+    setError("Lỗi khi đăng nhập bằng Google");
+    console.error("Google login error:", error);
+  } finally {
+    setIsGoogleLoading(false);
+  }
+};
+
+  
+  const handleGoogleLoginSuccess = async (user) => {
+    try {
+      const idToken = await user.getIdToken();
+      console.log("Google idToken:", idToken);
+      const response = await api.auth.post("/api/Auth/google-callback", { idToken });
+      console.log("Backend login response:", response.data);
+      const { token, tokenExpiration, user: userData } = response.data;
+      const role = userData.role;
+      dispatch(login(response.data));
+      localStorage.setItem("token", token);
+      localStorage.setItem("tokenExpiration", tokenExpiration);
+      localStorage.setItem("role", role);
+      localStorage.setItem("user", JSON.stringify(userData));
+      // Điều hướng theo role
+      switch (role) {
+        case 'Customer':
+          navigate('/');
+          break;
+        case 'Lawyer':
+          navigate('/manageappointment');
+          break;
+        case 'Admin':
+          navigate('/dashboard');
+          break;
+        default:
+          navigate('/');
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || 'Đăng nhập Google thất bại');
+      console.log("Google login backend error:", err);
+    }
   };
 
   return (

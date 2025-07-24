@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import api from "../../../config/axios";
+import { FaBan } from 'react-icons/fa';
 
 const PAGE_SIZE = 5;
 
@@ -69,9 +70,12 @@ const LawyerManagement = () => {
 
   const handleEdit = async (slot) => {
     try {
-      await api.lawyer.put(`/api/lawyers/${selectedLawyer.lawyerProfile.id}/workslots/`, {
-        ...slot,
+      await api.lawyer.put(`/api/lawyers/${selectedLawyer.lawyerProfile.id}/workslots/${slot.id}`, {
+        id: slot.id,
+        dayOfWeek: slot.dayOfWeek,
+        slot: slot.slot,
         isActive: true,
+        lawyerId: selectedLawyer.lawyerProfile.id,
       });
       handleSearch();
     } catch {
@@ -109,14 +113,14 @@ const LawyerManagement = () => {
   }, [dayFilter, slots]);
 
   useEffect(() => {
-  if (selectedLawyer?.lawyerProfile?.id) {
-    handleSearch();
-  } else {
-    setSlots([]);
-    setFilteredSlots([]);
-    setDayFilter("");
-  }
-}, [selectedLawyer]);
+    if (selectedLawyer?.lawyerProfile?.id) {
+      handleSearch();
+    } else {
+      setSlots([]);
+      setFilteredSlots([]);
+      setDayFilter("");
+    }
+  }, [selectedLawyer]);
 
 
   const totalPages = Math.ceil(filteredSlots.length / PAGE_SIZE);
@@ -229,9 +233,32 @@ const LawyerManagement = () => {
                     {slotOptions.map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </td>
-                <td className="border px-3 py-2 flex justify-center gap-2">
-                  <button onClick={() => handleEdit(slot)} className={buttonStyle}>Lưu</button>
-                  <button onClick={() => handleDelete(slot.id)} className={buttonStyle}>Xóa</button>
+                <td className="border px-3 py-2">
+                  <div className="flex flex-row items-center justify-center gap-4">
+                    {/* Nhóm nút Lưu */}
+                    <div>
+                      <button
+                        onClick={() => handleEdit(slot)}
+                        className="bg-primary-700 hover:bg-primary-800 text-white px-4 py-1 rounded-lg shadow transition"
+                      >
+                        Lưu
+                      </button>
+                    </div>
+
+                    {/* Nhóm nút Xóa hoặc thông báo */}
+                    <div>
+                      {slot.isActive ? (
+                        <button
+                          onClick={() => handleDelete(slot.id)}
+                          className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded-lg shadow transition"
+                        >
+                          Xóa
+                        </button>
+                      ) : (
+                       <FaBan title="Không thể xóa do cuộc hẹn đang diễn ra!" className="text-red-600 w-12 h-8" />
+                      )}
+                    </div>
+                  </div>
                 </td>
               </tr>
             ))}

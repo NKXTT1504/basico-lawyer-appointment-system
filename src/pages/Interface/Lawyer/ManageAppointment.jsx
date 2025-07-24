@@ -7,7 +7,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 const ManageAppointment = () => {
   const [appointments, setAppointments] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
-  const [selectedStatus, setSelectedStatus] = useState('ALL');
+  const [selectedStatus, setSelectedStatus] = useState("ALL");
   const itemsPerPage = 5;
 
   const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -18,7 +18,9 @@ const ManageAppointment = () => {
 
     const fetchAppointments = async () => {
       try {
-        const res = await api.appointment.get(`/api/AppointmentWithUserLawyer/by-lawyer/${lawyerId}`);
+        const res = await api.appointment.get(
+          `/api/AppointmentWithUserLawyer/by-lawyer/${lawyerId}`
+        );
         setAppointments(Array.isArray(res.data) ? res.data : []);
       } catch (err) {
         console.error("Error fetching appointments:", err);
@@ -30,7 +32,7 @@ const ManageAppointment = () => {
   }, [lawyerId]);
 
   const handleStatusChange = (id, newStatus) => {
-    let url = '';
+    let url = "";
 
     switch (newStatus) {
       case 1:
@@ -47,24 +49,25 @@ const ManageAppointment = () => {
         return;
     }
 
-    api.appointment.put(url)
+    api.appointment
+      .put(url)
       .then(() => {
-        setAppointments(prev =>
-          prev.map(app =>
+        setAppointments((prev) =>
+          prev.map((app) =>
             app.id === id ? { ...app, status: newStatus } : app
           )
         );
       })
-      .catch(err => {
+      .catch((err) => {
         console.error(`Lỗi khi cập nhật trạng thái ${newStatus}:`, err);
       });
   };
 
   const filteredAppointments = appointments
     .slice()
-    .sort((a, b) => new Date(b.scheduledAt) - new Date(a.scheduledAt)) // Mới nhất lên trước
-    .filter(app => {
-      if (selectedStatus === 'ALL') return true;
+    .sort((a, b) => new Date(b.scheduledAt) - new Date(a.scheduledAt))
+    .filter((app) => {
+      if (selectedStatus === "ALL") return true;
       return app.status === parseInt(selectedStatus);
     });
 
@@ -78,12 +81,14 @@ const ManageAppointment = () => {
     "1": "08:00 ~ 10:00",
     "2": "10:00 ~ 12:00",
     "3": "13:00 ~ 15:00",
-    "4": "15:00 ~ 17:00"
+    "4": "15:00 ~ 17:00",
   };
 
   return (
     <div className="p-4">
-      <h1 className="text-4xl font-bold text-center mt-10 text-primary">Danh sách cuộc hẹn</h1>
+      <h1 className="text-4xl font-bold text-center mt-10 text-primary">
+        Danh sách cuộc hẹn
+      </h1>
 
       {/* Filter */}
       <div className="mb-4 mt-6 flex justify-center items-center">
@@ -113,6 +118,7 @@ const ManageAppointment = () => {
               <th className="py-2 px-4 border">Khách hàng</th>
               <th className="py-2 px-4 border">Thời gian bắt đầu</th>
               <th className="py-2 px-4 border">Dịch vụ</th>
+              <th className="py-2 px-4 border">Ghi chú</th>
               <th className="py-2 px-4 border">Trạng thái</th>
               <th className="py-2 px-4 border">Hành động</th>
             </tr>
@@ -124,25 +130,35 @@ const ManageAppointment = () => {
               const timeRange = slotToTime[slot];
               let formatted = "Không xác định";
               if (scheduledAt && timeRange) {
-                // Lấy giờ bắt đầu từ timeRange, ví dụ "08:00 ~ 10:00" => "08:00"
                 const startTime = timeRange.split("~")[0].trim();
                 const dateTimeStr = `${scheduledAt.slice(0, 10)}T${startTime}:00`;
                 const dateObj = parseISO(dateTimeStr);
                 if (!isNaN(dateObj)) {
-                  formatted = `${timeRange}, ${format(dateObj, "EEEE, dd/MM/yyyy", { locale: vi })}`;
+                  formatted = `${timeRange}, ${format(dateObj, "EEEE, dd/MM/yyyy", {
+                    locale: vi,
+                  })}`;
                 }
               }
               return (
                 <tr key={app.id} className="text-center">
-                  <td className="py-2 px-4 border">{(currentPage - 1) * itemsPerPage + index + 1}</td>
+                  <td className="py-2 px-4 border">
+                    {(currentPage - 1) * itemsPerPage + index + 1}
+                  </td>
                   <td className="py-2 px-4 border">{app.user.fullName}</td>
                   <td className="py-2 px-4 border">{formatted}</td>
                   <td className="py-2 px-4 border">{app.services.join(", ")}</td>
+                  <td className="py-2 px-4 border">{app.note || "—"}</td>
                   <td className="py-2 px-4 border">
                     {app.status === 0 && <span>Đang chờ</span>}
-                    {app.status === 1 && <span className="text-green-600">Đã xác nhận</span>}
-                    {app.status === 2 && <span className="text-red-600 font-bold">Đã hủy</span>}
-                    {app.status === 3 && <span className="text-green-600 font-bold">Hoàn thành</span>}
+                    {app.status === 1 && (
+                      <span className="text-green-600">Đã xác nhận</span>
+                    )}
+                    {app.status === 2 && (
+                      <span className="text-red-600 font-bold">Đã hủy</span>
+                    )}
+                    {app.status === 3 && (
+                      <span className="text-green-600 font-bold">Hoàn thành</span>
+                    )}
                   </td>
                   <td className="py-2 px-4 border space-x-2">
                     {app.status === 0 && (
@@ -175,7 +191,7 @@ const ManageAppointment = () => {
             })}
             {paginatedAppointments.length === 0 && (
               <tr>
-                <td colSpan="6" className="py-4 text-gray-500 text-center">
+                <td colSpan="7" className="py-4 text-gray-500 text-center">
                   Không có cuộc hẹn nào.
                 </td>
               </tr>

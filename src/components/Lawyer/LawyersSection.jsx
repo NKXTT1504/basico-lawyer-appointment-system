@@ -114,9 +114,7 @@ const LawyersSection = () => {
                   id: lawyerProfile.id,
                   slug,
                   name: user.fullName,
-                  photo: lawyerProfile.img
-                    ? `/images/${lawyerProfile.img}`
-                    : "/default-avatar.png",
+                  photo: lawyerProfile.img,
                   specialization: lawyerProfile.spec || [],
                   experience: lawyerProfile.expYears,
                   description: lawyerProfile.description,

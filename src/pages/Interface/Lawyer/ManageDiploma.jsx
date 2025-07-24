@@ -173,7 +173,7 @@ const ManageDiploma = () => {
                             href={d.documentUrl}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 underline"
+                            className="flex items-center gap-1 px-3 py-1 text-primary-600 underline"
                           >
                             Xem file
                           </a>
@@ -182,12 +182,22 @@ const ManageDiploma = () => {
                         )}
                       </td>
                       <td className="px-2 py-2">
-                        <button onClick={() => handleEdit(d)} className="px-2 py-1 bg-yellow-500 text-white rounded mr-2">
-                          Sửa
-                        </button>
-                        <button onClick={() => handleDelete(d.id)} className="px-2 py-1 bg-red-500 text-white rounded">
-                          Xóa
-                        </button>
+                        <div className="flex justify-center gap-2">
+                          <button
+                            onClick={() => handleEdit(d)}
+                            className="flex items-center gap-1 px-3 py-1 bg-yellow-600 hover:bg-yellow-500 text-white text-sm rounded shadow"
+                            title="Chỉnh sửa"
+                          >
+                            Sửa
+                          </button>
+                          <button
+                            onClick={() => handleDelete(d.id)}
+                            className="flex items-center gap-1 px-3 py-1 bg-red-600 hover:bg-red-500 text-white text-sm rounded shadow"
+                            title="Xóa bằng cấp"
+                          >
+                            Xóa
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

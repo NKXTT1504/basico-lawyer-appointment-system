@@ -16,7 +16,6 @@ const Dashboard = () => {
   const [reviewStats, setReviewStats] = useState([]);
   const [bookingStats, setBookingStats] = useState([]);
   const [cancelStats, setCancelStats] = useState([]);
-  const [lawyerMap, setLawyerMap] = useState({});
   const [loading, setLoading] = useState(true);
 
   const now = new Date();
@@ -27,12 +26,12 @@ const Dashboard = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const reviewRes = await api.auth.get("/api/Review");
-        const reviews = Array.isArray(reviewRes.data) ? reviewRes.data : [];
+        const [reviewRes, appRes] = await Promise.all([
+          api.auth.get("/api/Review"),
+          api.appointment.get("/api/AppointmentWithUserLawyer/GetAllAppointment"),
+        ]);
 
-        const appRes = await api.appointment.get(
-          "/api/AppointmentWithUserLawyer/GetAllAppointment"
-        );
+        const reviews = Array.isArray(reviewRes.data) ? reviewRes.data : [];
         const appointments = appRes.data?.result || [];
 
         const reviewsThisMonth = reviews.filter((r) => {
@@ -40,45 +39,48 @@ const Dashboard = () => {
           return d.getMonth() === month && d.getFullYear() === year;
         });
 
-        const lawyerReviewCount = {};
-        reviewsThisMonth.forEach((r) => {
-          if (!lawyerReviewCount[r.lawyerId]) lawyerReviewCount[r.lawyerId] = 0;
-          lawyerReviewCount[r.lawyerId]++;
-        });
-
         const completedAppointments = appointments.filter((a) => {
-          const d = new Date(a.scheduledAt);
-          return a.status === 2 && d.getMonth() === month && d.getFullYear() === year;
-        });
-
-        const cancelledAppointments = appointments.filter((a) => {
           const d = new Date(a.scheduledAt);
           return a.status === 3 && d.getMonth() === month && d.getFullYear() === year;
         });
 
+        const cancelledAppointments = appointments.filter((a) => {
+          const d = new Date(a.scheduledAt);
+          return a.status === 1 && d.getMonth() === month && d.getFullYear() === year;
+        });
+
+        // Aggregation
+        const lawyerReviewCount = {};
         const lawyerBookingCount = {};
+        const lawyerCancelCount = {};
+
+        reviewsThisMonth.forEach((r) => {
+          const id = r.lawyerId;
+          if (!id) return;
+          lawyerReviewCount[id] = (lawyerReviewCount[id] || 0) + 1;
+        });
+
         completedAppointments.forEach((a) => {
           const id = a.lawyerProfile?.userId;
           if (!id) return;
-          if (!lawyerBookingCount[id]) lawyerBookingCount[id] = 0;
-          lawyerBookingCount[id]++;
+          lawyerBookingCount[id] = (lawyerBookingCount[id] || 0) + 1;
         });
 
-        const lawyerCancelCount = {};
         cancelledAppointments.forEach((a) => {
           const id = a.lawyerProfile?.userId;
           if (!id) return;
-          if (!lawyerCancelCount[id]) lawyerCancelCount[id] = 0;
-          lawyerCancelCount[id]++;
+          lawyerCancelCount[id] = (lawyerCancelCount[id] || 0) + 1;
         });
 
-        const allLawyerIds = [...new Set([
-          ...Object.keys(lawyerReviewCount),
-          ...Object.keys(lawyerBookingCount),
-          ...Object.keys(lawyerCancelCount),
-        ])];
+        const allLawyerIds = [
+          ...new Set([
+            ...Object.keys(lawyerReviewCount),
+            ...Object.keys(lawyerBookingCount),
+            ...Object.keys(lawyerCancelCount),
+          ]),
+        ];
 
-        const lawyerMapTemp = {};
+        const lawyerMap = {};
         const lawyerAvgRatingMap = {};
 
         await Promise.all(
@@ -86,47 +88,42 @@ const Dashboard = () => {
             try {
               const [userRes, avgRes] = await Promise.all([
                 api.auth.get(`/api/UserWithLawyerProfile/${id}`),
-                api.auth.get(`/api/Review/lawyer/${id}/average-rating`)
+                api.auth.get(`/api/Review/lawyer/${id}/average-rating`),
               ]);
-              lawyerMapTemp[id] = userRes.data?.result?.user?.fullName || `Luật sư ${id}`;
-              lawyerAvgRatingMap[id] = avgRes.data;
+              lawyerMap[id] = userRes.data?.result?.user?.fullName || `Luật sư ${id}`;
+              lawyerAvgRatingMap[id] = avgRes.data || 0;
             } catch {
-              lawyerMapTemp[id] = `Luật sư ${id}`;
+              lawyerMap[id] = `Luật sư ${id}`;
               lawyerAvgRatingMap[id] = 0;
             }
           })
         );
 
+        // Build unified data by lawyer
         const reviewData = allLawyerIds.map((id) => ({
-          name: lawyerMapTemp[id],
+          name: lawyerMap[id],
           avgRating: parseFloat((lawyerAvgRatingMap[id] || 0).toFixed(2)),
           count: lawyerReviewCount[id] || 0,
         }));
 
-        const bookingData = Object.entries(lawyerBookingCount).map(
-          ([id, count]) => ({
-            name: lawyerMapTemp[id],
-            "Cuộc hẹn hoàn thành": count,
-          })
-        );
+        const bookingData = allLawyerIds.map((id) => ({
+          name: lawyerMap[id],
+          "Cuộc hẹn hoàn thành": lawyerBookingCount[id] || 0,
+        }));
 
-        const cancelData = Object.entries(lawyerCancelCount).map(
-          ([id, count]) => ({
-            name: lawyerMapTemp[id],
-            "Cuộc hẹn bị hủy": count,
-          })
-        );
+        const cancelData = allLawyerIds.map((id) => ({
+          name: lawyerMap[id],
+          "Cuộc hẹn bị hủy": lawyerCancelCount[id] || 0,
+        }));
 
         setReviewStats(reviewData);
         setBookingStats(bookingData);
         setCancelStats(cancelData);
-        setLawyerMap(lawyerMapTemp);
       } catch (err) {
-        console.error("Lỗi lấy dữ liệu:", err);
+        console.error("Lỗi khi lấy dữ liệu:", err);
         setReviewStats([]);
         setBookingStats([]);
         setCancelStats([]);
-        setLawyerMap({});
       } finally {
         setLoading(false);
       }
@@ -147,7 +144,7 @@ const Dashboard = () => {
         </div>
       ) : (
         <>
-          {/* Biểu đồ trung bình đánh giá */}
+          {/* Biểu đồ đánh giá */}
           <div className="bg-white rounded shadow p-6 mb-10">
             <h2 className="text-2xl font-bold mb-4 text-primary-700 text-center">
               TỔNG ĐÁNH GIÁ LUẬT SƯ
@@ -174,7 +171,7 @@ const Dashboard = () => {
                       <text
                         x={x + width / 2}
                         y={y - 10}
-                        fill="#1F2937" // màu xám đậm
+                        fill="#1F2937"
                         fontSize={12}
                         fontWeight="bold"
                         textAnchor="middle"
@@ -188,7 +185,7 @@ const Dashboard = () => {
             </ResponsiveContainer>
           </div>
 
-          {/* Biểu đồ cuộc hẹn hoàn thành */}
+          {/* Biểu đồ hoàn thành */}
           <div className="bg-white rounded shadow p-6 mb-10">
             <h2 className="text-2xl font-bold mb-4 text-primary-700 text-center">
               CUỘC HẸN HOÀN TẤT
@@ -208,7 +205,7 @@ const Dashboard = () => {
             </ResponsiveContainer>
           </div>
 
-          {/* Biểu đồ cuộc hẹn bị hủy */}
+          {/* Biểu đồ bị hủy */}
           <div className="bg-white rounded shadow p-6 mb-10">
             <h2 className="text-2xl font-bold mb-4 text-primary-700 text-center">
               CUỘC HẸN BỊ HỦY
