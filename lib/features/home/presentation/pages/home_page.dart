@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import '../widgets/header_widget.dart';
 import '../widgets/hero_section.dart';
@@ -25,32 +26,47 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _pages[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Trang chủ',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.calendar_today),
-            label: 'Lịch hẹn',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.people),
-            label: 'Luật sư',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Cá nhân',
-          ),
-        ],
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 4,
+              offset: const Offset(0, -2),
+            ),
+          ],
+        ),
+        child: BottomNavigationBar(
+          currentIndex: _currentIndex,
+          onTap: (index) {
+            setState(() {
+              _currentIndex = index;
+            });
+          },
+          type: BottomNavigationBarType.fixed,
+          backgroundColor: Colors.white,
+          selectedItemColor: const Color(0xFF1E3A8A),
+          unselectedItemColor: Colors.grey[600],
+          items: [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.home, size: 20.sp),
+              label: 'Trang chủ',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.calendar_today, size: 20.sp),
+              label: 'Lịch hẹn',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.people, size: 20.sp),
+              label: 'Luật sư',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.person, size: 20.sp),
+              label: 'Cá nhân',
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -62,47 +78,51 @@ class _HomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            const HeaderWidget(),
-            const HeroSection(),
-            const FeatureCards(),
-            // Footer section
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(40),
-              color: const Color(0xFF1E3A8A),
-              child: const Column(
-                children: [
-                  Text(
-                    'BASICO LAW FIRM',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+      appBar: const HeaderWidget(),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              const HeroSection(),
+              const FeatureCards(),
+              // Footer section
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.all(20.w),
+                color: const Color(0xFF1E3A8A),
+                child: Column(
+                  children: [
+                    Text(
+                      'BASICO LAW FIRM',
+                      style: TextStyle(
+                        fontSize: 18.sp,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 16),
-                  Text(
-                    'Giải pháp pháp lý chuyên nghiệp cho mọi nhu cầu',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white70,
+                    SizedBox(height: 12.h),
+                    Text(
+                      'Giải pháp pháp lý chuyên nghiệp cho mọi nhu cầu',
+                      style: TextStyle(
+                        fontSize: 12.sp,
+                        color: Colors.white70,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                  ),
-                  SizedBox(height: 24),
-                  Text(
-                    '© 2024 Basico Law Firm. Tất cả quyền được bảo lưu.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white60,
+                    SizedBox(height: 16.h),
+                    Text(
+                      '© 2024 Basico Law Firm. Tất cả quyền được bảo lưu.',
+                      style: TextStyle(
+                        fontSize: 10.sp,
+                        color: Colors.white60,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

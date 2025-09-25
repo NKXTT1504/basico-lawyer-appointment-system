@@ -40,6 +40,34 @@ class BasicoLawyerApp extends StatelessWidget {
             darkTheme: AppTheme.darkTheme,
             themeMode: ThemeMode.system,
             routerConfig: AppRouter.router,
+            builder: (context, child) {
+              // Responsive design for web
+              return LayoutBuilder(
+                builder: (context, constraints) {
+                  // If screen width is larger than mobile, center the content
+                  if (constraints.maxWidth > 600) {
+                    return Center(
+                      child: Container(
+                        width: 375,
+                        height: constraints.maxHeight,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 10,
+                              offset: const Offset(0, 0),
+                            ),
+                          ],
+                        ),
+                        child: child,
+                      ),
+                    );
+                  }
+                  return child!;
+                },
+              );
+            },
           ),
         );
       },

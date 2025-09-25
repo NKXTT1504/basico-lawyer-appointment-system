@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 class FeatureCards extends StatelessWidget {
   const FeatureCards({super.key});
@@ -8,31 +9,25 @@ class FeatureCards extends StatelessWidget {
     return Container(
       width: double.infinity,
       color: Colors.white,
-      padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 80),
-      child: Row(
+      padding: EdgeInsets.all(20.w),
+      child: Column(
         children: [
-          Expanded(
-            child: _buildFeatureCard(
-              'Luật sư giàu kinh nghiệm',
-              'Luật sư của chúng tôi có trung bình hơn 10 năm kinh nghiệm trong lĩnh vực chuyên môn của họ.',
-              Icons.people,
-            ),
+          _buildFeatureCard(
+            'Luật sư giàu kinh nghiệm',
+            'Luật sư của chúng tôi có trung bình hơn 10 năm kinh nghiệm trong lĩnh vực chuyên môn của họ.',
+            Icons.people,
           ),
-          const SizedBox(width: 32),
-          Expanded(
-            child: _buildFeatureCard(
-              'Giải Pháp Cá Nhân Hóa',
-              'Chiến lược pháp lý được thiết kế riêng để phù hợp với nhu cầu cụ thể của bạn.',
-              Icons.person_pin,
-            ),
+          SizedBox(height: 16.h),
+          _buildFeatureCard(
+            'Giải Pháp Cá Nhân Hóa',
+            'Chiến lược pháp lý được thiết kế riêng để phù hợp với nhu cầu cụ thể của bạn.',
+            Icons.person_pin,
           ),
-          const SizedBox(width: 32),
-          Expanded(
-            child: _buildFeatureCard(
-              'Tập Trung Vào Khách Hàng',
-              'Chúng tôi ưu tiên sự giao tiếp rõ ràng và dịch vụ xuất sắc.',
-              Icons.favorite,
-            ),
+          SizedBox(height: 16.h),
+          _buildFeatureCard(
+            'Tập Trung Vào Khách Hàng',
+            'Chúng tôi ưu tiên sự giao tiếp rõ ràng và dịch vụ xuất sắc.',
+            Icons.favorite,
           ),
         ],
       ),
@@ -41,10 +36,10 @@ class FeatureCards extends StatelessWidget {
 
   Widget _buildFeatureCard(String title, String description, IconData icon) {
     return Container(
-      padding: const EdgeInsets.all(40),
+      padding: EdgeInsets.all(20.w),
       decoration: BoxDecoration(
         color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(12.r),
         border: Border.all(
           color: Colors.grey[200]!,
           width: 1,
@@ -52,45 +47,51 @@ class FeatureCards extends StatelessWidget {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
           Container(
-            width: 70,
-            height: 70,
+            width: 50.w,
+            height: 50.w,
             decoration: BoxDecoration(
               color: const Color(0xFF1E3A8A).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(16),
+              borderRadius: BorderRadius.circular(12.r),
             ),
             child: Icon(
               icon,
               color: const Color(0xFF1E3A8A),
-              size: 36,
+              size: 24.sp,
             ),
           ),
-          const SizedBox(height: 28),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E3A8A),
-              height: 1.2,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            description,
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[600],
-              height: 1.6,
-              fontWeight: FontWeight.w400,
+          SizedBox(width: 16.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14.sp,
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF1E3A8A),
+                    height: 1.2,
+                  ),
+                ),
+                SizedBox(height: 8.h),
+                Text(
+                  description,
+                  style: TextStyle(
+                    fontSize: 12.sp,
+                    color: Colors.grey[600],
+                    height: 1.4,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
