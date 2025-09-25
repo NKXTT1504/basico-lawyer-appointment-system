@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../widgets/header_widget.dart';
+import '../widgets/hero_section.dart';
+import '../widgets/feature_cards.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -59,19 +62,48 @@ class _HomeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Trang chủ'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications),
-            onPressed: () {
-              // Handle notifications
-            },
-          ),
-        ],
-      ),
-      body: const Center(
-        child: Text('Trang chủ - Sẽ được phát triển'),
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const HeaderWidget(),
+            const HeroSection(),
+            const FeatureCards(),
+            // Footer section
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(40),
+              color: const Color(0xFF1E3A8A),
+              child: const Column(
+                children: [
+                  Text(
+                    'BASICO LAW FIRM',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Text(
+                    'Giải pháp pháp lý chuyên nghiệp cho mọi nhu cầu',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.white70,
+                    ),
+                  ),
+                  SizedBox(height: 24),
+                  Text(
+                    '© 2024 Basico Law Firm. Tất cả quyền được bảo lưu.',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white60,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
