@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/appointment/presentation/bloc/appointment_bloc.dart';
+import '../../features/appointment/data/datasources/appointment_local_data_source.dart';
 import '../../features/lawyer/presentation/bloc/lawyer_bloc.dart';
 import '../../features/profile/presentation/bloc/profile_bloc.dart';
 
@@ -13,11 +14,16 @@ Future<void> initializeDependencies() async {
   final sharedPreferences = await SharedPreferences.getInstance();
   getIt.registerLazySingleton(() => sharedPreferences);
   
+  // Data Sources
+  getIt.registerLazySingleton<AppointmentLocalDataSource>(
+    () => AppointmentLocalDataSourceImpl(),
+  );
+  
   // Auth
   getIt.registerFactory(() => AuthBloc());
   
   // Appointment
-  getIt.registerFactory(() => AppointmentBloc());
+  getIt.registerFactory(() => AppointmentBloc(dataSource: getIt<AppointmentLocalDataSource>()));
   
   // Lawyer
   getIt.registerFactory(() => LawyerBloc());

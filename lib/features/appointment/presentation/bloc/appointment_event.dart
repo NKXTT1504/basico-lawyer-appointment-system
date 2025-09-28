@@ -10,3 +10,11 @@ abstract class AppointmentEvent extends Equatable {
 class GetAppointmentsRequested extends AppointmentEvent {
   const GetAppointmentsRequested();
 }
+
+class GetUpcomingAppointmentsRequested extends AppointmentEvent {
+  const GetUpcomingAppointmentsRequested();
+}
+
+class GetAppointmentHistoryRequested extends AppointmentEvent {
+  const GetAppointmentHistoryRequested();
+}

@@ -12,7 +12,7 @@ class AppointmentInitial extends AppointmentState {}
 class AppointmentLoading extends AppointmentState {}
 
 class AppointmentSuccess extends AppointmentState {
-  final List<dynamic> appointments;
+  final List<Appointment> appointments;
 
   const AppointmentSuccess(this.appointments);
 
