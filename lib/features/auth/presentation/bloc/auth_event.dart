@@ -44,3 +44,14 @@ class LogoutRequested extends AuthEvent {
 class AuthStatusChecked extends AuthEvent {
   const AuthStatusChecked();
 }
+
+class ForgotPasswordRequested extends AuthEvent {
+  final String email;
+
+  const ForgotPasswordRequested({
+    required this.email,
+  });
+
+  @override
+  List<Object> get props => [email];
+}

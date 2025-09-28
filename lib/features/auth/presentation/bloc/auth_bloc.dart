@@ -10,6 +10,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<RegisterRequested>(_onRegisterRequested);
     on<LogoutRequested>(_onLogoutRequested);
     on<AuthStatusChecked>(_onAuthStatusChecked);
+    on<ForgotPasswordRequested>(_onForgotPasswordRequested);
   }
 
   Future<void> _onLoginRequested(
@@ -45,5 +46,20 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   ) async {
     // Check if user is already logged in
     // Implementation depends on your local storage setup
+  }
+
+  Future<void> _onForgotPasswordRequested(
+    ForgotPasswordRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(AuthLoading());
+    try {
+      // TODO: Implement forgot password logic
+      // For now, simulate success after a delay
+      await Future.delayed(const Duration(seconds: 2));
+      emit(AuthSuccess({'message': 'Email đặt lại mật khẩu đã được gửi'}));
+    } catch (e) {
+      emit(AuthFailure('Có lỗi xảy ra. Vui lòng thử lại sau.'));
+    }
   }
 }
