@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
 import '../widgets/header_widget.dart';
 import '../widgets/hero_section.dart';
 import '../widgets/feature_cards.dart';

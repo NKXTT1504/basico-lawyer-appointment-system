@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../bloc/auth_bloc.dart';
+import '../../../admin/data/services/user_storage_service.dart';
+import '../../../admin/data/models/admin_user.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -16,12 +16,78 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final user = await UserStorageService.loginUser(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+
+      if (user != null) {
+        await UserStorageService.setCurrentUser(user);
+        if (mounted) {
+          _showSuccessSnackBar('Đăng nhập thành công!');
+          _navigateToDashboard(user.role);
+        }
+      } else {
+        _showErrorSnackBar('Email hoặc mật khẩu không đúng');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Có lỗi xảy ra: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _navigateToDashboard(UserRole role) {
+    switch (role) {
+      case UserRole.admin:
+        context.go('/admin/dashboard');
+        break;
+      case UserRole.lawyer:
+        context.go('/lawyer/dashboard');
+        break;
+      case UserRole.customer:
+        context.go('/home');
+        break;
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
   }
 
   @override
@@ -43,25 +109,25 @@ class _LoginPageState extends State<LoginPage> {
                   color: Theme.of(context).primaryColor,
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Title
                 Text(
                   'Đăng nhập',
                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Chào mừng bạn quay trở lại',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                    color: Colors.grey[600],
-                  ),
+                        color: Colors.grey[600],
+                      ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Email field
                 TextFormField(
                   controller: _emailController,
@@ -81,7 +147,7 @@ class _LoginPageState extends State<LoginPage> {
                   },
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Password field
                 TextFormField(
                   controller: _passwordController,
@@ -91,7 +157,9 @@ class _LoginPageState extends State<LoginPage> {
                     prefixIcon: const Icon(Icons.lock),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                        _obscurePassword
+                            ? Icons.visibility
+                            : Icons.visibility_off,
                       ),
                       onPressed: () {
                         setState(() {
@@ -111,43 +179,16 @@ class _LoginPageState extends State<LoginPage> {
                   },
                 ),
                 const SizedBox(height: 24),
-                
+
                 // Login button
-                BlocConsumer<AuthBloc, AuthState>(
-                  listener: (context, state) {
-                    if (state is AuthSuccess) {
-                      context.go('/home');
-                    } else if (state is AuthFailure) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(state.message),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-                    }
-                  },
-                  builder: (context, state) {
-                    return ElevatedButton(
-                      onPressed: state is AuthLoading
-                          ? null
-                          : () {
-                              if (_formKey.currentState!.validate()) {
-                                context.read<AuthBloc>().add(
-                                  LoginRequested(
-                                    email: _emailController.text.trim(),
-                                    password: _passwordController.text,
-                                  ),
-                                );
-                              }
-                            },
-                      child: state is AuthLoading
-                          ? const CircularProgressIndicator(color: Colors.white)
-                          : const Text('Đăng nhập'),
-                    );
-                  },
+                ElevatedButton(
+                  onPressed: _isLoading ? null : _login,
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text('Đăng nhập'),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Register link
                 TextButton(
                   onPressed: () {
@@ -156,7 +197,7 @@ class _LoginPageState extends State<LoginPage> {
                   child: const Text('Chưa có tài khoản? Đăng ký ngay'),
                 ),
                 const SizedBox(height: 8),
-                
+
                 // Demo link
                 TextButton(
                   onPressed: () {
