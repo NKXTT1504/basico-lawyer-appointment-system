@@ -26,6 +26,10 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isTablet = screenWidth > 600;
+    
     return Scaffold(
       body: _pages[_currentIndex],
       bottomNavigationBar: Container(
@@ -50,21 +54,23 @@ class _HomePageState extends State<HomePage> {
           backgroundColor: Colors.white,
           selectedItemColor: const Color(0xFF1E3A8A),
           unselectedItemColor: Colors.grey[600],
+          selectedFontSize: screenWidth * 0.032, // 3.2% of screen width
+          unselectedFontSize: screenWidth * 0.028, // 2.8% of screen width
           items: [
             BottomNavigationBarItem(
-              icon: Icon(Icons.home, size: 20.sp),
+              icon: Icon(Icons.home, size: screenWidth * 0.05), // 5% of screen width
               label: 'Trang chủ',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_today, size: 20.sp),
+              icon: Icon(Icons.calendar_today, size: screenWidth * 0.05),
               label: 'Lịch hẹn',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.people, size: 20.sp),
+              icon: Icon(Icons.people, size: screenWidth * 0.05),
               label: 'Luật sư',
             ),
             BottomNavigationBarItem(
-              icon: Icon(Icons.person, size: 20.sp),
+              icon: Icon(Icons.person, size: screenWidth * 0.05),
               label: 'Cá nhân',
             ),
           ],
@@ -79,6 +85,9 @@ class _HomeTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    
     return Scaffold(
       appBar: const HeaderWidget(),
       body: SafeArea(
@@ -90,32 +99,35 @@ class _HomeTab extends StatelessWidget {
               // Footer section
               Container(
                 width: double.infinity,
-                padding: EdgeInsets.all(20.w),
+                padding: EdgeInsets.symmetric(
+                  horizontal: screenWidth * 0.05, // 5% of screen width
+                  vertical: screenHeight * 0.03, // 3% of screen height
+                ),
                 color: const Color(0xFF1E3A8A),
                 child: Column(
                   children: [
                     Text(
                       'BASICO LAW FIRM',
                       style: TextStyle(
-                        fontSize: 18.sp,
+                        fontSize: screenWidth * 0.045, // 4.5% of screen width
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: 12.h),
+                    SizedBox(height: screenHeight * 0.015), // 1.5% of screen height
                     Text(
                       'Giải pháp pháp lý chuyên nghiệp cho mọi nhu cầu',
                       style: TextStyle(
-                        fontSize: 12.sp,
+                        fontSize: screenWidth * 0.03, // 3% of screen width
                         color: Colors.white70,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    SizedBox(height: 16.h),
+                    SizedBox(height: screenHeight * 0.02), // 2% of screen height
                     Text(
                       '© 2024 Basico Law Firm. Tất cả quyền được bảo lưu.',
                       style: TextStyle(
-                        fontSize: 10.sp,
+                        fontSize: screenWidth * 0.025, // 2.5% of screen width
                         color: Colors.white60,
                       ),
                       textAlign: TextAlign.center,
@@ -182,21 +194,28 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isTablet = screenWidth > 600;
+    
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.all(20.w),
+          padding: EdgeInsets.symmetric(
+            horizontal: screenWidth * (isTablet ? 0.08 : 0.04), // 8% for tablet, 4% for mobile
+            vertical: screenHeight * 0.02, // 2% of screen height
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Page Title
               _buildPageTitle(),
-              SizedBox(height: 24.h),
+              SizedBox(height: screenHeight * 0.03), // 3% of screen height
               
               // Tabs
               _buildTabs(),
-              SizedBox(height: 24.h),
+              SizedBox(height: screenHeight * 0.03), // 3% of screen height
               
               // Content
               Expanded(
@@ -212,10 +231,13 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
   }
 
   Widget _buildPageTitle() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
+    
     return Text(
       'LỊCH HẸN CỦA BẠN',
       style: TextStyle(
-        fontSize: 24.sp,
+        fontSize: screenWidth * (isTablet ? 0.07 : 0.06), // 7% for tablet, 6% for mobile
         fontWeight: FontWeight.bold,
         color: const Color(0xFF1C1B1F),
       ),
@@ -223,20 +245,25 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
   }
 
   Widget _buildTabs() {
-    return Row(
-      children: [
-        _buildTab(
-          text: 'Cuộc hẹn sắp tới',
-          index: 0,
-          isSelected: _selectedTabIndex == 0,
-        ),
-        SizedBox(width: 16.w),
-        _buildTab(
-          text: 'Lịch sử cuộc hẹn',
-          index: 1,
-          isSelected: _selectedTabIndex == 1,
-        ),
-      ],
+    final screenWidth = MediaQuery.of(context).size.width;
+    
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          _buildTab(
+            text: 'Cuộc hẹn sắp tới',
+            index: 0,
+            isSelected: _selectedTabIndex == 0,
+          ),
+          SizedBox(width: screenWidth * 0.04), // 4% of screen width
+          _buildTab(
+            text: 'Lịch sử cuộc hẹn',
+            index: 1,
+            isSelected: _selectedTabIndex == 1,
+          ),
+        ],
+      ),
     );
   }
 
@@ -245,6 +272,10 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
     required int index,
     required bool isSelected,
   }) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isTablet = screenWidth > 600;
+    
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -252,7 +283,10 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
         });
       },
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 24.w, vertical: 12.h),
+        padding: EdgeInsets.symmetric(
+          horizontal: screenWidth * (isTablet ? 0.08 : 0.05), // 8% for tablet, 5% for mobile
+          vertical: screenHeight * 0.015, // 1.5% of screen height
+        ),
         decoration: BoxDecoration(
           color: isSelected ? const Color(0xFF1E3A8A) : Colors.white,
           border: Border.all(
@@ -264,7 +298,7 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
         child: Text(
           text,
           style: TextStyle(
-            fontSize: 14.sp,
+            fontSize: screenWidth * (isTablet ? 0.04 : 0.035), // 4% for tablet, 3.5% for mobile
             color: isSelected ? Colors.white : const Color(0xFF1C1B1F),
             fontWeight: FontWeight.w500,
           ),
@@ -275,6 +309,8 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
 
   Widget _buildAppointmentTable() {
     final appointments = _selectedTabIndex == 0 ? _upcomingAppointments : _historyAppointments;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
     
     return Container(
       decoration: BoxDecoration(
@@ -290,18 +326,20 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
       ),
       child: Column(
         children: [
-          // Table Header
-          _buildTableHeader(),
+          // Table Header - only show on larger screens
+          if (isTablet) _buildTableHeader(),
           // Table Body
           Expanded(
             child: appointments.isEmpty
                 ? _buildEmptyState()
-                : ListView.builder(
-                    itemCount: appointments.length,
-                    itemBuilder: (context, index) {
-                      return _buildTableRow(appointments[index], index);
-                    },
-                  ),
+                : isTablet
+                    ? ListView.builder(
+                        itemCount: appointments.length,
+                        itemBuilder: (context, index) {
+                          return _buildTableRow(appointments[index], index);
+                        },
+                      )
+                    : _buildMobileAppointmentList(appointments),
           ),
         ],
       ),
@@ -309,8 +347,10 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
   }
 
   Widget _buildTableHeader() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    
     return Container(
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(screenWidth * 0.04), // 4% of screen width
       decoration: const BoxDecoration(
         color: Color(0xFF1E3A8A), // Dark blue
         borderRadius: BorderRadius.only(
@@ -346,10 +386,12 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
   }
 
   Widget _buildHeaderCell(String text) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    
     return Text(
       text,
       style: TextStyle(
-        fontSize: 11.sp,
+        fontSize: screenWidth * 0.028, // 2.8% of screen width
         color: Colors.white,
         fontWeight: FontWeight.bold,
       ),
@@ -443,6 +485,90 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
           fontWeight: FontWeight.w500,
         ),
         textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  Widget _buildMobileAppointmentList(List<Appointment> appointments) {
+    return ListView.builder(
+      itemCount: appointments.length,
+      itemBuilder: (context, index) {
+        return _buildMobileAppointmentCard(appointments[index], index);
+      },
+    );
+  }
+
+  Widget _buildMobileAppointmentCard(Appointment appointment, int index) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    
+    return Container(
+      margin: EdgeInsets.all(screenWidth * 0.02), // 2% of screen width
+      padding: EdgeInsets.all(screenWidth * 0.04), // 4% of screen width
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  appointment.lawyerName,
+                  style: TextStyle(
+                    fontSize: screenWidth * 0.04, // 4% of screen width
+                    fontWeight: FontWeight.bold,
+                    color: const Color(0xFF1C1B1F),
+                  ),
+                ),
+              ),
+              _buildStatusCell(appointment.status),
+            ],
+          ),
+          SizedBox(height: screenHeight * 0.01), // 1% of screen height
+          Text(
+            'Thời gian: ${appointment.time}',
+            style: TextStyle(
+              fontSize: screenWidth * 0.035, // 3.5% of screen width
+              color: Colors.grey[600],
+            ),
+          ),
+          Text(
+            'Ngày: ${appointment.dayOfWeek}, ${appointment.date}',
+            style: TextStyle(
+              fontSize: screenWidth * 0.035, // 3.5% of screen width
+              color: Colors.grey[600],
+            ),
+          ),
+          SizedBox(height: screenHeight * 0.01), // 1% of screen height
+          Text(
+            'Dịch vụ: ${appointment.service}',
+            style: TextStyle(
+              fontSize: screenWidth * 0.035, // 3.5% of screen width
+              color: Colors.grey[600],
+            ),
+          ),
+          if (appointment.action != null) ...[
+            SizedBox(height: screenHeight * 0.01), // 1% of screen height
+            Text(
+              'Thao tác: ${appointment.action}',
+              style: TextStyle(
+                fontSize: screenWidth * 0.035, // 3.5% of screen width
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }

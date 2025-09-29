@@ -58,17 +58,24 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isTablet = screenWidth > 600;
+    
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.all(20.w),
+          padding: EdgeInsets.symmetric(
+            horizontal: screenWidth * (isTablet ? 0.08 : 0.04), // 8% for tablet, 4% for mobile
+            vertical: screenHeight * 0.02, // 2% of screen height
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Page Title
               _buildPageTitle(),
-              SizedBox(height: 24.h),
+              SizedBox(height: screenHeight * 0.03), // 3% of screen height
               
               // Tabs
               AppointmentTabs(
@@ -79,7 +86,7 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
                   });
                 },
               ),
-              SizedBox(height: 24.h),
+              SizedBox(height: screenHeight * 0.03), // 3% of screen height
               
               // Content
               Expanded(
@@ -99,10 +106,13 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
   }
 
   Widget _buildPageTitle() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
+    
     return Text(
       'LỊCH HẸN CỦA BẠN',
       style: TextStyle(
-        fontSize: 24.sp,
+        fontSize: screenWidth * (isTablet ? 0.07 : 0.06), // 7% for tablet, 6% for mobile
         fontWeight: FontWeight.bold,
         color: AppColors.onBackground,
       ),

@@ -14,6 +14,9 @@ class AppointmentTable extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
+    
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -28,27 +31,31 @@ class AppointmentTable extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Table Header
-          _buildTableHeader(),
+          // Table Header - only show on larger screens
+          if (isTablet) _buildTableHeader(context),
           // Table Body
           Expanded(
             child: appointments.isEmpty
                 ? _buildEmptyState()
-                : ListView.builder(
-                    itemCount: appointments.length,
-                    itemBuilder: (context, index) {
-                      return _buildTableRow(appointments[index], index);
-                    },
-                  ),
+                : isTablet
+                    ? ListView.builder(
+                        itemCount: appointments.length,
+                        itemBuilder: (context, index) {
+                          return _buildTableRow(appointments[index], index);
+                        },
+                      )
+                    : _buildMobileAppointmentList(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildTableHeader() {
+  Widget _buildTableHeader(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    
     return Container(
-      padding: EdgeInsets.all(16.w),
+      padding: EdgeInsets.all(screenWidth * 0.04), // 4% of screen width
       decoration: const BoxDecoration(
         color: Color(0xFF1E3A8A), // Dark blue
         borderRadius: BorderRadius.only(
@@ -60,34 +67,36 @@ class AppointmentTable extends StatelessWidget {
         children: [
           Expanded(
             flex: 2,
-            child: _buildHeaderCell('LUẬT SƯ'),
+            child: _buildHeaderCell(context, 'LUẬT SƯ'),
           ),
           Expanded(
             flex: 2,
-            child: _buildHeaderCell('NGÀY'),
+            child: _buildHeaderCell(context, 'NGÀY'),
           ),
           Expanded(
             flex: 2,
-            child: _buildHeaderCell('DỊCH VỤ'),
+            child: _buildHeaderCell(context, 'DỊCH VỤ'),
           ),
           Expanded(
             flex: 1,
-            child: _buildHeaderCell('TRẠNG THÁI'),
+            child: _buildHeaderCell(context, 'TRẠNG THÁI'),
           ),
           Expanded(
             flex: 1,
-            child: _buildHeaderCell('THAO TÁC'),
+            child: _buildHeaderCell(context, 'THAO TÁC'),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildHeaderCell(String text) {
+  Widget _buildHeaderCell(BuildContext context, String text) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    
     return Text(
       text,
       style: TextStyle(
-        fontSize: 11.sp,
+        fontSize: screenWidth * 0.028, // 2.8% of screen width
         color: Colors.white,
         fontWeight: FontWeight.bold,
       ),
@@ -181,6 +190,90 @@ class AppointmentTable extends StatelessWidget {
           fontWeight: FontWeight.w500,
         ),
         textAlign: TextAlign.center,
+      ),
+    );
+  }
+
+  Widget _buildMobileAppointmentList() {
+    return ListView.builder(
+      itemCount: appointments.length,
+      itemBuilder: (context, index) {
+        return _buildMobileAppointmentCard(context, appointments[index], index);
+      },
+    );
+  }
+
+  Widget _buildMobileAppointmentCard(BuildContext context, Appointment appointment, int index) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    
+    return Container(
+      margin: EdgeInsets.all(screenWidth * 0.02), // 2% of screen width
+      padding: EdgeInsets.all(screenWidth * 0.04), // 4% of screen width
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  appointment.lawyerName,
+                  style: TextStyle(
+                    fontSize: screenWidth * 0.04, // 4% of screen width
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.onSurface,
+                  ),
+                ),
+              ),
+              _buildStatusCell(appointment.status),
+            ],
+          ),
+          SizedBox(height: screenHeight * 0.01), // 1% of screen height
+          Text(
+            'Thời gian: ${appointment.time}',
+            style: TextStyle(
+              fontSize: screenWidth * 0.035, // 3.5% of screen width
+              color: Colors.grey[600],
+            ),
+          ),
+          Text(
+            'Ngày: ${appointment.dayOfWeek}, ${appointment.date}',
+            style: TextStyle(
+              fontSize: screenWidth * 0.035, // 3.5% of screen width
+              color: Colors.grey[600],
+            ),
+          ),
+          SizedBox(height: screenHeight * 0.01), // 1% of screen height
+          Text(
+            'Dịch vụ: ${appointment.service}',
+            style: TextStyle(
+              fontSize: screenWidth * 0.035, // 3.5% of screen width
+              color: Colors.grey[600],
+            ),
+          ),
+          if (appointment.action != null) ...[
+            SizedBox(height: screenHeight * 0.01), // 1% of screen height
+            Text(
+              'Thao tác: ${appointment.action}',
+              style: TextStyle(
+                fontSize: screenWidth * 0.035, // 3.5% of screen width
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
+        ],
       ),
     );
   }
