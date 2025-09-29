@@ -48,7 +48,6 @@ linter:
     avoid_types_on_closure_parameters: true
     avoid_unused_constructor_parameters: true
     avoid_void_async: true
-    avoid_web_libraries_in_flutter: true
     cancel_subscriptions: true
     cascade_invocations: true
     close_sinks: true

@@ -1,10 +1,15 @@
 import 'package:flutter/material.dart';
 
 class ResponsiveHelper {
-  // Breakpoints
+  // Breakpoints - Tối ưu cho Tablet/iPad
   static const double mobileBreakpoint = 600;
-  static const double tabletBreakpoint = 900;
+  static const double tabletBreakpoint = 1024;  // iPad thường có width ~768px, iPad Pro ~1024px
   static const double desktopBreakpoint = 1200;
+  
+  // Additional breakpoints cho các loại tablet khác nhau
+  static const double tabletSmall = 768;   // iPad Mini
+  static const double tabletMedium = 834;  // iPad thường
+  static const double tabletLarge = 1024;  // iPad Pro
 
   // Screen size helpers
   static double getScreenWidth(BuildContext context) {
@@ -26,7 +31,29 @@ class ResponsiveHelper {
   }
 
   static bool isDesktop(BuildContext context) {
-    return getScreenWidth(context) >= tabletBreakpoint;
+    return getScreenWidth(context) >= desktopBreakpoint;
+  }
+  
+  // Tablet size detection
+  static bool isTabletSmall(BuildContext context) {
+    final width = getScreenWidth(context);
+    return width >= tabletSmall && width < tabletMedium;
+  }
+  
+  static bool isTabletMedium(BuildContext context) {
+    final width = getScreenWidth(context);
+    return width >= tabletMedium && width < tabletLarge;
+  }
+  
+  static bool isTabletLarge(BuildContext context) {
+    final width = getScreenWidth(context);
+    return width >= tabletLarge && width < desktopBreakpoint;
+  }
+  
+  // iPad specific detection
+  static bool isIPad(BuildContext context) {
+    final width = getScreenWidth(context);
+    return width >= tabletSmall && width < desktopBreakpoint;
   }
 
   // Responsive sizing
@@ -47,6 +74,35 @@ class ResponsiveHelper {
   }) {
     if (isMobile(context)) return mobile;
     if (isTablet(context)) return tablet;
+    return desktop;
+  }
+  
+  // iPad optimized sizing
+  static double getIPadOptimizedFontSize(BuildContext context, {
+    required double mobile,
+    required double tabletSmall,
+    required double tabletMedium,
+    required double tabletLarge,
+    required double desktop,
+  }) {
+    if (isMobile(context)) return mobile;
+    if (isTabletSmall(context)) return tabletSmall;
+    if (isTabletMedium(context)) return tabletMedium;
+    if (isTabletLarge(context)) return tabletLarge;
+    return desktop;
+  }
+  
+  static double getIPadOptimizedPadding(BuildContext context, {
+    required double mobile,
+    required double tabletSmall,
+    required double tabletMedium,
+    required double tabletLarge,
+    required double desktop,
+  }) {
+    if (isMobile(context)) return mobile;
+    if (isTabletSmall(context)) return tabletSmall;
+    if (isTabletMedium(context)) return tabletMedium;
+    if (isTabletLarge(context)) return tabletLarge;
     return desktop;
   }
 

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/pages/login_page.dart';
@@ -10,7 +9,12 @@ import '../../features/appointment/presentation/pages/appointment_detail_page.da
 import '../../features/lawyer/presentation/pages/lawyer_list_page.dart';
 import '../../features/lawyer/presentation/pages/lawyer_detail_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
+import '../../features/profile/presentation/pages/profile_demo_page.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
+import '../../responsive_test_page.dart';
+import '../layout/main_shell.dart';
+import '../../features/services/presentation/pages/services_page.dart';
+
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -36,43 +40,67 @@ class AppRouter {
         builder: (context, state) => const ForgotPasswordPage(),
       ),
       
-      // Main App
-      GoRoute(
-        path: '/home',
-        builder: (context, state) => const HomePage(),
-      ),
-      
-      // Appointments
-      GoRoute(
-        path: '/appointments',
-        builder: (context, state) => const AppointmentListPage(),
-      ),
-      GoRoute(
-        path: '/appointments/:id',
-        builder: (context, state) {
-          final id = state.pathParameters['id']!;
-          return AppointmentDetailPage(appointmentId: id);
+      // Main App with Shell Route for bottom navigation
+      ShellRoute(
+        builder: (context, state, child) {
+          return MainShell(child: child);
         },
+        routes: [
+          GoRoute(
+            path: '/home',
+            builder: (context, state) => const HomePage(),
+          ),
+          
+          // Appointments
+          GoRoute(
+            path: '/appointments',
+            builder: (context, state) => const AppointmentListPage(),
+          ),
+          GoRoute(
+            path: '/appointments/:id',
+            builder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return AppointmentDetailPage(appointmentId: id);
+            },
+          ),
+          
+          // Lawyers
+          GoRoute(
+            path: '/lawyers',
+            builder: (context, state) => const LawyerListPage(),
+          ),
+          GoRoute(
+            path: '/lawyers/:id',
+            builder: (context, state) {
+              final id = state.pathParameters['id']!;
+              return LawyerDetailPage(lawyerId: id);
+            },
+          ),
+          
+          // Services
+          GoRoute(
+            path: '/services',
+            builder: (context, state) => const ServicesPage(),
+          ),
+        ],
       ),
       
-      // Lawyers
-      GoRoute(
-        path: '/lawyers',
-        builder: (context, state) => const LawyerListPage(),
-      ),
-      GoRoute(
-        path: '/lawyers/:id',
-        builder: (context, state) {
-          final id = state.pathParameters['id']!;
-          return LawyerDetailPage(lawyerId: id);
-        },
-      ),
-      
-      // Profile
+      // Profile (without shell for clean profile page)
       GoRoute(
         path: '/profile',
         builder: (context, state) => const ProfilePage(),
       ),
+      GoRoute(
+        path: '/profile-demo',
+        builder: (context, state) => const ProfileDemoPage(),
+      ),
+      
+      // Test Pages (Development)
+      GoRoute(
+        path: '/responsive-test',
+        builder: (context, state) => const ResponsiveTestPage(),
+      ),
+      
     ],
   );
 }

@@ -7,76 +7,12 @@ import '../widgets/feature_cards.dart';
 import '../../../appointment/domain/entities/appointment.dart';
 import '../../../appointment/data/datasources/appointment_local_data_source.dart';
 
-class HomePage extends StatefulWidget {
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  int _currentIndex = 0;
-
-  final List<Widget> _pages = [
-    const _HomeTab(),
-    const _AppointmentsTab(),
-    const _LawyersTab(),
-    const _ProfileTab(),
-  ];
-
-  @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final isTablet = screenWidth > 600;
-    
-    return Scaffold(
-      body: _pages[_currentIndex],
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 4,
-              offset: const Offset(0, -2),
-            ),
-          ],
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _currentIndex,
-          onTap: (index) {
-            setState(() {
-              _currentIndex = index;
-            });
-          },
-          type: BottomNavigationBarType.fixed,
-          backgroundColor: Colors.white,
-          selectedItemColor: const Color(0xFF1E3A8A),
-          unselectedItemColor: Colors.grey[600],
-          selectedFontSize: screenWidth * 0.032, // 3.2% of screen width
-          unselectedFontSize: screenWidth * 0.028, // 2.8% of screen width
-          items: [
-            BottomNavigationBarItem(
-              icon: Icon(Icons.home, size: screenWidth * 0.05), // 5% of screen width
-              label: 'Trang chủ',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_today, size: screenWidth * 0.05),
-              label: 'Lịch hẹn',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.people, size: screenWidth * 0.05),
-              label: 'Luật sư',
-            ),
-            BottomNavigationBarItem(
-              icon: Icon(Icons.person, size: screenWidth * 0.05),
-              label: 'Cá nhân',
-            ),
-          ],
-        ),
-      ),
-    );
+    return const _HomeTab();
   }
 }
 
@@ -132,6 +68,7 @@ class _HomeTab extends StatelessWidget {
                       ),
                       textAlign: TextAlign.center,
                     ),
+
                   ],
                 ),
               ),
@@ -625,26 +562,20 @@ class _LawyersTab extends StatelessWidget {
   }
 }
 
-class _ProfileTab extends StatelessWidget {
-  const _ProfileTab();
+class _ProfilePlaceholder extends StatelessWidget {
+  const _ProfilePlaceholder();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Cá nhân'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              // Navigate to settings
-            },
-          ),
-        ],
-      ),
-      body: const Center(
-        child: Text('Thông tin cá nhân - Sẽ được phát triển'),
-      ),
+    // This placeholder will immediately redirect to the profile page
+    // Used because the profile tab in BottomNavigationBar now navigates directly
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.go('/profile');
+    });
+    
+    return const Center(
+      child: CircularProgressIndicator(),
     );
   }
 }
+

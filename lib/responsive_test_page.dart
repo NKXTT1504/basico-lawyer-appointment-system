@@ -34,7 +34,7 @@ class ResponsiveTestPage extends StatelessWidget {
             SizedBox(height: screenHeight * 0.03), // 3% of screen height
             
             // Responsive card test
-            _buildCardTest(screenWidth, screenHeight, isTablet),
+            _buildCardTest(context, screenWidth, screenHeight, isTablet),
             SizedBox(height: screenHeight * 0.03), // 3% of screen height
             
             // Responsive layout test
@@ -211,7 +211,7 @@ class ResponsiveTestPage extends StatelessWidget {
     );
   }
 
-  Widget _buildCardTest(double screenWidth, double screenHeight, bool isTablet) {
+  Widget _buildCardTest(BuildContext context, double screenWidth, double screenHeight, bool isTablet) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -228,32 +228,32 @@ class ResponsiveTestPage extends StatelessWidget {
             ? Row(
                 children: [
                   Expanded(
-                    child: _buildTestCard('Card 1', Icons.star),
+                    child: _buildTestCard(context, 'Card 1', Icons.star),
                   ),
                   SizedBox(width: screenWidth * 0.04), // 4% of screen width
                   Expanded(
-                    child: _buildTestCard('Card 2', Icons.favorite),
+                    child: _buildTestCard(context, 'Card 2', Icons.favorite),
                   ),
                   SizedBox(width: screenWidth * 0.04), // 4% of screen width
                   Expanded(
-                    child: _buildTestCard('Card 3', Icons.thumb_up),
+                    child: _buildTestCard(context, 'Card 3', Icons.thumb_up),
                   ),
                 ],
               )
             : Column(
                 children: [
-                  _buildTestCard('Card 1', Icons.star),
+                  _buildTestCard(context, 'Card 1', Icons.star),
                   SizedBox(height: screenHeight * 0.02), // 2% of screen height
-                  _buildTestCard('Card 2', Icons.favorite),
+                  _buildTestCard(context, 'Card 2', Icons.favorite),
                   SizedBox(height: screenHeight * 0.02), // 2% of screen height
-                  _buildTestCard('Card 3', Icons.thumb_up),
+                  _buildTestCard(context, 'Card 3', Icons.thumb_up),
                 ],
               ),
       ],
     );
   }
 
-  Widget _buildTestCard(String title, IconData icon) {
+  Widget _buildTestCard(BuildContext context, String title, IconData icon) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     
@@ -265,7 +265,7 @@ class ResponsiveTestPage extends StatelessWidget {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 4,
             offset: const Offset(0, 2),
           ),
