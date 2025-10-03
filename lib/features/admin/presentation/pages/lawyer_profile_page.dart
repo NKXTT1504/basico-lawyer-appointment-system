@@ -30,7 +30,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
         });
       } else {
         if (mounted) {
-          context.go('/role-login');
+          context.go('/login');
         }
       }
     } catch (e) {
@@ -147,6 +147,9 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
       );
     }
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     return Scaffold(
       backgroundColor: Colors.blue[50],
       appBar: AppBar(
@@ -162,14 +165,14 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
+        padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Profile Header
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(24),
+              padding: EdgeInsets.all(isMobile ? 20 : 24),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
@@ -182,20 +185,20 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
               child: Column(
                 children: [
                   CircleAvatar(
-                    radius: 50,
+                    radius: isMobile ? 40 : 50,
                     backgroundColor: Colors.white,
                     child: Icon(
                       Icons.gavel,
-                      size: 50,
+                      size: isMobile ? 40 : 50,
                       color: Colors.blue[600],
                     ),
                   ),
-                  const SizedBox(height: 16),
+                  SizedBox(height: isMobile ? 12 : 16),
                   Text(
                     _currentUser?.name ?? 'Luật sư',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
-                      fontSize: 24,
+                      fontSize: isMobile ? 20 : 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -204,22 +207,23 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                     _currentUser?.email ?? '',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.9),
-                      fontSize: 16,
+                      fontSize: isMobile ? 14 : 16,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: isMobile ? 8 : 12),
                   Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: EdgeInsets.symmetric(
+                        horizontal: isMobile ? 12 : 16,
+                        vertical: isMobile ? 6 : 8),
                     decoration: BoxDecoration(
                       color: Colors.white.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Text(
+                    child: Text(
                       'Luật sư',
                       style: TextStyle(
                         color: Colors.white,
-                        fontSize: 14,
+                        fontSize: isMobile ? 12 : 14,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -228,7 +232,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
               ),
             ),
 
-            const SizedBox(height: 24),
+            SizedBox(height: isMobile ? 20 : 24),
 
             // Personal Information
             Text(
@@ -236,6 +240,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Colors.blue[800],
+                    fontSize: isMobile ? 18 : 20,
                   ),
             ),
             const SizedBox(height: 16),
@@ -246,7 +251,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: EdgeInsets.all(isMobile ? 12 : 16),
                 child: Column(
                   children: [
                     _buildInfoRow(
@@ -264,7 +269,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
               ),
             ),
 
-            const SizedBox(height: 24),
+            SizedBox(height: isMobile ? 20 : 24),
 
             // Professional Statistics
             Text(
@@ -272,98 +277,197 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Colors.blue[800],
+                    fontSize: isMobile ? 18 : 20,
                   ),
             ),
             const SizedBox(height: 16),
 
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    'Tổng lịch hẹn',
-                    '0',
-                    Icons.calendar_today,
-                    Colors.blue,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
-                    'Đã hoàn thành',
-                    '0',
-                    Icons.check_circle,
-                    Colors.green,
-                  ),
-                ),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                if (isMobile) {
+                  return Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard(
+                              'Tổng lịch hẹn',
+                              '0',
+                              Icons.calendar_today,
+                              Colors.blue,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildStatCard(
+                              'Đã hoàn thành',
+                              '0',
+                              Icons.check_circle,
+                              Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard(
+                              'Đang chờ',
+                              '0',
+                              Icons.schedule,
+                              Colors.amber,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _buildStatCard(
+                              'Đánh giá TB',
+                              '5.0',
+                              Icons.star,
+                              Colors.orange,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                } else {
+                  return Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard(
+                              'Tổng lịch hẹn',
+                              '0',
+                              Icons.calendar_today,
+                              Colors.blue,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildStatCard(
+                              'Đã hoàn thành',
+                              '0',
+                              Icons.check_circle,
+                              Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildStatCard(
+                              'Đang chờ',
+                              '0',
+                              Icons.schedule,
+                              Colors.amber,
+                            ),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: _buildStatCard(
+                              'Đánh giá TB',
+                              '5.0',
+                              Icons.star,
+                              Colors.orange,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  );
+                }
+              },
             ),
 
-            const SizedBox(height: 16),
-
-            Row(
-              children: [
-                Expanded(
-                  child: _buildStatCard(
-                    'Đang chờ',
-                    '0',
-                    Icons.schedule,
-                    Colors.amber,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildStatCard(
-                    'Đánh giá TB',
-                    '5.0',
-                    Icons.star,
-                    Colors.orange,
-                  ),
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 24),
+            SizedBox(height: isMobile ? 20 : 24),
 
             // Action Buttons
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _showEditDialog,
-                    icon: const Icon(Icons.edit),
-                    label: const Text('Chỉnh sửa thông tin'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[600],
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+            if (isMobile) ...[
+              // Mobile layout - stacked buttons
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _showEditDialog,
+                  icon: const Icon(Icons.edit),
+                  label: const Text('Chỉnh sửa thông tin'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue[600],
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      // TODO: Implement change password
-                      _showSuccessSnackBar(
-                          'Chức năng đổi mật khẩu đang được phát triển');
-                    },
-                    icon: const Icon(Icons.lock),
-                    label: const Text('Đổi mật khẩu'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.blue[600],
-                      side: BorderSide(color: Colors.blue[600]!),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () {
+                    // TODO: Implement change password
+                    _showSuccessSnackBar(
+                        'Chức năng đổi mật khẩu đang được phát triển');
+                  },
+                  icon: const Icon(Icons.lock),
+                  label: const Text('Đổi mật khẩu'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.blue[600],
+                    side: BorderSide(color: Colors.blue[600]!),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
                     ),
                   ),
                 ),
-              ],
-            ),
+              ),
+            ] else ...[
+              // Desktop layout - inline buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: _showEditDialog,
+                      icon: const Icon(Icons.edit),
+                      label: const Text('Chỉnh sửa thông tin'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue[600],
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        // TODO: Implement change password
+                        _showSuccessSnackBar(
+                            'Chức năng đổi mật khẩu đang được phát triển');
+                      },
+                      icon: const Icon(Icons.lock),
+                      label: const Text('Đổi mật khẩu'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.blue[600],
+                        side: BorderSide(color: Colors.blue[600]!),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -371,12 +475,15 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: Colors.blue[600]),
-          const SizedBox(width: 12),
+          Icon(icon, size: isMobile ? 18 : 20, color: Colors.blue[600]),
+          SizedBox(width: isMobile ? 8 : 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -384,7 +491,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                 Text(
                   label,
                   style: TextStyle(
-                    fontSize: 12,
+                    fontSize: isMobile ? 11 : 12,
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w500,
                   ),
@@ -392,8 +499,8 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                 const SizedBox(height: 2),
                 Text(
                   value,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  style: TextStyle(
+                    fontSize: isMobile ? 14 : 16,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -407,8 +514,11 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
 
   Widget _buildStatCard(
       String title, String value, IconData icon, Color color) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: EdgeInsets.all(isMobile ? 12 : 16),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(12),
@@ -423,12 +533,12 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
       ),
       child: Column(
         children: [
-          Icon(icon, size: 24, color: color),
-          const SizedBox(height: 8),
+          Icon(icon, size: isMobile ? 20 : 24, color: color),
+          SizedBox(height: isMobile ? 6 : 8),
           Text(
             value,
             style: TextStyle(
-              fontSize: 20,
+              fontSize: isMobile ? 18 : 20,
               fontWeight: FontWeight.bold,
               color: color,
             ),
@@ -437,7 +547,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
           Text(
             title,
             style: TextStyle(
-              fontSize: 12,
+              fontSize: isMobile ? 11 : 12,
               color: Colors.grey[600],
             ),
             textAlign: TextAlign.center,
@@ -447,4 +557,3 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
     );
   }
 }
-

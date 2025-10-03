@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+// AppBar is managed globally in MainNavigation for mobile
 import '../../data/services/user_storage_service.dart';
 import '../../data/models/customer.dart';
 
@@ -11,7 +12,11 @@ class AdminCustomersPage extends StatefulWidget {
 
 class _AdminCustomersPageState extends State<AdminCustomersPage> {
   List<Customer> _customers = [];
+  List<Customer> _filteredCustomers = [];
   bool _isLoading = true;
+  String _searchQuery = '';
+  String _selectedGender = 'all';
+  String _selectedOccupation = 'all';
 
   @override
   void initState() {
@@ -24,6 +29,7 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
       final customers = await UserStorageService.getCustomers();
       setState(() {
         _customers = customers;
+        _applyFilters();
         _isLoading = false;
       });
     } catch (e) {
@@ -32,6 +38,36 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
       });
       _showErrorSnackBar('Có lỗi xảy ra: $e');
     }
+  }
+
+  void _applyFilters() {
+    setState(() {
+      _filteredCustomers = _customers.where((customer) {
+        // Search filter
+        if (_searchQuery.isNotEmpty) {
+          final query = _searchQuery.toLowerCase();
+          if (!customer.name.toLowerCase().contains(query) &&
+              !customer.email.toLowerCase().contains(query) &&
+              !customer.phone.toLowerCase().contains(query) &&
+              !customer.occupation.toLowerCase().contains(query)) {
+            return false;
+          }
+        }
+
+        // Gender filter
+        if (_selectedGender != 'all' && customer.gender != _selectedGender) {
+          return false;
+        }
+
+        // Occupation filter
+        if (_selectedOccupation != 'all' &&
+            customer.occupation != _selectedOccupation) {
+          return false;
+        }
+
+        return true;
+      }).toList();
+    });
   }
 
   void _showErrorSnackBar(String message) {
@@ -218,35 +254,51 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
             ),
             ElevatedButton(
               onPressed: () async {
-                if (nameController.text.isNotEmpty &&
-                    emailController.text.isNotEmpty &&
-                    phoneController.text.isNotEmpty &&
-                    addressController.text.isNotEmpty &&
-                    occupationController.text.isNotEmpty &&
-                    selectedDate != null) {
-                  try {
-                    final newCustomer = Customer(
-                      id: 'cust_${DateTime.now().millisecondsSinceEpoch}',
-                      name: nameController.text,
-                      email: emailController.text,
-                      phone: phoneController.text,
-                      address: addressController.text,
-                      dateOfBirth: selectedDate!,
-                      gender: selectedGender,
-                      occupation: occupationController.text,
-                      notes: notesController.text,
-                      createdAt: DateTime.now(),
-                    );
+                // Validate input
+                final validationResult = _validateCustomerInput(
+                  nameController.text,
+                  emailController.text,
+                  phoneController.text,
+                  addressController.text,
+                  occupationController.text,
+                  selectedDate,
+                );
 
-                    await UserStorageService.addCustomer(newCustomer);
-                    await _loadCustomers();
-                    Navigator.pop(context);
-                    _showSuccessSnackBar('Thêm khách hàng thành công');
-                  } catch (e) {
-                    _showErrorSnackBar('Có lỗi xảy ra: $e');
+                if (validationResult.isNotEmpty) {
+                  _showErrorSnackBar(validationResult);
+                  return;
+                }
+
+                try {
+                  // Check if email already exists
+                  final existingCustomers =
+                      await UserStorageService.getCustomers();
+                  if (existingCustomers.any((customer) =>
+                      customer.email.toLowerCase() ==
+                      emailController.text.toLowerCase())) {
+                    _showErrorSnackBar('Email đã tồn tại trong hệ thống');
+                    return;
                   }
-                } else {
-                  _showErrorSnackBar('Vui lòng điền đầy đủ thông tin');
+
+                  final newCustomer = Customer(
+                    id: 'cust_${DateTime.now().millisecondsSinceEpoch}',
+                    name: nameController.text.trim(),
+                    email: emailController.text.trim().toLowerCase(),
+                    phone: phoneController.text.trim(),
+                    address: addressController.text.trim(),
+                    dateOfBirth: selectedDate!,
+                    gender: selectedGender,
+                    occupation: occupationController.text.trim(),
+                    notes: notesController.text.trim(),
+                    createdAt: DateTime.now(),
+                  );
+
+                  await UserStorageService.addCustomer(newCustomer);
+                  await _loadCustomers();
+                  Navigator.pop(context);
+                  _showSuccessSnackBar('Thêm khách hàng thành công');
+                } catch (e) {
+                  _showErrorSnackBar('Có lỗi xảy ra khi thêm khách hàng: $e');
                 }
               },
               child: const Text('Thêm'),
@@ -267,48 +319,102 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
       );
     }
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Quản lý khách hàng'),
-        backgroundColor: Theme.of(context).primaryColor,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadCustomers,
+      body: Column(
+        children: [
+          // Search and filters
+          Container(
+            padding: EdgeInsets.all(isMobile ? 12 : 16),
+            color: Colors.grey[50],
+            child: Column(
+              children: [
+                // Search bar
+                TextField(
+                  onChanged: (value) {
+                    setState(() {
+                      _searchQuery = value;
+                      _applyFilters();
+                    });
+                  },
+                  decoration: InputDecoration(
+                    hintText: 'Tìm kiếm theo tên, email, số điện thoại...',
+                    prefixIcon: const Icon(Icons.search),
+                    suffixIcon: _searchQuery.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () {
+                              setState(() {
+                                _searchQuery = '';
+                                _applyFilters();
+                              });
+                            },
+                          )
+                        : null,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Filter row
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildGenderFilter(),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildOccupationFilter(),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+
+          // Customers list
+          Expanded(
+            child: _filteredCustomers.isEmpty
+                ? Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.person,
+                          size: isMobile ? 48 : 64,
+                          color: Colors.grey[400],
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _customers.isEmpty
+                              ? 'Chưa có khách hàng nào'
+                              : 'Không tìm thấy khách hàng phù hợp',
+                          style: TextStyle(
+                            fontSize: isMobile ? 16 : 18,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : ListView.builder(
+                    padding: EdgeInsets.all(isMobile ? 12 : 16),
+                    itemCount: _filteredCustomers.length,
+                    itemBuilder: (context, index) {
+                      final customer = _filteredCustomers[index];
+                      return _buildCustomerCard(customer);
+                    },
+                  ),
           ),
         ],
       ),
-      body: _customers.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.person,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Chưa có khách hàng nào',
-                    style: TextStyle(
-                      fontSize: 18,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _customers.length,
-              itemBuilder: (context, index) {
-                final customer = _customers[index];
-                return _buildCustomerCard(customer);
-              },
-            ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddCustomerDialog,
         backgroundColor: Theme.of(context).primaryColor,
@@ -319,15 +425,17 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
 
   Widget _buildCustomerCard(Customer customer) {
     final age = DateTime.now().year - customer.dateOfBirth.year;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(isMobile ? 12 : 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -336,30 +444,32 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
               children: [
                 CircleAvatar(
                   backgroundColor: Theme.of(context).primaryColor,
+                  radius: isMobile ? 20 : 24,
                   child: Text(
                     customer.name[0].toUpperCase(),
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
+                      fontSize: isMobile ? 16 : 18,
                     ),
                   ),
                 ),
-                const SizedBox(width: 12),
+                SizedBox(width: isMobile ? 8 : 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         customer.name,
-                        style: const TextStyle(
-                          fontSize: 16,
+                        style: TextStyle(
+                          fontSize: isMobile ? 15 : 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
                         customer.occupation,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: isMobile ? 13 : 14,
                           color: Colors.grey[600],
                         ),
                       ),
@@ -367,17 +477,17 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: isMobile ? 6 : 8, vertical: isMobile ? 3 : 4),
                   decoration: BoxDecoration(
                     color: customer.isActive ? Colors.green : Colors.red,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     customer.isActive ? 'Hoạt động' : 'Không hoạt động',
-                    style: const TextStyle(
+                    style: TextStyle(
                       color: Colors.white,
-                      fontSize: 12,
+                      fontSize: isMobile ? 10 : 12,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -385,7 +495,7 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
               ],
             ),
 
-            const SizedBox(height: 16),
+            SizedBox(height: isMobile ? 12 : 16),
 
             // Details
             _buildDetailRow(Icons.email, 'Email', customer.email),
@@ -400,34 +510,69 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
               _buildDetailRow(Icons.note, 'Ghi chú', customer.notes),
             ],
 
-            const SizedBox(height: 16),
+            SizedBox(height: isMobile ? 12 : 16),
 
             // Actions
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      // TODO: Implement edit functionality
-                      _showErrorSnackBar(
-                          'Chức năng chỉnh sửa đang được phát triển');
-                    },
-                    icon: const Icon(Icons.edit, size: 16),
-                    label: const Text('Chỉnh sửa'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
+            if (isMobile) ...[
+              // Mobile layout - stacked buttons
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    // TODO: Implement edit functionality
+                    _showErrorSnackBar(
+                        'Chức năng chỉnh sửa đang được phát triển');
+                  },
+                  icon: const Icon(Icons.edit, size: 16),
+                  label: const Text('Chỉnh sửa'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                   ),
                 ),
-                const SizedBox(width: 8),
-                IconButton(
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
                   onPressed: () => _showDeleteDialog(customer),
                   icon: const Icon(Icons.delete, color: Colors.red),
+                  label: const Text('Xóa', style: TextStyle(color: Colors.red)),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.red),
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                  ),
                 ),
-              ],
-            ),
+              ),
+            ] else ...[
+              // Desktop layout - inline buttons
+              Row(
+                children: [
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        // TODO: Implement edit functionality
+                        _showErrorSnackBar(
+                            'Chức năng chỉnh sửa đang được phát triển');
+                      },
+                      icon: const Icon(Icons.edit, size: 16),
+                      label: const Text('Chỉnh sửa'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    onPressed: () => _showDeleteDialog(customer),
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -435,27 +580,131 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
   }
 
   Widget _buildDetailRow(IconData icon, String label, String value) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: Colors.grey[600]),
-          const SizedBox(width: 8),
+          Icon(icon, size: isMobile ? 14 : 16, color: Colors.grey[600]),
+          SizedBox(width: isMobile ? 6 : 8),
           Text(
             '$label: ',
             style: TextStyle(
               fontWeight: FontWeight.w600,
               color: Colors.grey[700],
+              fontSize: isMobile ? 13 : 14,
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: TextStyle(color: Colors.grey[600]),
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: isMobile ? 13 : 14,
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  String _validateCustomerInput(String name, String email, String phone,
+      String address, String occupation, DateTime? dateOfBirth) {
+    if (name.trim().isEmpty) {
+      return 'Vui lòng nhập họ và tên';
+    }
+    if (name.trim().length < 2) {
+      return 'Họ và tên phải có ít nhất 2 ký tự';
+    }
+    if (email.trim().isEmpty) {
+      return 'Vui lòng nhập email';
+    }
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email.trim())) {
+      return 'Email không hợp lệ';
+    }
+    if (phone.trim().isEmpty) {
+      return 'Vui lòng nhập số điện thoại';
+    }
+    if (!RegExp(r'^[0-9]{10,11}$').hasMatch(phone.trim())) {
+      return 'Số điện thoại phải có 10-11 chữ số';
+    }
+    if (address.trim().isEmpty) {
+      return 'Vui lòng nhập địa chỉ';
+    }
+    if (occupation.trim().isEmpty) {
+      return 'Vui lòng nhập nghề nghiệp';
+    }
+    if (dateOfBirth == null) {
+      return 'Vui lòng chọn ngày sinh';
+    }
+    if (dateOfBirth.isAfter(DateTime.now())) {
+      return 'Ngày sinh không thể là tương lai';
+    }
+    if (DateTime.now().year - dateOfBirth.year < 16) {
+      return 'Khách hàng phải ít nhất 16 tuổi';
+    }
+    return '';
+  }
+
+  Widget _buildGenderFilter() {
+    return DropdownButtonFormField<String>(
+      value: _selectedGender,
+      decoration: InputDecoration(
+        labelText: 'Giới tính',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        isDense: true,
+      ),
+      items: const [
+        DropdownMenuItem(value: 'all', child: Text('Tất cả')),
+        DropdownMenuItem(value: 'Nam', child: Text('Nam')),
+        DropdownMenuItem(value: 'Nữ', child: Text('Nữ')),
+        DropdownMenuItem(value: 'Khác', child: Text('Khác')),
+      ],
+      onChanged: (value) {
+        setState(() {
+          _selectedGender = value ?? 'all';
+          _applyFilters();
+        });
+      },
+    );
+  }
+
+  Widget _buildOccupationFilter() {
+    final uniqueOccupations = _customers
+        .map((customer) => customer.occupation)
+        .toSet()
+        .toList()
+      ..sort();
+
+    return DropdownButtonFormField<String>(
+      value: _selectedOccupation,
+      decoration: InputDecoration(
+        labelText: 'Nghề nghiệp',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        isDense: true,
+      ),
+      items: [
+        const DropdownMenuItem(value: 'all', child: Text('Tất cả nghề nghiệp')),
+        ...uniqueOccupations.map((occupation) => DropdownMenuItem(
+              value: occupation,
+              child: Text(occupation),
+            )),
+      ],
+      onChanged: (value) {
+        setState(() {
+          _selectedOccupation = value ?? 'all';
+          _applyFilters();
+        });
+      },
     );
   }
 }

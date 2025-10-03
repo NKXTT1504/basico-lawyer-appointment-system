@@ -123,6 +123,9 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
       );
     }
 
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     return Scaffold(
       backgroundColor: Colors.blue[50],
       appBar: AppBar(
@@ -142,8 +145,8 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
           // Statistics Header
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            margin: const EdgeInsets.all(16),
+            padding: EdgeInsets.all(isMobile ? 16 : 20),
+            margin: EdgeInsets.all(isMobile ? 12 : 16),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -157,9 +160,9 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
               children: [
                 Text(
                   'Thống kê lịch hẹn',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
-                    fontSize: 18,
+                    fontSize: isMobile ? 16 : 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -203,7 +206,7 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
 
           // Filter chips
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: EdgeInsets.symmetric(horizontal: isMobile ? 12 : 16),
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
@@ -233,14 +236,14 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
                       children: [
                         Icon(
                           Icons.calendar_today,
-                          size: 64,
+                          size: isMobile ? 48 : 64,
                           color: Colors.grey[400],
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'Chưa có lịch hẹn nào',
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: isMobile ? 16 : 18,
                             color: Colors.grey[600],
                           ),
                         ),
@@ -248,7 +251,7 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
                     ),
                   )
                 : ListView.builder(
-                    padding: const EdgeInsets.all(16),
+                    padding: EdgeInsets.all(isMobile ? 12 : 16),
                     itemCount: _filteredAppointments.length,
                     itemBuilder: (context, index) {
                       final appointment = _filteredAppointments[index];
@@ -262,15 +265,18 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
   }
 
   Widget _buildStatItem(String label, String value, IconData icon) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     return Column(
       children: [
-        Icon(icon, color: Colors.white, size: 24),
+        Icon(icon, color: Colors.white, size: isMobile ? 20 : 24),
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
-            fontSize: 20,
+            fontSize: isMobile ? 18 : 20,
             fontWeight: FontWeight.bold,
           ),
         ),
@@ -278,7 +284,7 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
           label,
           style: TextStyle(
             color: Colors.white.withOpacity(0.9),
-            fontSize: 12,
+            fontSize: isMobile ? 10 : 12,
           ),
         ),
       ],
@@ -301,14 +307,17 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
   }
 
   Widget _buildAppointmentCard(Appointment appointment) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isMobile = screenWidth < 600;
+
     return Card(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
       elevation: 2,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(isMobile ? 12 : 16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -321,8 +330,8 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
                     children: [
                       Text(
                         appointment.customerName,
-                        style: const TextStyle(
-                          fontSize: 16,
+                        style: TextStyle(
+                          fontSize: isMobile ? 15 : 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -330,7 +339,7 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
                       Text(
                         appointment.description,
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: isMobile ? 13 : 14,
                           color: Colors.grey[600],
                         ),
                       ),
@@ -338,8 +347,9 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
                   ),
                 ),
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: isMobile ? 8 : 12,
+                      vertical: isMobile ? 4 : 6),
                   decoration: BoxDecoration(
                     color: _getStatusColor(appointment.status).withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
@@ -351,7 +361,7 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
                   child: Text(
                     _getStatusText(appointment.status),
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: isMobile ? 10 : 12,
                       fontWeight: FontWeight.w600,
                       color: _getStatusColor(appointment.status),
                     ),
@@ -360,38 +370,66 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
               ],
             ),
 
-            const SizedBox(height: 12),
+            SizedBox(height: isMobile ? 10 : 12),
 
             // Details
-            Row(
-              children: [
-                Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 8),
-                Text(
-                  '${appointment.appointmentDate.day}/${appointment.appointmentDate.month}/${appointment.appointmentDate.year}',
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-                const SizedBox(width: 16),
-                Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 8),
-                Text(
-                  appointment.timeSlot,
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-              ],
-            ),
+            if (isMobile) ...[
+              // Mobile layout - stacked
+              Row(
+                children: [
+                  Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${appointment.appointmentDate.day}/${appointment.appointmentDate.month}/${appointment.appointmentDate.year}',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
+                  const SizedBox(width: 6),
+                  Text(
+                    appointment.timeSlot,
+                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                  ),
+                ],
+              ),
+            ] else ...[
+              // Desktop layout - inline
+              Row(
+                children: [
+                  Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+                  const SizedBox(width: 8),
+                  Text(
+                    '${appointment.appointmentDate.day}/${appointment.appointmentDate.month}/${appointment.appointmentDate.year}',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                  const SizedBox(width: 16),
+                  Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+                  const SizedBox(width: 8),
+                  Text(
+                    appointment.timeSlot,
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ],
 
             const SizedBox(height: 8),
 
             Row(
               children: [
-                Icon(Icons.attach_money, size: 16, color: Colors.grey[600]),
+                Icon(Icons.attach_money,
+                    size: isMobile ? 14 : 16, color: Colors.grey[600]),
                 const SizedBox(width: 8),
                 Text(
                   '${appointment.fee.toStringAsFixed(0)} VNĐ',
                   style: TextStyle(
                     color: Colors.grey[600],
                     fontWeight: FontWeight.w600,
+                    fontSize: isMobile ? 13 : 14,
                   ),
                 ),
               ],
@@ -402,72 +440,107 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(Icons.note, size: 16, color: Colors.grey[600]),
+                  Icon(Icons.note,
+                      size: isMobile ? 14 : 16, color: Colors.grey[600]),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       appointment.notes,
-                      style: TextStyle(color: Colors.grey[600]),
+                      style: TextStyle(
+                        color: Colors.grey[600],
+                        fontSize: isMobile ? 13 : 14,
+                      ),
                     ),
                   ),
                 ],
               ),
             ],
 
-            const SizedBox(height: 16),
+            SizedBox(height: isMobile ? 12 : 16),
 
             // Actions
             if (appointment.status == AppointmentStatus.pending) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _updateAppointmentStatus(
-                          appointment, AppointmentStatus.confirmed),
-                      icon: const Icon(Icons.check, size: 16),
-                      label: const Text('Chấp nhận'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                      ),
+              if (isMobile) ...[
+                // Mobile layout - stacked buttons
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _updateAppointmentStatus(
+                        appointment, AppointmentStatus.confirmed),
+                    icon: const Icon(Icons.check, size: 16),
+                    label: const Text('Chấp nhận'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                     ),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _updateAppointmentStatus(
-                          appointment, AppointmentStatus.cancelled),
-                      icon: const Icon(Icons.cancel, size: 16),
-                      label: const Text('Từ chối'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                      ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: () => _updateAppointmentStatus(
+                        appointment, AppointmentStatus.cancelled),
+                    icon: const Icon(Icons.cancel, size: 16),
+                    label: const Text('Từ chối'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 8),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ] else ...[
+                // Desktop layout - inline buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _updateAppointmentStatus(
+                            appointment, AppointmentStatus.confirmed),
+                        icon: const Icon(Icons.check, size: 16),
+                        label: const Text('Chấp nhận'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: ElevatedButton.icon(
+                        onPressed: () => _updateAppointmentStatus(
+                            appointment, AppointmentStatus.cancelled),
+                        icon: const Icon(Icons.cancel, size: 16),
+                        label: const Text('Từ chối'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
 
             if (appointment.status == AppointmentStatus.confirmed) ...[
-              Row(
-                children: [
-                  Expanded(
-                    child: ElevatedButton.icon(
-                      onPressed: () => _updateAppointmentStatus(
-                          appointment, AppointmentStatus.completed),
-                      icon: const Icon(Icons.done, size: 16),
-                      label: const Text('Hoàn thành'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                      ),
-                    ),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: () => _updateAppointmentStatus(
+                      appointment, AppointmentStatus.completed),
+                  icon: const Icon(Icons.done, size: 16),
+                  label: const Text('Hoàn thành'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
                   ),
-                ],
+                ),
               ),
             ],
           ],

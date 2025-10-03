@@ -10,6 +10,10 @@ class Lawyer extends Equatable {
   final String licenseNumber;
   final int experienceYears;
   final double hourlyRate;
+  final double baseSalary; // lương cứng hàng tháng
+  final double commissionRate; // % hoa hồng trên phí khi hoàn thành
+  final double successRate; // tỉ lệ thành công 0..1
+  final int ongoingCases; // số vụ đang xử lý
   final String bio;
   final List<String> languages;
   final List<String> certifications;
@@ -27,6 +31,10 @@ class Lawyer extends Equatable {
     required this.licenseNumber,
     required this.experienceYears,
     required this.hourlyRate,
+    this.baseSalary = 0,
+    this.commissionRate = 0.1,
+    this.successRate = 0.7,
+    this.ongoingCases = 0,
     this.bio = '',
     this.languages = const [],
     this.certifications = const [],
@@ -46,6 +54,10 @@ class Lawyer extends Equatable {
       licenseNumber: json['licenseNumber'] as String,
       experienceYears: json['experienceYears'] as int,
       hourlyRate: (json['hourlyRate'] as num).toDouble(),
+      baseSalary: (json['baseSalary'] as num?)?.toDouble() ?? 0,
+      commissionRate: (json['commissionRate'] as num?)?.toDouble() ?? 0.1,
+      successRate: (json['successRate'] as num?)?.toDouble() ?? 0.7,
+      ongoingCases: json['ongoingCases'] as int? ?? 0,
       bio: json['bio'] as String? ?? '',
       languages: List<String>.from(json['languages'] as List? ?? []),
       certifications: List<String>.from(json['certifications'] as List? ?? []),
@@ -68,6 +80,10 @@ class Lawyer extends Equatable {
       'licenseNumber': licenseNumber,
       'experienceYears': experienceYears,
       'hourlyRate': hourlyRate,
+      'baseSalary': baseSalary,
+      'commissionRate': commissionRate,
+      'successRate': successRate,
+      'ongoingCases': ongoingCases,
       'bio': bio,
       'languages': languages,
       'certifications': certifications,
@@ -87,6 +103,10 @@ class Lawyer extends Equatable {
     String? licenseNumber,
     int? experienceYears,
     double? hourlyRate,
+    double? baseSalary,
+    double? commissionRate,
+    double? successRate,
+    int? ongoingCases,
     String? bio,
     List<String>? languages,
     List<String>? certifications,
@@ -104,6 +124,10 @@ class Lawyer extends Equatable {
       licenseNumber: licenseNumber ?? this.licenseNumber,
       experienceYears: experienceYears ?? this.experienceYears,
       hourlyRate: hourlyRate ?? this.hourlyRate,
+      baseSalary: baseSalary ?? this.baseSalary,
+      commissionRate: commissionRate ?? this.commissionRate,
+      successRate: successRate ?? this.successRate,
+      ongoingCases: ongoingCases ?? this.ongoingCases,
       bio: bio ?? this.bio,
       languages: languages ?? this.languages,
       certifications: certifications ?? this.certifications,
@@ -124,6 +148,10 @@ class Lawyer extends Equatable {
         licenseNumber,
         experienceYears,
         hourlyRate,
+        baseSalary,
+        commissionRate,
+        successRate,
+        ongoingCases,
         bio,
         languages,
         certifications,
@@ -132,4 +160,3 @@ class Lawyer extends Equatable {
         updatedAt
       ];
 }
-

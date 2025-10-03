@@ -162,6 +162,21 @@ class UserStorageService {
     final lawyers = await getLawyers();
     lawyers.add(lawyer);
     await saveLawyers(lawyers);
+
+    // Ensure a corresponding login account exists for the lawyer
+    final users = await getUsers();
+    final bool hasUser = users.any((u) => u.email == lawyer.email);
+    if (!hasUser) {
+      final User lawyerUser = User(
+        id: 'user_${lawyer.id}',
+        email: lawyer.email,
+        password: 'lawyer123', // temporary default password
+        name: lawyer.name,
+        role: UserRole.lawyer,
+        createdAt: DateTime.now(),
+      );
+      await addUser(lawyerUser);
+    }
   }
 
   static Future<void> updateLawyer(Lawyer lawyer) async {
@@ -170,13 +185,47 @@ class UserStorageService {
     if (index != -1) {
       lawyers[index] = lawyer;
       await saveLawyers(lawyers);
+
+      // Keep associated user in sync (name/email)
+      final users = await getUsers();
+      final int userIdxById =
+          users.indexWhere((u) => u.id == 'user_${lawyer.id}');
+      if (userIdxById != -1) {
+        final updated = users[userIdxById].copyWith(
+          name: lawyer.name,
+          email: lawyer.email,
+        );
+        users[userIdxById] = updated;
+        await saveUsers(users);
+      } else {
+        final int userIdxByEmail =
+            users.indexWhere((u) => u.email == lawyer.email);
+        if (userIdxByEmail != -1) {
+          final updated = users[userIdxByEmail].copyWith(
+            name: lawyer.name,
+          );
+          users[userIdxByEmail] = updated;
+          await saveUsers(users);
+        }
+      }
     }
   }
 
   static Future<void> deleteLawyer(String id) async {
     final lawyers = await getLawyers();
-    lawyers.removeWhere((law) => law.id == id);
+    Lawyer? removed;
+    lawyers.removeWhere((law) {
+      final match = law.id == id;
+      if (match) removed = law;
+      return match;
+    });
     await saveLawyers(lawyers);
+
+    // Remove associated user account
+    final users = await getUsers();
+    users.removeWhere((u) =>
+        u.id == 'user_$id' || (removed != null && u.email == removed!.email));
+    await saveUsers(users);
   }
 
   // Appointments Management
@@ -334,6 +383,10 @@ class UserStorageService {
         licenseNumber: 'LS001234',
         experienceYears: 8,
         hourlyRate: 500000,
+        baseSalary: 15000000,
+        commissionRate: 0.12,
+        successRate: 0.78,
+        ongoingCases: 1,
         bio: 'Chuyên gia về luật dân sự với 8 năm kinh nghiệm',
         languages: ['Tiếng Việt', 'Tiếng Anh'],
         certifications: ['Chứng chỉ luật sư', 'Chứng chỉ quốc tế'],
@@ -349,6 +402,10 @@ class UserStorageService {
         licenseNumber: 'LS005678',
         experienceYears: 12,
         hourlyRate: 700000,
+        baseSalary: 22000000,
+        commissionRate: 0.15,
+        successRate: 0.85,
+        ongoingCases: 2,
         bio: 'Chuyên gia về luật hình sự với 12 năm kinh nghiệm',
         languages: ['Tiếng Việt', 'Tiếng Anh', 'Tiếng Pháp'],
         certifications: [
@@ -403,4 +460,3 @@ class UserStorageService {
     }
   }
 }
-

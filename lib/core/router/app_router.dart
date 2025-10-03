@@ -9,11 +9,13 @@ import '../../features/lawyer/presentation/pages/lawyer_list_page.dart';
 import '../../features/lawyer/presentation/pages/lawyer_detail_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
-import '../../features/admin/presentation/pages/admin_dashboard_page.dart';
+import '../../features/admin/presentation/pages/admin_dashboard_page.dart'
+    as admin_pages;
 import '../../features/admin/presentation/pages/admin_appointments_page.dart';
 import '../../features/admin/presentation/pages/admin_customers_page.dart';
 import '../../features/admin/presentation/pages/admin_lawyers_page.dart';
-import '../../features/admin/presentation/pages/lawyer_dashboard_page.dart';
+import '../../features/admin/presentation/pages/lawyer_dashboard_page.dart'
+    as lawyer_pages;
 import '../../features/admin/presentation/pages/lawyer_appointments_page.dart';
 import '../../features/admin/presentation/pages/lawyer_profile_page.dart';
 import '../../features/admin/presentation/widgets/main_navigation.dart';
@@ -22,6 +24,11 @@ class AppRouter {
   static final GoRouter router = GoRouter(
     initialLocation: '/splash',
     routes: [
+      // Root redirect for web direct hits
+      GoRoute(
+        path: '/',
+        redirect: (_, __) => '/splash',
+      ),
       // Splash
       GoRoute(
         path: '/splash',
@@ -38,29 +45,13 @@ class AppRouter {
         builder: (context, state) => const RegisterPage(),
       ),
 
-      // Main App
-      GoRoute(
-        path: '/home',
-        builder: (context, state) => const HomePage(),
-      ),
-
-      // Appointments
-      GoRoute(
-        path: '/appointments',
-        builder: (context, state) => const AppointmentListPage(),
-      ),
+      // Customer simple details route kept (detail page)
       GoRoute(
         path: '/appointments/:id',
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           return AppointmentDetailPage(appointmentId: id);
         },
-      ),
-
-      // Lawyers
-      GoRoute(
-        path: '/lawyers',
-        builder: (context, state) => const LawyerListPage(),
       ),
       GoRoute(
         path: '/lawyers/:id',
@@ -70,18 +61,12 @@ class AppRouter {
         },
       ),
 
-      // Profile
-      GoRoute(
-        path: '/profile',
-        builder: (context, state) => const ProfilePage(),
-      ),
-
       // Admin Routes with Sidebar
       GoRoute(
         path: '/admin/dashboard',
         builder: (context, state) => MainNavigation(
           currentPath: '/admin/dashboard',
-          child: const AdminDashboardPage(),
+          child: const admin_pages.AdminDashboardPage(),
         ),
       ),
       GoRoute(
@@ -111,7 +96,7 @@ class AppRouter {
         path: '/lawyer/dashboard',
         builder: (context, state) => MainNavigation(
           currentPath: '/lawyer/dashboard',
-          child: const LawyerDashboardPage(),
+          child: const lawyer_pages.LawyerDashboardPage(),
         ),
       ),
       GoRoute(
@@ -129,7 +114,7 @@ class AppRouter {
         ),
       ),
 
-      // Customer Routes with Sidebar
+      // Customer Routes with Sidebar (Main app)
       GoRoute(
         path: '/home',
         builder: (context, state) => MainNavigation(

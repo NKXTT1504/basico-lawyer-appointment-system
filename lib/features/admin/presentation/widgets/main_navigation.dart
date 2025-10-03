@@ -45,7 +45,7 @@ class _MainNavigationState extends State<MainNavigation> {
   Future<void> _logout() async {
     await UserStorageService.setCurrentUser(null);
     if (mounted) {
-      context.go('/role-login');
+      context.go('/login');
     }
   }
 
@@ -59,7 +59,13 @@ class _MainNavigationState extends State<MainNavigation> {
       );
     }
 
-    if (_currentUser == null) {
+    // Allow unauthenticated users to access customer routes
+    final bool isCustomerRoute = widget.currentPath == '/home' ||
+        widget.currentPath == '/appointments' ||
+        widget.currentPath == '/lawyers' ||
+        widget.currentPath == '/profile';
+
+    if (_currentUser == null && !isCustomerRoute) {
       return Scaffold(
         body: Center(
           child: Column(
@@ -70,7 +76,7 @@ class _MainNavigationState extends State<MainNavigation> {
               const Text('Chưa đăng nhập'),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => context.go('/role-login'),
+                onPressed: () => context.go('/login'),
                 child: const Text('Đăng nhập'),
               ),
             ],
@@ -79,20 +85,51 @@ class _MainNavigationState extends State<MainNavigation> {
       );
     }
 
+    final UserRole role = _currentUser?.role ?? UserRole.customer;
+    final String userName = _currentUser?.name ?? 'Khách';
+
     final screenWidth = MediaQuery.of(context).size.width;
 
     // Mobile: use Drawer + AppBar
     if (screenWidth < 800) {
+      final String pageTitle = _getMobileTitle(widget.currentPath, role);
+      final bool isAdminSubPage = widget.currentPath == '/admin/appointments' ||
+          widget.currentPath == '/admin/customers' ||
+          widget.currentPath == '/admin/lawyers';
       return Scaffold(
         appBar: AppBar(
           backgroundColor: Colors.blue[600],
           foregroundColor: Colors.white,
           elevation: 0,
-          title: Text(_getRoleText(_currentUser!.role)),
+          leading: isAdminSubPage
+              ? IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () => context.go('/admin/dashboard'),
+                  tooltip: 'Về Dashboard',
+                )
+              : null,
+          title: Text(pageTitle),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () => context.go(widget.currentPath),
+              tooltip: 'Làm mới',
+            ),
+            PopupMenuButton<String>(
+              onSelected: (value) {
+                if (value == 'logout') {
+                  _logout();
+                }
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem(value: 'logout', child: Text('Đăng xuất')),
+              ],
+            ),
+          ],
         ),
         drawer: Drawer(
           backgroundColor: Colors.white,
-          child: _buildDrawerContent(),
+          child: _buildDrawerContent(role, userName),
         ),
         body: widget.child,
       );
@@ -126,7 +163,7 @@ class _MainNavigationState extends State<MainNavigation> {
                         radius: 22,
                         backgroundColor: Colors.white,
                         child: Icon(
-                          _getUserIcon(_currentUser!.role),
+                          _getUserIcon(role),
                           size: 22,
                           color: Colors.blue[600],
                         ),
@@ -138,7 +175,7 @@ class _MainNavigationState extends State<MainNavigation> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                _currentUser!.name,
+                                userName,
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,
@@ -155,7 +192,7 @@ class _MainNavigationState extends State<MainNavigation> {
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Text(
-                                  _getRoleText(_currentUser!.role),
+                                  _getRoleText(role),
                                   style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 10,
@@ -183,7 +220,7 @@ class _MainNavigationState extends State<MainNavigation> {
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    children: _buildNavigationItems().map((w) {
+                    children: _buildNavigationItems(role).map((w) {
                       // When collapsed, show only icons
                       if (_isCollapsed && w is Container) {
                         final listTile = (w.child as ListTile);
@@ -197,22 +234,23 @@ class _MainNavigationState extends State<MainNavigation> {
                     }).toList(),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(8),
-                  child: _isCollapsed
-                      ? IconButton(
-                          onPressed: _logout,
-                          icon: const Icon(Icons.logout, color: Colors.white),
-                          tooltip: 'Đăng xuất',
-                        )
-                      : ListTile(
-                          leading:
-                              const Icon(Icons.logout, color: Colors.white),
-                          title: const Text('Đăng xuất',
-                              style: TextStyle(color: Colors.white)),
-                          onTap: _logout,
-                        ),
-                ),
+                if (_currentUser != null)
+                  Padding(
+                    padding: const EdgeInsets.all(8),
+                    child: _isCollapsed
+                        ? IconButton(
+                            onPressed: _logout,
+                            icon: const Icon(Icons.logout, color: Colors.white),
+                            tooltip: 'Đăng xuất',
+                          )
+                        : ListTile(
+                            leading:
+                                const Icon(Icons.logout, color: Colors.white),
+                            title: const Text('Đăng xuất',
+                                style: TextStyle(color: Colors.white)),
+                            onTap: _logout,
+                          ),
+                  ),
               ],
             ),
           ),
@@ -223,7 +261,7 @@ class _MainNavigationState extends State<MainNavigation> {
   }
 
   // Drawer content for mobile
-  Widget _buildDrawerContent() {
+  Widget _buildDrawerContent(UserRole role, String userName) {
     return SafeArea(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -236,7 +274,7 @@ class _MainNavigationState extends State<MainNavigation> {
                 CircleAvatar(
                   radius: 22,
                   backgroundColor: Colors.white,
-                  child: Icon(_getUserIcon(_currentUser!.role),
+                  child: Icon(_getUserIcon(role),
                       color: Colors.blue[600], size: 22),
                 ),
                 const SizedBox(width: 12),
@@ -245,12 +283,12 @@ class _MainNavigationState extends State<MainNavigation> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _currentUser!.name,
+                        userName,
                         style: const TextStyle(
                             color: Colors.white, fontWeight: FontWeight.bold),
                         overflow: TextOverflow.ellipsis,
                       ),
-                      Text(_getRoleText(_currentUser!.role),
+                      Text(_getRoleText(role),
                           style: const TextStyle(
                               color: Colors.white70, fontSize: 12)),
                     ],
@@ -261,7 +299,7 @@ class _MainNavigationState extends State<MainNavigation> {
           ),
           Expanded(
             child: ListView(
-              children: _buildNavigationItems().map((w) {
+              children: _buildNavigationItems(role).map((w) {
                 if (w is Container) {
                   final listTile = (w.child as ListTile);
                   final Icon? oldIcon = listTile.leading is Icon
@@ -291,28 +329,29 @@ class _MainNavigationState extends State<MainNavigation> {
               }).toList(),
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.logout, color: Colors.black87),
-            title: const Text('Đăng xuất',
-                style: TextStyle(color: Colors.black87)),
-            onTap: () {
-              Navigator.of(context).pop();
-              _logout();
-            },
-          ),
+          if (_currentUser != null)
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.black87),
+              title: const Text('Đăng xuất',
+                  style: TextStyle(color: Colors.black87)),
+              onTap: () {
+                Navigator.of(context).pop();
+                _logout();
+              },
+            ),
         ],
       ),
     );
   }
 
-  List<Widget> _buildNavigationItems() {
+  List<Widget> _buildNavigationItems(UserRole role) {
     final items = <Widget>[];
 
-    if (_currentUser!.role == UserRole.admin) {
+    if (role == UserRole.admin) {
       items.addAll(_buildAdminNavigationItems());
-    } else if (_currentUser!.role == UserRole.lawyer) {
+    } else if (role == UserRole.lawyer) {
       items.addAll(_buildLawyerNavigationItems());
-    } else if (_currentUser!.role == UserRole.customer) {
+    } else if (role == UserRole.customer) {
       items.addAll(_buildCustomerNavigationItems());
     }
 
@@ -453,5 +492,22 @@ class _MainNavigationState extends State<MainNavigation> {
       case UserRole.customer:
         return 'Khách hàng';
     }
+  }
+
+  String _getMobileTitle(String currentPath, UserRole role) {
+    if (role == UserRole.admin) {
+      switch (currentPath) {
+        case '/admin/appointments':
+          return 'Quản lý đặt lịch';
+        case '/admin/customers':
+          return 'Quản lý khách hàng';
+        case '/admin/lawyers':
+          return 'Quản lý luật sư';
+        case '/admin/dashboard':
+          return 'Dashboard';
+      }
+      return 'Admin';
+    }
+    return _getRoleText(role);
   }
 }
