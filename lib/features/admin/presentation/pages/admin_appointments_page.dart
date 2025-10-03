@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
 // AppBar is managed globally in MainNavigation for mobile
 import '../../data/services/user_storage_service.dart';
 import '../../data/models/appointment.dart';
+import '../../data/models/admin_user.dart';
 
 class AdminAppointmentsPage extends StatefulWidget {
   const AdminAppointmentsPage({super.key});
@@ -27,6 +30,13 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
 
   Future<void> _loadAppointments() async {
     try {
+      final current = await UserStorageService.getCurrentUser();
+      if (current == null || current.role != UserRole.admin) {
+        if (mounted)
+          context.go(
+              current?.role == UserRole.lawyer ? '/lawyer/dashboard' : '/home');
+        return;
+      }
       final appointments = await UserStorageService.getAppointments();
       setState(() {
         _appointments = appointments;

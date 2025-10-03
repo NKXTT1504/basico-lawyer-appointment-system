@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../data/services/user_storage_service.dart';
 import '../../data/models/lawyer.dart';
 import '../../data/models/admin_user.dart';
+import 'package:go_router/go_router.dart';
 
 class AdminLawyersPage extends StatefulWidget {
   const AdminLawyersPage({super.key});
@@ -27,6 +28,13 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
 
   Future<void> _loadLawyers() async {
     try {
+      final current = await UserStorageService.getCurrentUser();
+      if (current == null || current.role != UserRole.admin) {
+        if (mounted)
+          context.go(
+              current?.role == UserRole.lawyer ? '/lawyer/dashboard' : '/home');
+        return;
+      }
       final lawyers = await UserStorageService.getLawyers();
       setState(() {
         _lawyers = lawyers;

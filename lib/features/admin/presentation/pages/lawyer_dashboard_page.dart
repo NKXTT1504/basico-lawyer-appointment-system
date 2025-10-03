@@ -42,9 +42,12 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
 
       final user = await UserStorageService.getCurrentUser();
       if (user != null && user.role == UserRole.lawyer) {
-        final customers = await UserStorageService.getCustomers();
         final lawyers = await UserStorageService.getLawyers();
-        final appointments = await UserStorageService.getAppointments();
+        final me = lawyers.firstWhere(
+            (l) => l.email.toLowerCase() == user.email.toLowerCase(),
+            orElse: () => throw 'Không tìm thấy hồ sơ luật sư');
+        final appointments =
+            await UserStorageService.getLawyerAppointments(me.id);
 
         // Calculate statistics
         final now = DateTime.now();
@@ -74,20 +77,15 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
             .take(5)
             .toList();
 
-        final recentCustomers = customers
-            .where((cust) =>
-                cust.createdAt.isAfter(now.subtract(const Duration(days: 30))))
-            .take(5)
-            .toList();
-
-        final activeLawyers =
-            lawyers.where((lawyer) => lawyer.isActive).take(5).toList();
+        final recentCustomers = <Customer>[];
+        final activeLawyers = <Lawyer>[];
 
         if (mounted) {
           setState(() {
             _currentUser = user;
-            _totalCustomers = customers.length;
-            _totalLawyers = lawyers.length;
+            _totalCustomers =
+                appointments.map((a) => a.customerId).toSet().length;
+            _totalLawyers = 1;
             _totalAppointments = appointments.length;
             _pendingAppointments = appointments
                 .where((apt) => apt.status == AppointmentStatus.pending)
@@ -270,7 +268,6 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
                   ),
             ),
             const SizedBox(height: 16),
-
             LayoutBuilder(
               builder: (context, constraints) {
                 if (isMobile) {
@@ -377,65 +374,7 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
 
             SizedBox(height: isMobile ? 20 : 24),
 
-            // Quick actions
-            Text(
-              'Thao tác nhanh',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[800],
-                    fontSize: isMobile ? 18 : 20,
-                  ),
-            ),
-            const SizedBox(height: 16),
-
-            LayoutBuilder(
-              builder: (context, constraints) {
-                int crossAxisCount;
-                if (isTablet) {
-                  crossAxisCount = 4;
-                } else if (isMobile) {
-                  crossAxisCount = 1;
-                } else {
-                  crossAxisCount = 2;
-                }
-
-                return GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: isMobile ? 12 : 16,
-                  mainAxisSpacing: isMobile ? 12 : 16,
-                  childAspectRatio: isMobile ? 4.0 : 2.5,
-                  children: [
-                    _buildActionCard(
-                      'Quản lý đặt lịch',
-                      Icons.calendar_today,
-                      Colors.blue,
-                      () => context.go('/admin/appointments'),
-                    ),
-                    _buildActionCard(
-                      'Quản lý khách hàng',
-                      Icons.person,
-                      Colors.orange,
-                      () => context.go('/admin/customers'),
-                    ),
-                    _buildActionCard(
-                      'Quản lý luật sư',
-                      Icons.gavel,
-                      Colors.purple,
-                      () => context.go('/admin/lawyers'),
-                    ),
-                    _buildActionCard(
-                      'Báo cáo thống kê',
-                      Icons.analytics,
-                      Colors.green,
-                      () => _showErrorSnackBar(
-                          'Chức năng báo cáo đang được phát triển'),
-                    ),
-                  ],
-                );
-              },
-            ),
+            // Quick actions removed for lawyer role
           ],
         ),
       ),

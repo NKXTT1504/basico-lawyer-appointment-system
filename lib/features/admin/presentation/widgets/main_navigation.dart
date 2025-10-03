@@ -86,6 +86,29 @@ class _MainNavigationState extends State<MainNavigation> {
     }
 
     final UserRole role = _currentUser?.role ?? UserRole.customer;
+    // Guard admin routes: redirect non-admins appropriately
+    if (_currentUser != null) {
+      final String path = widget.currentPath;
+      final bool isAdminRoute = path.startsWith('/admin/');
+      final bool isLawyerRoute = path.startsWith('/lawyer/');
+      if (isAdminRoute && role != UserRole.admin) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (role == UserRole.lawyer) {
+            context.go('/lawyer/dashboard');
+          } else {
+            context.go('/home');
+          }
+        });
+      }
+      if (isLawyerRoute && role == UserRole.customer) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          context.go('/home');
+        });
+      }
+    }
+    ;
     final String userName = _currentUser?.name ?? 'Khách';
 
     final screenWidth = MediaQuery.of(context).size.width;

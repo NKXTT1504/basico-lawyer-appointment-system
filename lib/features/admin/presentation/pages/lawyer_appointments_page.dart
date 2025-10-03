@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../data/services/user_storage_service.dart';
 import '../../data/models/admin_user.dart';
 import '../../data/models/appointment.dart';
@@ -25,16 +26,23 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
     try {
       final user = await UserStorageService.getCurrentUser();
       if (user != null && user.role == UserRole.lawyer) {
+        // Lawyer profile IDs in sample data are 'law_*'. We stored user ids as 'user_lawyer_*'.
+        // Match by email to get lawyer profile id, then fetch appointments by lawyerId.
+        final lawyers = await UserStorageService.getLawyers();
+        final lawyerProfile = lawyers.firstWhere(
+            (l) => l.email.toLowerCase() == user.email.toLowerCase(),
+            orElse: () => throw 'Không tìm thấy hồ sơ luật sư');
         final appointments =
-            await UserStorageService.getLawyerAppointments(user.id);
+            await UserStorageService.getLawyerAppointments(lawyerProfile.id);
         setState(() {
           _myAppointments = appointments;
           _isLoading = false;
         });
       } else {
         if (mounted) {
-          // Redirect to login if not lawyer
+          // Redirect non-lawyer to home/dashboard
           _isLoading = false;
+          context.go('/home');
         }
       }
     } catch (e) {
@@ -128,18 +136,6 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
 
     return Scaffold(
       backgroundColor: Colors.blue[50],
-      appBar: AppBar(
-        title: const Text('Lịch hẹn của tôi'),
-        backgroundColor: Colors.blue[600],
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadData,
-          ),
-        ],
-      ),
       body: Column(
         children: [
           // Statistics Header
@@ -455,7 +451,6 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
                 ],
               ),
             ],
-
             SizedBox(height: isMobile ? 12 : 16),
 
             // Actions

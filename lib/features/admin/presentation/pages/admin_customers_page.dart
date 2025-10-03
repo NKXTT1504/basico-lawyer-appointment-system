@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 // AppBar is managed globally in MainNavigation for mobile
 import '../../data/services/user_storage_service.dart';
 import '../../data/models/customer.dart';
+import '../../data/models/admin_user.dart';
 
 class AdminCustomersPage extends StatefulWidget {
   const AdminCustomersPage({super.key});
@@ -26,6 +28,13 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
 
   Future<void> _loadCustomers() async {
     try {
+      final current = await UserStorageService.getCurrentUser();
+      if (current == null || current.role != UserRole.admin) {
+        if (mounted)
+          context.go(
+              current?.role == UserRole.lawyer ? '/lawyer/dashboard' : '/home');
+        return;
+      }
       final customers = await UserStorageService.getCustomers();
       setState(() {
         _customers = customers;
