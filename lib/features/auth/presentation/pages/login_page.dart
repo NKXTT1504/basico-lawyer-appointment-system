@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
-import '../bloc/auth_bloc.dart';
+import '../../../admin/data/services/user_storage_service.dart';
+import '../../../admin/data/models/admin_user.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -19,6 +17,7 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -27,12 +26,80 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
+  Future<void> _login() async {
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final user = await UserStorageService.loginUser(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+
+      if (user != null) {
+        await UserStorageService.setCurrentUser(user);
+        if (mounted) {
+          _showSuccessSnackBar('Đăng nhập thành công!');
+          _navigateToDashboard(user.role);
+        }
+      } else {
+        _showErrorSnackBar('Email hoặc mật khẩu không đúng');
+      }
+    } catch (e) {
+      _showErrorSnackBar('Có lỗi xảy ra: $e');
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  void _navigateToDashboard(UserRole role) {
+    switch (role) {
+      case UserRole.admin:
+        context.go('/admin/dashboard');
+        break;
+      case UserRole.lawyer:
+        context.go('/lawyer/dashboard');
+        break;
+      case UserRole.customer:
+        context.go('/home');
+        break;
+    }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+
+  void _showSuccessSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: const LinearGradient(
+          gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
@@ -48,7 +115,7 @@ class _LoginPageState extends State<LoginPage> {
               child: Column(
                 children: [
                   SizedBox(height: 40.h),
-                  
+
                   // Logo and Brand
                   Container(
                     padding: EdgeInsets.all(20.w),
@@ -70,10 +137,11 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   SizedBox(height: 24.h),
-                  
+
                   Text(
                     'BASICO LAW',
-                    style: AppTextStyles.headlineLarge.copyWith(
+                    style: TextStyle(
+                      fontSize: screenWidth * 0.08,
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 2,
@@ -83,13 +151,14 @@ class _LoginPageState extends State<LoginPage> {
                   SizedBox(height: 8.h),
                   Text(
                     'Hệ thống đặt lịch luật sư',
-                    style: AppTextStyles.bodyLarge.copyWith(
+                    style: TextStyle(
+                      fontSize: screenWidth * 0.04,
                       color: Colors.white70,
                     ),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 40.h),
-                  
+
                   // Login Form Card
                   Container(
                     padding: EdgeInsets.all(24.w),
@@ -111,7 +180,8 @@ class _LoginPageState extends State<LoginPage> {
                         children: [
                           Text(
                             'Đăng nhập',
-                            style: AppTextStyles.headlineMedium.copyWith(
+                            style: TextStyle(
+                              fontSize: screenWidth * 0.06,
                               color: const Color(0xFF1E3A8A),
                               fontWeight: FontWeight.bold,
                             ),
@@ -120,22 +190,24 @@ class _LoginPageState extends State<LoginPage> {
                           SizedBox(height: 8.h),
                           Text(
                             'Chào mừng bạn quay trở lại',
-                            style: AppTextStyles.bodyMedium.copyWith(
-                              color: AppColors.onSurfaceVariant,
+                            style: TextStyle(
+                              fontSize: screenWidth * 0.035,
+                              color: Colors.grey[600],
                             ),
                             textAlign: TextAlign.center,
                           ),
                           SizedBox(height: 32.h),
-                
+
                           // Email field
                           TextFormField(
                             controller: _emailController,
                             keyboardType: TextInputType.emailAddress,
-                            style: AppTextStyles.bodyLarge,
+                            style: TextStyle(fontSize: screenWidth * 0.04),
                             decoration: InputDecoration(
                               labelText: 'Email',
-                              labelStyle: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.onSurfaceVariant,
+                              labelStyle: TextStyle(
+                                fontSize: screenWidth * 0.035,
+                                color: Colors.grey[600],
                               ),
                               prefixIcon: Icon(
                                 Icons.email_outlined,
@@ -143,7 +215,7 @@ class _LoginPageState extends State<LoginPage> {
                                 size: 20.w,
                               ),
                               filled: true,
-                              fillColor: AppColors.surfaceVariant,
+                              fillColor: Colors.grey[100],
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12.r),
                                 borderSide: BorderSide.none,
@@ -164,16 +236,17 @@ class _LoginPageState extends State<LoginPage> {
                             },
                           ),
                           SizedBox(height: 16.h),
-                          
+
                           // Password field
                           TextFormField(
                             controller: _passwordController,
                             obscureText: _obscurePassword,
-                            style: AppTextStyles.bodyLarge,
+                            style: TextStyle(fontSize: screenWidth * 0.04),
                             decoration: InputDecoration(
                               labelText: 'Mật khẩu',
-                              labelStyle: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.onSurfaceVariant,
+                              labelStyle: TextStyle(
+                                fontSize: screenWidth * 0.035,
+                                color: Colors.grey[600],
                               ),
                               prefixIcon: Icon(
                                 Icons.lock_outline,
@@ -182,8 +255,10 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               suffixIcon: IconButton(
                                 icon: Icon(
-                                  _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-                                  color: AppColors.onSurfaceVariant,
+                                  _obscurePassword
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
+                                  color: Colors.grey[600],
                                   size: 20.w,
                                 ),
                                 onPressed: () {
@@ -193,7 +268,7 @@ class _LoginPageState extends State<LoginPage> {
                                 },
                               ),
                               filled: true,
-                              fillColor: AppColors.surfaceVariant,
+                              fillColor: Colors.grey[100],
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12.r),
                                 borderSide: BorderSide.none,
@@ -214,7 +289,7 @@ class _LoginPageState extends State<LoginPage> {
                             },
                           ),
                           SizedBox(height: 8.h),
-                          
+
                           // Forgot password link
                           Align(
                             alignment: Alignment.centerRight,
@@ -224,7 +299,8 @@ class _LoginPageState extends State<LoginPage> {
                               },
                               child: Text(
                                 'Quên mật khẩu?',
-                                style: AppTextStyles.bodyMedium.copyWith(
+                                style: TextStyle(
+                                  fontSize: screenWidth * 0.035,
                                   color: const Color(0xFF1E3A8A),
                                   fontWeight: FontWeight.w500,
                                 ),
@@ -232,91 +308,62 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           SizedBox(height: 24.h),
-                
+
                           // Login button
-                          BlocConsumer<AuthBloc, AuthState>(
-                            listener: (context, state) {
-                              if (state is AuthSuccess) {
-                                context.go('/home');
-                              } else if (state is AuthFailure) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  SnackBar(
-                                    content: Text(state.message),
-                                    backgroundColor: AppColors.error,
-                                    behavior: SnackBarBehavior.floating,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8.r),
-                                    ),
-                                  ),
-                                );
-                              }
-                            },
-                            builder: (context, state) {
-                              return Container(
-                                height: 50.h,
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
-                                    begin: Alignment.centerLeft,
-                                    end: Alignment.centerRight,
-                                  ),
+                          Container(
+                            height: 50.h,
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+                                begin: Alignment.centerLeft,
+                                end: Alignment.centerRight,
+                              ),
+                              borderRadius: BorderRadius.circular(12.r),
+                              boxShadow: [
+                                BoxShadow(
+                                  color:
+                                      const Color(0xFF1E3A8A).withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: ElevatedButton(
+                              onPressed: _isLoading ? null : _login,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12.r),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF1E3A8A).withOpacity(0.3),
-                                      blurRadius: 8,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
                                 ),
-                                child: ElevatedButton(
-                                  onPressed: state is AuthLoading
-                                      ? null
-                                      : () {
-                                          if (_formKey.currentState!.validate()) {
-                                            context.read<AuthBloc>().add(
-                                              LoginRequested(
-                                                email: _emailController.text.trim(),
-                                                password: _passwordController.text,
-                                              ),
-                                            );
-                                          }
-                                        },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.transparent,
-                                    shadowColor: Colors.transparent,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12.r),
+                              ),
+                              child: _isLoading
+                                  ? SizedBox(
+                                      width: 20.w,
+                                      height: 20.w,
+                                      child: const CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Text(
+                                      'Đăng nhập',
+                                      style: TextStyle(
+                                        fontSize: screenWidth * 0.045,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
-                                  ),
-                                  child: state is AuthLoading
-                                      ? SizedBox(
-                                          width: 20.w,
-                                          height: 20.w,
-                                          child: const CircularProgressIndicator(
-                                            color: Colors.white,
-                                            strokeWidth: 2,
-                                          ),
-                                        )
-                                      : Text(
-                                          'Đăng nhập',
-                                          style: AppTextStyles.titleMedium.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                ),
-                              );
-                            },
+                            ),
                           ),
                           SizedBox(height: 24.h),
-                          
+
                           // Divider
                           Row(
                             children: [
                               Expanded(
                                 child: Divider(
-                                  color: AppColors.outlineVariant,
+                                  color: Colors.grey[300],
                                   thickness: 1,
                                 ),
                               ),
@@ -324,26 +371,28 @@ class _LoginPageState extends State<LoginPage> {
                                 padding: EdgeInsets.symmetric(horizontal: 16.w),
                                 child: Text(
                                   'hoặc',
-                                  style: AppTextStyles.bodySmall.copyWith(
-                                    color: AppColors.onSurfaceVariant,
+                                  style: TextStyle(
+                                    fontSize: screenWidth * 0.035,
+                                    color: Colors.grey[600],
                                   ),
                                 ),
                               ),
                               Expanded(
                                 child: Divider(
-                                  color: AppColors.outlineVariant,
+                                  color: Colors.grey[300],
                                   thickness: 1,
                                 ),
                               ),
                             ],
                           ),
                           SizedBox(height: 24.h),
-                          
+
                           // Register link
                           Container(
                             height: 50.h,
                             decoration: BoxDecoration(
-                              border: Border.all(color: const Color(0xFF1E3A8A), width: 2),
+                              border: Border.all(
+                                  color: const Color(0xFF1E3A8A), width: 2),
                               borderRadius: BorderRadius.circular(12.r),
                             ),
                             child: OutlinedButton(
@@ -358,7 +407,8 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                               child: Text(
                                 'Tạo tài khoản mới',
-                                style: AppTextStyles.titleMedium.copyWith(
+                                style: TextStyle(
+                                  fontSize: screenWidth * 0.045,
                                   color: const Color(0xFF1E3A8A),
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -366,7 +416,7 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ),
                           SizedBox(height: 16.h),
-                          
+
                           // Demo link
                           TextButton(
                             onPressed: () {
@@ -374,8 +424,9 @@ class _LoginPageState extends State<LoginPage> {
                             },
                             child: Text(
                               'Quay lại trang chủ',
-                              style: AppTextStyles.bodyMedium.copyWith(
-                                color: AppColors.onSurfaceVariant,
+                              style: TextStyle(
+                                fontSize: screenWidth * 0.035,
+                                color: Colors.grey[600],
                                 decoration: TextDecoration.underline,
                               ),
                             ),
@@ -385,11 +436,12 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                   SizedBox(height: 40.h),
-                  
+
                   // Footer
                   Text(
                     '© 2024 Basico Law Firm. Tất cả quyền được bảo lưu.',
-                    style: AppTextStyles.bodySmall.copyWith(
+                    style: TextStyle(
+                      fontSize: screenWidth * 0.03,
                       color: Colors.white70,
                     ),
                     textAlign: TextAlign.center,

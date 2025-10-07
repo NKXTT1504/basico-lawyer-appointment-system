@@ -23,7 +23,7 @@ class _HomeTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    
+
     return Scaffold(
       appBar: const HeaderWidget(),
       body: SafeArea(
@@ -50,7 +50,8 @@ class _HomeTab extends StatelessWidget {
                         color: Colors.white,
                       ),
                     ),
-                    SizedBox(height: screenHeight * 0.015), // 1.5% of screen height
+                    SizedBox(
+                        height: screenHeight * 0.015), // 1.5% of screen height
                     Text(
                       'Giải pháp pháp lý chuyên nghiệp cho mọi nhu cầu',
                       style: TextStyle(
@@ -59,7 +60,8 @@ class _HomeTab extends StatelessWidget {
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    SizedBox(height: screenHeight * 0.02), // 2% of screen height
+                    SizedBox(
+                        height: screenHeight * 0.02), // 2% of screen height
                     Text(
                       '© 2024 Basico Law Firm. Tất cả quyền được bảo lưu.',
                       style: TextStyle(
@@ -68,7 +70,6 @@ class _HomeTab extends StatelessWidget {
                       ),
                       textAlign: TextAlign.center,
                     ),
-
                   ],
                 ),
               ),
@@ -88,7 +89,8 @@ class _AppointmentsTab extends StatefulWidget {
 }
 
 class _AppointmentsTabState extends State<_AppointmentsTab> {
-  final AppointmentLocalDataSource _dataSource = AppointmentLocalDataSourceImpl();
+  final AppointmentLocalDataSource _dataSource =
+      AppointmentLocalDataSourceImpl();
   List<Appointment> _appointments = [];
   List<Appointment> _upcomingAppointments = [];
   List<Appointment> _historyAppointments = [];
@@ -134,13 +136,14 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final isTablet = screenWidth > 600;
-    
+
     return Scaffold(
       backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: screenWidth * (isTablet ? 0.08 : 0.04), // 8% for tablet, 4% for mobile
+            horizontal: screenWidth *
+                (isTablet ? 0.08 : 0.04), // 8% for tablet, 4% for mobile
             vertical: screenHeight * 0.02, // 2% of screen height
           ),
           child: Column(
@@ -149,11 +152,11 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
               // Page Title
               _buildPageTitle(),
               SizedBox(height: screenHeight * 0.03), // 3% of screen height
-              
+
               // Tabs
               _buildTabs(),
               SizedBox(height: screenHeight * 0.03), // 3% of screen height
-              
+
               // Content
               Expanded(
                 child: _isLoading
@@ -170,11 +173,12 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
   Widget _buildPageTitle() {
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = screenWidth > 600;
-    
+
     return Text(
       'LỊCH HẸN CỦA BẠN',
       style: TextStyle(
-        fontSize: screenWidth * (isTablet ? 0.07 : 0.06), // 7% for tablet, 6% for mobile
+        fontSize: screenWidth *
+            (isTablet ? 0.07 : 0.06), // 7% for tablet, 6% for mobile
         fontWeight: FontWeight.bold,
         color: const Color(0xFF1C1B1F),
       ),
@@ -183,7 +187,7 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
 
   Widget _buildTabs() {
     final screenWidth = MediaQuery.of(context).size.width;
-    
+
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
       child: Row(
@@ -212,7 +216,7 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     final isTablet = screenWidth > 600;
-    
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -221,7 +225,8 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
       },
       child: Container(
         padding: EdgeInsets.symmetric(
-          horizontal: screenWidth * (isTablet ? 0.08 : 0.05), // 8% for tablet, 5% for mobile
+          horizontal: screenWidth *
+              (isTablet ? 0.08 : 0.05), // 8% for tablet, 5% for mobile
           vertical: screenHeight * 0.015, // 1.5% of screen height
         ),
         decoration: BoxDecoration(
@@ -235,7 +240,8 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
         child: Text(
           text,
           style: TextStyle(
-            fontSize: screenWidth * (isTablet ? 0.04 : 0.035), // 4% for tablet, 3.5% for mobile
+            fontSize: screenWidth *
+                (isTablet ? 0.04 : 0.035), // 4% for tablet, 3.5% for mobile
             color: isSelected ? Colors.white : const Color(0xFF1C1B1F),
             fontWeight: FontWeight.w500,
           ),
@@ -245,10 +251,11 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
   }
 
   Widget _buildAppointmentTable() {
-    final appointments = _selectedTabIndex == 0 ? _upcomingAppointments : _historyAppointments;
+    final appointments =
+        _selectedTabIndex == 0 ? _upcomingAppointments : _historyAppointments;
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = screenWidth > 600;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -285,7 +292,6 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
 
   Widget _buildTableHeader() {
     final screenWidth = MediaQuery.of(context).size.width;
-    
     return Container(
       padding: EdgeInsets.all(screenWidth * 0.04), // 4% of screen width
       decoration: const BoxDecoration(
@@ -324,7 +330,7 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
 
   Widget _buildHeaderCell(String text) {
     final screenWidth = MediaQuery.of(context).size.width;
-    
+
     return Text(
       text,
       style: TextStyle(
@@ -338,7 +344,7 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
 
   Widget _buildTableRow(Appointment appointment, int index) {
     final isEven = index % 2 == 0;
-    
+
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -438,7 +444,7 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
   Widget _buildMobileAppointmentCard(Appointment appointment, int index) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    
+
     return Container(
       margin: EdgeInsets.all(screenWidth * 0.02), // 2% of screen width
       padding: EdgeInsets.all(screenWidth * 0.04), // 4% of screen width
@@ -567,15 +573,34 @@ class _ProfilePlaceholder extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // This placeholder will immediately redirect to the profile page
-    // Used because the profile tab in BottomNavigationBar now navigates directly
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.go('/profile');
-    });
-    
     return const Center(
-      child: CircularProgressIndicator(),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.person,
+            size: 64,
+            color: Colors.grey,
+          ),
+          SizedBox(height: 16),
+          Text(
+            'Profile Page',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey,
+            ),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'This is a placeholder for profile page',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
-

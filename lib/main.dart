@@ -8,16 +8,20 @@ import 'core/constants/app_constants.dart';
 import 'core/di/injection_container.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'features/admin/data/services/user_storage_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Hive for local storage
   await Hive.initFlutter();
-  
+
   // Initialize dependency injection
   await initializeDependencies();
-  
+
+  // Initialize sample data including admin account
+  await UserStorageService.initializeSampleData();
+
   runApp(const BasicoLawyerApp());
 }
 
