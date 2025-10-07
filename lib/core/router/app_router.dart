@@ -123,6 +123,10 @@ class AppRouter {
         ),
       ),
       GoRoute(
+        path: '/book-appointment',
+        redirect: (context, state) => '/appointments',
+      ),
+      GoRoute(
         path: '/appointments/:id',
         builder: (context, state) {
           final id = state.pathParameters['id']!;

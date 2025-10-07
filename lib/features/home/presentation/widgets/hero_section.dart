@@ -11,13 +11,12 @@ class HeroSection extends StatelessWidget {
     final screenHeight = ResponsiveHelper.getScreenHeight(context);
     final isTablet = ResponsiveHelper.isTablet(context);
     final isMobile = ResponsiveHelper.isMobile(context);
-    
+
     return Container(
-      height: ResponsiveHelper.getResponsiveHeight(context, 
-        mobile: screenHeight * 0.5, 
-        tablet: screenHeight * 0.55, 
-        desktop: screenHeight * 0.6
-      ),
+      height: ResponsiveHelper.getResponsiveHeight(context,
+          mobile: screenHeight * 0.5,
+          tablet: screenHeight * 0.55,
+          desktop: screenHeight * 0.6),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -59,7 +58,8 @@ class HeroSection extends StatelessWidget {
           // Content
           Positioned.fill(
             child: Padding(
-              padding: EdgeInsets.all(screenWidth * (isTablet ? 0.08 : 0.05)), // 8% for tablet, 5% for mobile
+              padding: EdgeInsets.all(screenWidth *
+                  (isTablet ? 0.08 : 0.05)), // 8% for tablet, 5% for mobile
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -67,7 +67,10 @@ class HeroSection extends StatelessWidget {
                   Text(
                     'Giải pháp chuyên nghiệp',
                     style: TextStyle(
-                      fontSize: screenWidth * (isTablet ? 0.08 : 0.06), // 8% for tablet, 6% for mobile
+                      fontSize: screenWidth *
+                          (isTablet
+                              ? 0.08
+                              : 0.06), // 8% for tablet, 6% for mobile
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                       height: 1.2,
@@ -77,17 +80,24 @@ class HeroSection extends StatelessWidget {
                   Text(
                     'Vì sự thành công của bạn',
                     style: TextStyle(
-                      fontSize: screenWidth * (isTablet ? 0.06 : 0.045), // 6% for tablet, 4.5% for mobile
+                      fontSize: screenWidth *
+                          (isTablet
+                              ? 0.06
+                              : 0.045), // 6% for tablet, 4.5% for mobile
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                       height: 1.2,
                     ),
                   ),
-                  SizedBox(height: screenHeight * 0.025), // 2.5% of screen height
+                  SizedBox(
+                      height: screenHeight * 0.025), // 2.5% of screen height
                   Text(
                     'Đội ngũ luật sư giàu kinh nghiệm của chúng tôi cung cấp các dịch vụ pháp lý cá nhân để giúp bạn giải quyết các vấn đề pháp lý phức tạp một cách tự tin và an tâm.',
                     style: TextStyle(
-                      fontSize: screenWidth * (isTablet ? 0.04 : 0.035), // 4% for tablet, 3.5% for mobile
+                      fontSize: screenWidth *
+                          (isTablet
+                              ? 0.04
+                              : 0.035), // 4% for tablet, 3.5% for mobile
                       color: Colors.white,
                       height: 1.5,
                       fontWeight: FontWeight.w400,
@@ -101,14 +111,16 @@ class HeroSection extends StatelessWidget {
                             Expanded(
                               child: ElevatedButton(
                                 onPressed: () {
-                                  context.go('/book-appointment');
+                                  context.go('/appointments');
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
                                   foregroundColor: const Color(0xFF1E3A8A),
                                   padding: EdgeInsets.symmetric(
-                                    horizontal: screenWidth * 0.06, // 6% of screen width
-                                    vertical: screenHeight * 0.02, // 2% of screen height
+                                    horizontal: screenWidth *
+                                        0.06, // 6% of screen width
+                                    vertical: screenHeight *
+                                        0.02, // 2% of screen height
                                   ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
@@ -118,13 +130,16 @@ class HeroSection extends StatelessWidget {
                                 child: Text(
                                   'Đặt lịch tư vấn',
                                   style: TextStyle(
-                                    fontSize: screenWidth * 0.04, // 4% of screen width
+                                    fontSize: screenWidth *
+                                        0.04, // 4% of screen width
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),
                             ),
-                            SizedBox(width: screenWidth * 0.04), // 4% of screen width
+                            SizedBox(
+                                width:
+                                    screenWidth * 0.04), // 4% of screen width
                             Expanded(
                               child: OutlinedButton(
                                 onPressed: () {
@@ -132,10 +147,13 @@ class HeroSection extends StatelessWidget {
                                 },
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.white,
-                                  side: const BorderSide(color: Colors.white, width: 2),
+                                  side: const BorderSide(
+                                      color: Colors.white, width: 2),
                                   padding: EdgeInsets.symmetric(
-                                    horizontal: screenWidth * 0.06, // 6% of screen width
-                                    vertical: screenHeight * 0.02, // 2% of screen height
+                                    horizontal: screenWidth *
+                                        0.06, // 6% of screen width
+                                    vertical: screenHeight *
+                                        0.02, // 2% of screen height
                                   ),
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(8),
@@ -147,12 +165,17 @@ class HeroSection extends StatelessWidget {
                                     Text(
                                       'Khám phá dịch vụ',
                                       style: TextStyle(
-                                        fontSize: screenWidth * 0.04, // 4% of screen width
+                                        fontSize: screenWidth *
+                                            0.04, // 4% of screen width
                                         fontWeight: FontWeight.w600,
                                       ),
                                     ),
-                                    SizedBox(width: screenWidth * 0.02), // 2% of screen width
-                                    Icon(Icons.arrow_forward, size: screenWidth * 0.045), // 4.5% of screen width
+                                    SizedBox(
+                                        width: screenWidth *
+                                            0.02), // 2% of screen width
+                                    Icon(Icons.arrow_forward,
+                                        size: screenWidth *
+                                            0.045), // 4.5% of screen width
                                   ],
                                 ),
                               ),
@@ -164,14 +187,16 @@ class HeroSection extends StatelessWidget {
                           children: [
                             ElevatedButton(
                               onPressed: () {
-                                context.go('/book-appointment');
+                                context.go('/appointments');
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,
                                 foregroundColor: const Color(0xFF1E3A8A),
                                 padding: EdgeInsets.symmetric(
-                                  horizontal: screenWidth * 0.06, // 6% of screen width
-                                  vertical: screenHeight * 0.02, // 2% of screen height
+                                  horizontal:
+                                      screenWidth * 0.06, // 6% of screen width
+                                  vertical: screenHeight *
+                                      0.02, // 2% of screen height
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
@@ -181,22 +206,28 @@ class HeroSection extends StatelessWidget {
                               child: Text(
                                 'Đặt lịch tư vấn',
                                 style: TextStyle(
-                                  fontSize: screenWidth * 0.035, // 3.5% of screen width
+                                  fontSize: screenWidth *
+                                      0.035, // 3.5% of screen width
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
                             ),
-                            SizedBox(height: screenHeight * 0.015), // 1.5% of screen height
+                            SizedBox(
+                                height: screenHeight *
+                                    0.015), // 1.5% of screen height
                             OutlinedButton(
                               onPressed: () {
                                 context.go('/services');
                               },
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: Colors.white,
-                                side: const BorderSide(color: Colors.white, width: 2),
+                                side: const BorderSide(
+                                    color: Colors.white, width: 2),
                                 padding: EdgeInsets.symmetric(
-                                  horizontal: screenWidth * 0.06, // 6% of screen width
-                                  vertical: screenHeight * 0.02, // 2% of screen height
+                                  horizontal:
+                                      screenWidth * 0.06, // 6% of screen width
+                                  vertical: screenHeight *
+                                      0.02, // 2% of screen height
                                 ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
@@ -208,12 +239,17 @@ class HeroSection extends StatelessWidget {
                                   Text(
                                     'Khám phá dịch vụ',
                                     style: TextStyle(
-                                      fontSize: screenWidth * 0.035, // 3.5% of screen width
+                                      fontSize: screenWidth *
+                                          0.035, // 3.5% of screen width
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  SizedBox(width: screenWidth * 0.02), // 2% of screen width
-                                  Icon(Icons.arrow_forward, size: screenWidth * 0.04), // 4% of screen width
+                                  SizedBox(
+                                      width: screenWidth *
+                                          0.02), // 2% of screen width
+                                  Icon(Icons.arrow_forward,
+                                      size: screenWidth *
+                                          0.04), // 4% of screen width
                                 ],
                               ),
                             ),

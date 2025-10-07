@@ -67,9 +67,12 @@ class UserStorageService {
   static Future<User?> loginUser(String email, String password) async {
     final users = await getUsers();
     try {
+      final normalizedEmail = email.trim().toLowerCase();
       return users.firstWhere(
         (user) =>
-            user.email == email && user.password == password && user.isActive,
+            user.email.toLowerCase() == normalizedEmail &&
+            user.password == password &&
+            user.isActive,
       );
     } catch (e) {
       return null;
