@@ -46,7 +46,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               child: Column(
                 children: [
                   SizedBox(height: 20.h),
-                  
+
                   // Back button
                   Align(
                     alignment: Alignment.centerLeft,
@@ -60,7 +60,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     ),
                   ),
                   SizedBox(height: 20.h),
-                  
+
                   // Logo and Brand
                   Container(
                     padding: EdgeInsets.all(20.w),
@@ -82,7 +82,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     ),
                   ),
                   SizedBox(height: 24.h),
-                  
+
                   Text(
                     'QUÊN MẬT KHẨU',
                     style: AppTextStyles.headlineLarge.copyWith(
@@ -101,7 +101,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 40.h),
-                  
+
                   // Forgot Password Form Card
                   Container(
                     padding: EdgeInsets.all(24.w),
@@ -131,7 +131,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                           ),
                           SizedBox(height: 8.h),
                           Text(
-                            _isEmailSent 
+                            _isEmailSent
                                 ? 'Chúng tôi đã gửi liên kết đặt lại mật khẩu đến email của bạn'
                                 : 'Vui lòng nhập email đã đăng ký tài khoản',
                             style: AppTextStyles.bodyMedium.copyWith(
@@ -140,7 +140,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             textAlign: TextAlign.center,
                           ),
                           SizedBox(height: 32.h),
-                          
+
                           if (!_isEmailSent) ...[
                             // Email field
                             TextFormField(
@@ -179,7 +179,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                               },
                             ),
                             SizedBox(height: 24.h),
-                            
+
                             // Send reset link button
                             BlocConsumer<AuthBloc, AuthState>(
                               listener: (context, state) {
@@ -189,11 +189,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                   });
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     SnackBar(
-                                      content: const Text('Email đặt lại mật khẩu đã được gửi'),
+                                      content: const Text(
+                                          'Email đặt lại mật khẩu đã được gửi'),
                                       backgroundColor: AppColors.success,
                                       behavior: SnackBarBehavior.floating,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8.r),
+                                        borderRadius:
+                                            BorderRadius.circular(8.r),
                                       ),
                                     ),
                                   );
@@ -204,7 +206,8 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                       backgroundColor: AppColors.error,
                                       behavior: SnackBarBehavior.floating,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(8.r),
+                                        borderRadius:
+                                            BorderRadius.circular(8.r),
                                       ),
                                     ),
                                   );
@@ -215,14 +218,18 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                   height: 50.h,
                                   decoration: BoxDecoration(
                                     gradient: const LinearGradient(
-                                      colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+                                      colors: [
+                                        Color(0xFF1E3A8A),
+                                        Color(0xFF3B82F6)
+                                      ],
                                       begin: Alignment.centerLeft,
                                       end: Alignment.centerRight,
                                     ),
                                     borderRadius: BorderRadius.circular(12.r),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF1E3A8A).withOpacity(0.3),
+                                        color: const Color(0xFF1E3A8A)
+                                            .withOpacity(0.3),
                                         blurRadius: 8,
                                         offset: const Offset(0, 4),
                                       ),
@@ -232,33 +239,39 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                     onPressed: state is AuthLoading
                                         ? null
                                         : () {
-                                            if (_formKey.currentState!.validate()) {
+                                            if (_formKey.currentState!
+                                                .validate()) {
                                               context.read<AuthBloc>().add(
-                                                ForgotPasswordRequested(
-                                                  email: _emailController.text.trim(),
-                                                ),
-                                              );
+                                                    ForgotPasswordRequested(
+                                                      email: _emailController
+                                                          .text
+                                                          .trim(),
+                                                    ),
+                                                  );
                                             }
                                           },
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.transparent,
                                       shadowColor: Colors.transparent,
                                       shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12.r),
+                                        borderRadius:
+                                            BorderRadius.circular(12.r),
                                       ),
                                     ),
                                     child: state is AuthLoading
                                         ? SizedBox(
                                             width: 20.w,
                                             height: 20.w,
-                                            child: const CircularProgressIndicator(
+                                            child:
+                                                const CircularProgressIndicator(
                                               color: Colors.white,
                                               strokeWidth: 2,
                                             ),
                                           )
                                         : Text(
                                             'Gửi liên kết đặt lại',
-                                            style: AppTextStyles.titleMedium.copyWith(
+                                            style: AppTextStyles.titleMedium
+                                                .copyWith(
                                               color: Colors.white,
                                               fontWeight: FontWeight.bold,
                                             ),
@@ -307,12 +320,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                               ),
                             ),
                             SizedBox(height: 24.h),
-                            
+
                             // Resend button
                             Container(
                               height: 50.h,
                               decoration: BoxDecoration(
-                                border: Border.all(color: const Color(0xFF1E3A8A), width: 2),
+                                border: Border.all(
+                                    color: const Color(0xFF1E3A8A), width: 2),
                                 borderRadius: BorderRadius.circular(12.r),
                               ),
                               child: OutlinedButton(
@@ -337,9 +351,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                               ),
                             ),
                           ],
-                          
+
                           SizedBox(height: 24.h),
-                          
+
                           // Divider
                           Row(
                             children: [
@@ -367,12 +381,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                             ],
                           ),
                           SizedBox(height: 24.h),
-                          
+
                           // Back to login button
                           Container(
                             height: 50.h,
                             decoration: BoxDecoration(
-                              border: Border.all(color: const Color(0xFF1E3A8A), width: 2),
+                              border: Border.all(
+                                  color: const Color(0xFF1E3A8A), width: 2),
                               borderRadius: BorderRadius.circular(12.r),
                             ),
                             child: OutlinedButton(
@@ -399,10 +414,10 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                     ),
                   ),
                   SizedBox(height: 40.h),
-                  
+
                   // Footer
                   Text(
-                    '© 2024 Basico Law Firm. Tất cả quyền được bảo lưu.',
+                    '© 2025 Basico Law Firm. Tất cả quyền được bảo lưu.',
                     style: AppTextStyles.bodySmall.copyWith(
                       color: Colors.white70,
                     ),

@@ -439,7 +439,7 @@ class _LoginPageState extends State<LoginPage> {
 
                   // Footer
                   Text(
-                    '© 2024 Basico Law Firm. Tất cả quyền được bảo lưu.',
+                    '© 2025 Basico Law Firm. Tất cả quyền được bảo lưu.',
                     style: TextStyle(
                       fontSize: screenWidth * 0.03,
                       color: Colors.white70,

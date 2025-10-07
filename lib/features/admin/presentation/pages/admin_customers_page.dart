@@ -524,18 +524,20 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
 
                 const SizedBox(height: 12),
 
-                // Filter row
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildGenderFilter(),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildOccupationFilter(),
-                    ),
-                  ],
-                ),
+                // Filter row (responsive)
+                if (isMobile) ...[
+                  _buildGenderFilter(),
+                  const SizedBox(height: 12),
+                  _buildOccupationFilter(),
+                ] else ...[
+                  Row(
+                    children: [
+                      Expanded(child: _buildGenderFilter()),
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildOccupationFilter()),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -601,60 +603,64 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Header
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: Theme.of(context).primaryColor,
-                  radius: isMobile ? 20 : 24,
-                  child: Text(
-                    customer.name[0].toUpperCase(),
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: isMobile ? 16 : 18,
+            LayoutBuilder(builder: (context, c) {
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Theme.of(context).primaryColor,
+                    radius: isMobile ? 20 : 24,
+                    child: Text(
+                      customer.name[0].toUpperCase(),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: isMobile ? 16 : 18,
+                      ),
                     ),
                   ),
-                ),
-                SizedBox(width: isMobile ? 8 : 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        customer.name,
-                        style: TextStyle(
-                          fontSize: isMobile ? 15 : 16,
-                          fontWeight: FontWeight.bold,
+                  SizedBox(width: isMobile ? 8 : 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          customer.name,
+                          style: TextStyle(
+                            fontSize: isMobile ? 15 : 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      Text(
-                        customer.occupation,
-                        style: TextStyle(
-                          fontSize: isMobile ? 13 : 14,
-                          color: Colors.grey[600],
+                        Text(
+                          customer.occupation,
+                          style: TextStyle(
+                            fontSize: isMobile ? 13 : 14,
+                            color: Colors.grey[600],
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.symmetric(
-                      horizontal: isMobile ? 6 : 8, vertical: isMobile ? 3 : 4),
-                  decoration: BoxDecoration(
-                    color: customer.isActive ? Colors.green : Colors.red,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    customer.isActive ? 'Hoạt động' : 'Không hoạt động',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: isMobile ? 10 : 12,
-                      fontWeight: FontWeight.w600,
+                      ],
                     ),
                   ),
-                ),
-              ],
-            ),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                        horizontal: isMobile ? 6 : 8,
+                        vertical: isMobile ? 3 : 4),
+                    decoration: BoxDecoration(
+                      color: customer.isActive ? Colors.green : Colors.red,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      customer.isActive ? 'Hoạt động' : 'Không hoạt động',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: isMobile ? 10 : 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            }),
 
             SizedBox(height: isMobile ? 12 : 16),
 

@@ -130,7 +130,20 @@ class _MainNavigationState extends State<MainNavigation> {
                   onPressed: () => context.go('/admin/dashboard'),
                   tooltip: 'Về Dashboard',
                 )
-              : null,
+              : Builder(
+                  builder: (context) => Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.menu),
+                        tooltip: 'Menu',
+                        onPressed: () => Scaffold.of(context).openDrawer(),
+                      ),
+                      const Icon(Icons.gavel, size: 18, color: Colors.white),
+                    ],
+                  ),
+                ),
+          leadingWidth: isAdminSubPage ? null : 72,
+          centerTitle: true,
           title: Text(pageTitle),
           actions: role == UserRole.customer
               ? const []

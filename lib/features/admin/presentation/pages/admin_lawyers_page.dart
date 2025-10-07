@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../data/services/user_storage_service.dart';
 import '../../data/models/lawyer.dart';
 import '../../data/models/admin_user.dart';
@@ -483,6 +482,7 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
         ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Search bar
           TextField(
@@ -492,21 +492,22 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
                 _applyFilters();
               });
             },
-            style: TextStyle(fontSize: screenWidth * 0.04),
+            style: TextStyle(fontSize: isTablet ? screenWidth * 0.035 : 14),
             decoration: InputDecoration(
               hintText: 'Tìm kiếm theo tên, email, chuyên môn...',
-              hintStyle: TextStyle(fontSize: screenWidth * 0.035),
+              hintStyle:
+                  TextStyle(fontSize: isTablet ? screenWidth * 0.03 : 13),
               prefixIcon: Icon(
                 Icons.search,
                 color: const Color(0xFF1E3A8A),
-                size: 20.w,
+                size: isTablet ? 22 : 20,
               ),
               suffixIcon: _searchQuery.isNotEmpty
                   ? IconButton(
                       icon: Icon(
                         Icons.clear,
                         color: Colors.grey[600],
-                        size: 20.w,
+                        size: isTablet ? 20 : 18,
                       ),
                       onPressed: () {
                         setState(() {
@@ -532,8 +533,8 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
               filled: true,
               fillColor: Colors.grey[50],
               contentPadding: EdgeInsets.symmetric(
-                horizontal: 16.w,
-                vertical: 16.h,
+                horizontal: isTablet ? 16 : 12,
+                vertical: isTablet ? 16 : 12,
               ),
             ),
           ),
@@ -541,17 +542,21 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
           SizedBox(height: screenWidth * 0.03),
 
           // Filter row
-          Row(
-            children: [
-              Expanded(
-                child: _buildSpecializationFilter(screenWidth, isTablet),
-              ),
-              SizedBox(width: screenWidth * 0.03),
-              Expanded(
-                child: _buildStatusFilter(screenWidth, isTablet),
-              ),
-            ],
-          ),
+          if (isTablet) ...[
+            Row(
+              children: [
+                Expanded(
+                    child: _buildSpecializationFilter(screenWidth, isTablet)),
+                SizedBox(width: screenWidth * 0.03),
+                Expanded(child: _buildStatusFilter(screenWidth, isTablet)),
+              ],
+            ),
+          ] else ...[
+            // Stack filters vertically on small phones to avoid overflow
+            _buildSpecializationFilter(screenWidth, isTablet),
+            const SizedBox(height: 12),
+            _buildStatusFilter(screenWidth, isTablet),
+          ],
         ],
       ),
     );
@@ -585,13 +590,13 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
 
   Widget _buildLawyersGrid(double screenWidth, bool isTablet) {
     return GridView.builder(
-      padding: EdgeInsets.all(screenWidth * 0.02),
+      padding: EdgeInsets.all(isTablet ? screenWidth * 0.02 : 12),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: isTablet ? 2 : 1,
-        crossAxisSpacing: screenWidth * 0.03,
-        mainAxisSpacing: screenWidth * 0.03,
-        // Use fixed item height to avoid pixel overflow on small screens
-        mainAxisExtent: isTablet ? 320 : 380,
+        crossAxisSpacing: isTablet ? screenWidth * 0.03 : 12,
+        mainAxisSpacing: isTablet ? screenWidth * 0.03 : 12,
+        // Adaptive fixed extent for consistency
+        mainAxisExtent: isTablet ? 340 : 420,
       ),
       itemCount: _filteredLawyers.length,
       itemBuilder: (context, index) {

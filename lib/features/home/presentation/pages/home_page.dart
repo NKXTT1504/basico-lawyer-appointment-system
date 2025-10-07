@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:go_router/go_router.dart';
-import '../widgets/header_widget.dart';
 import '../widgets/hero_section.dart';
 import '../widgets/feature_cards.dart';
 import '../../../appointment/domain/entities/appointment.dart';
@@ -25,13 +23,16 @@ class _HomeTab extends StatelessWidget {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
-      appBar: const HeaderWidget(),
+      appBar: null,
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
               const HeroSection(),
               const FeatureCards(),
+              _WhyChooseSection(),
+              _HowItWorksSection(),
+              _CTASection(),
               // Footer section
               Container(
                 width: double.infinity,
@@ -63,7 +64,7 @@ class _HomeTab extends StatelessWidget {
                     SizedBox(
                         height: screenHeight * 0.02), // 2% of screen height
                     Text(
-                      '© 2024 Basico Law Firm. Tất cả quyền được bảo lưu.',
+                      '© 2025 Basico Law Firm. Tất cả quyền được bảo lưu.',
                       style: TextStyle(
                         fontSize: screenWidth * 0.025, // 2.5% of screen width
                         color: Colors.white60,
@@ -81,6 +82,108 @@ class _HomeTab extends StatelessWidget {
   }
 }
 
+class _WhyChooseSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return Padding(
+      padding:
+          EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Vì sao chọn Basico?',
+              style: TextStyle(
+                  fontSize: screenWidth * 0.06, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          _bullet('Luật sư giàu kinh nghiệm, chuyên môn đa lĩnh vực'),
+          _bullet('Đặt lịch nhanh, xác nhận tức thì'),
+          _bullet('Chi phí minh bạch, báo giá rõ ràng'),
+        ],
+      ),
+    );
+  }
+
+  Widget _bullet(String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Row(children: [const Text('•  '), Expanded(child: Text(text))]),
+      );
+}
+
+class _HowItWorksSection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return Padding(
+      padding:
+          EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Quy trình 3 bước',
+              style: TextStyle(
+                  fontSize: screenWidth * 0.06, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          _step(1, 'Chọn luật sư phù hợp'),
+          _step(2, 'Chọn ngày/giờ trống'),
+          _step(3, 'Xác nhận và theo dõi lịch hẹn'),
+        ],
+      ),
+    );
+  }
+
+  Widget _step(int n, String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: Row(children: [
+          CircleAvatar(radius: 12, child: Text('$n')),
+          const SizedBox(width: 8),
+          Expanded(child: Text(text))
+        ]),
+      );
+}
+
+class _CTASection extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return Container(
+      width: double.infinity,
+      margin:
+          EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: 24),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E3A8A),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text('Cần hỗ trợ ngay?',
+              style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          const Text(
+              'Liên hệ đội ngũ của chúng tôi để được tư vấn nhanh chóng.',
+              style: TextStyle(color: Colors.white70)),
+          const SizedBox(height: 12),
+          Align(
+            alignment: Alignment.centerRight,
+            child: OutlinedButton(
+              onPressed: () => Navigator.of(context).pushNamed('/services'),
+              style: OutlinedButton.styleFrom(
+                  side: const BorderSide(color: Colors.white)),
+              child: const Text('Khám phá dịch vụ',
+                  style: TextStyle(color: Colors.white)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _AppointmentsTab extends StatefulWidget {
   const _AppointmentsTab();
 
@@ -91,6 +194,7 @@ class _AppointmentsTab extends StatefulWidget {
 class _AppointmentsTabState extends State<_AppointmentsTab> {
   final AppointmentLocalDataSource _dataSource =
       AppointmentLocalDataSourceImpl();
+  // ignore: unused_field
   List<Appointment> _appointments = [];
   List<Appointment> _upcomingAppointments = [];
   List<Appointment> _historyAppointments = [];
@@ -544,63 +648,4 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
   }
 }
 
-class _LawyersTab extends StatelessWidget {
-  const _LawyersTab();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Luật sư'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search),
-            onPressed: () {
-              // Handle search
-            },
-          ),
-        ],
-      ),
-      body: const Center(
-        child: Text('Danh sách luật sư - Sẽ được phát triển'),
-      ),
-    );
-  }
-}
-
-class _ProfilePlaceholder extends StatelessWidget {
-  const _ProfilePlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.person,
-            size: 64,
-            color: Colors.grey,
-          ),
-          SizedBox(height: 16),
-          Text(
-            'Profile Page',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'This is a placeholder for profile page',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+// Removed unused _LawyersTab and _ProfilePlaceholder widgets

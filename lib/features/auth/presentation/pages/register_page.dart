@@ -55,7 +55,7 @@ class _RegisterPageState extends State<RegisterPage> {
               child: Column(
                 children: [
                   SizedBox(height: 20.h),
-                  
+
                   // Back button
                   Align(
                     alignment: Alignment.centerLeft,
@@ -69,7 +69,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ),
                   SizedBox(height: 20.h),
-                  
+
                   // Logo and Brand
                   Container(
                     padding: EdgeInsets.all(20.w),
@@ -91,7 +91,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ),
                   SizedBox(height: 24.h),
-                  
+
                   Text(
                     'TẠO TÀI KHOẢN',
                     style: AppTextStyles.headlineLarge.copyWith(
@@ -110,7 +110,7 @@ class _RegisterPageState extends State<RegisterPage> {
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(height: 40.h),
-                  
+
                   // Register Form Card
                   Container(
                     padding: EdgeInsets.all(24.w),
@@ -147,7 +147,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             textAlign: TextAlign.center,
                           ),
                           SizedBox(height: 32.h),
-                
+
                           // Full name field
                           TextFormField(
                             controller: _fullNameController,
@@ -184,7 +184,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             },
                           ),
                           SizedBox(height: 16.h),
-                          
+
                           // Email field
                           TextFormField(
                             controller: _emailController,
@@ -222,7 +222,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             },
                           ),
                           SizedBox(height: 16.h),
-                          
+
                           // Phone field
                           TextFormField(
                             controller: _phoneController,
@@ -260,7 +260,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             },
                           ),
                           SizedBox(height: 16.h),
-                
+
                           // Password field
                           TextFormField(
                             controller: _passwordController,
@@ -278,7 +278,9 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                               suffixIcon: IconButton(
                                 icon: Icon(
-                                  _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                  _obscurePassword
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
                                   color: AppColors.onSurfaceVariant,
                                   size: 20.w,
                                 ),
@@ -310,7 +312,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             },
                           ),
                           SizedBox(height: 16.h),
-                          
+
                           // Confirm password field
                           TextFormField(
                             controller: _confirmPasswordController,
@@ -328,13 +330,16 @@ class _RegisterPageState extends State<RegisterPage> {
                               ),
                               suffixIcon: IconButton(
                                 icon: Icon(
-                                  _obscureConfirmPassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                                  _obscureConfirmPassword
+                                      ? Icons.visibility_outlined
+                                      : Icons.visibility_off_outlined,
                                   color: AppColors.onSurfaceVariant,
                                   size: 20.w,
                                 ),
                                 onPressed: () {
                                   setState(() {
-                                    _obscureConfirmPassword = !_obscureConfirmPassword;
+                                    _obscureConfirmPassword =
+                                        !_obscureConfirmPassword;
                                   });
                                 },
                               ),
@@ -360,7 +365,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             },
                           ),
                           SizedBox(height: 24.h),
-                
+
                           // Register button
                           BlocConsumer<AuthBloc, AuthState>(
                             listener: (context, state) {
@@ -384,14 +389,18 @@ class _RegisterPageState extends State<RegisterPage> {
                                 height: 50.h,
                                 decoration: BoxDecoration(
                                   gradient: const LinearGradient(
-                                    colors: [Color(0xFF1E3A8A), Color(0xFF3B82F6)],
+                                    colors: [
+                                      Color(0xFF1E3A8A),
+                                      Color(0xFF3B82F6)
+                                    ],
                                     begin: Alignment.centerLeft,
                                     end: Alignment.centerRight,
                                   ),
                                   borderRadius: BorderRadius.circular(12.r),
                                   boxShadow: [
                                     BoxShadow(
-                                      color: const Color(0xFF1E3A8A).withOpacity(0.3),
+                                      color: const Color(0xFF1E3A8A)
+                                          .withOpacity(0.3),
                                       blurRadius: 8,
                                       offset: const Offset(0, 4),
                                     ),
@@ -401,15 +410,23 @@ class _RegisterPageState extends State<RegisterPage> {
                                   onPressed: state is AuthLoading
                                       ? null
                                       : () {
-                                          if (_formKey.currentState!.validate()) {
+                                          if (_formKey.currentState!
+                                              .validate()) {
                                             context.read<AuthBloc>().add(
-                                              RegisterRequested(
-                                                email: _emailController.text.trim(),
-                                                password: _passwordController.text,
-                                                fullName: _fullNameController.text.trim(),
-                                                phoneNumber: _phoneController.text.trim(),
-                                              ),
-                                            );
+                                                  RegisterRequested(
+                                                    email: _emailController.text
+                                                        .trim(),
+                                                    password:
+                                                        _passwordController
+                                                            .text,
+                                                    fullName:
+                                                        _fullNameController.text
+                                                            .trim(),
+                                                    phoneNumber:
+                                                        _phoneController.text
+                                                            .trim(),
+                                                  ),
+                                                );
                                           }
                                         },
                                   style: ElevatedButton.styleFrom(
@@ -423,14 +440,16 @@ class _RegisterPageState extends State<RegisterPage> {
                                       ? SizedBox(
                                           width: 20.w,
                                           height: 20.w,
-                                          child: const CircularProgressIndicator(
+                                          child:
+                                              const CircularProgressIndicator(
                                             color: Colors.white,
                                             strokeWidth: 2,
                                           ),
                                         )
                                       : Text(
                                           'Tạo tài khoản',
-                                          style: AppTextStyles.titleMedium.copyWith(
+                                          style: AppTextStyles.titleMedium
+                                              .copyWith(
                                             color: Colors.white,
                                             fontWeight: FontWeight.bold,
                                           ),
@@ -440,7 +459,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             },
                           ),
                           SizedBox(height: 24.h),
-                          
+
                           // Divider
                           Row(
                             children: [
@@ -468,12 +487,13 @@ class _RegisterPageState extends State<RegisterPage> {
                             ],
                           ),
                           SizedBox(height: 24.h),
-                          
+
                           // Login link
                           Container(
                             height: 50.h,
                             decoration: BoxDecoration(
-                              border: Border.all(color: const Color(0xFF1E3A8A), width: 2),
+                              border: Border.all(
+                                  color: const Color(0xFF1E3A8A), width: 2),
                               borderRadius: BorderRadius.circular(12.r),
                             ),
                             child: OutlinedButton(
@@ -500,10 +520,10 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ),
                   SizedBox(height: 40.h),
-                  
+
                   // Footer
                   Text(
-                    '© 2024 Basico Law Firm. Tất cả quyền được bảo lưu.',
+                    '© 2025 Basico Law Firm. Tất cả quyền được bảo lưu.',
                     style: AppTextStyles.bodySmall.copyWith(
                       color: Colors.white70,
                     ),
