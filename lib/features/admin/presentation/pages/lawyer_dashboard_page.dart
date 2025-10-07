@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import '../../data/services/user_storage_service.dart';
 import '../../data/models/admin_user.dart';
 import '../../data/models/appointment.dart';
-import '../../data/models/customer.dart';
 import '../../data/models/lawyer.dart';
 
 class LawyerDashboardPage extends StatefulWidget {
@@ -15,8 +14,6 @@ class LawyerDashboardPage extends StatefulWidget {
 
 class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
   User? _currentUser;
-  int _totalCustomers = 0;
-  int _totalLawyers = 0;
   int _totalAppointments = 0;
   int _pendingAppointments = 0;
   int _confirmedAppointments = 0;
@@ -25,8 +22,6 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
   double _totalRevenue = 0;
   double _monthlyRevenue = 0;
   List<Appointment> _recentAppointments = [];
-  List<Customer> _recentCustomers = [];
-  List<Lawyer> _activeLawyers = [];
   bool _isLoading = true;
 
   @override
@@ -77,15 +72,9 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
             .take(5)
             .toList();
 
-        final recentCustomers = <Customer>[];
-        final activeLawyers = <Lawyer>[];
-
         if (mounted) {
           setState(() {
             _currentUser = user;
-            _totalCustomers =
-                appointments.map((a) => a.customerId).toSet().length;
-            _totalLawyers = 1;
             _totalAppointments = appointments.length;
             _pendingAppointments = appointments
                 .where((apt) => apt.status == AppointmentStatus.pending)
@@ -102,8 +91,6 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
             _totalRevenue = totalRevenue;
             _monthlyRevenue = monthlyRevenue;
             _recentAppointments = recentAppointments;
-            _recentCustomers = recentCustomers;
-            _activeLawyers = activeLawyers;
             _isLoading = false;
           });
         }
@@ -196,8 +183,7 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
             ),
 
             SizedBox(height: isMobile ? 20 : 24),
-
-            // Statistics cards
+// Statistics cards (simplified for lawyer)
             Text(
               'Thống kê tổng quan',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -210,15 +196,7 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
 
             LayoutBuilder(
               builder: (context, constraints) {
-                int crossAxisCount;
-                if (isTablet) {
-                  crossAxisCount = 4;
-                } else if (isMobile) {
-                  crossAxisCount = 2;
-                } else {
-                  crossAxisCount = 3;
-                }
-
+                final int crossAxisCount = 2;
                 return GridView.count(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
@@ -227,18 +205,6 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
                   mainAxisSpacing: isMobile ? 12 : 16,
                   childAspectRatio: isMobile ? 1.3 : 1.5,
                   children: [
-                    _buildStatCard(
-                      'Khách hàng',
-                      _totalCustomers.toString(),
-                      Icons.person,
-                      Colors.green,
-                    ),
-                    _buildStatCard(
-                      'Luật sư',
-                      _totalLawyers.toString(),
-                      Icons.gavel,
-                      Colors.orange,
-                    ),
                     _buildStatCard(
                       'Đặt lịch',
                       _totalAppointments.toString(),
@@ -369,8 +335,8 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
 
             SizedBox(height: isMobile ? 20 : 24),
 
-            // Recent activity
-            _buildRecentActivitySection(isMobile),
+            // Recent appointments
+            _buildRecentAppointments(isMobile),
 
             SizedBox(height: isMobile ? 20 : 24),
 
@@ -626,37 +592,6 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
     );
   }
 
-  Widget _buildRecentActivitySection(bool isMobile) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Hoạt động gần đây',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.blue[800],
-                fontSize: isMobile ? 18 : 20,
-              ),
-        ),
-        const SizedBox(height: 16),
-        if (isMobile) ...[
-          _buildRecentAppointments(isMobile),
-          const SizedBox(height: 16),
-          _buildRecentCustomers(isMobile),
-        ] else ...[
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(child: _buildRecentAppointments(isMobile)),
-              const SizedBox(width: 16),
-              Expanded(child: _buildRecentCustomers(isMobile)),
-            ],
-          ),
-        ],
-      ],
-    );
-  }
-
   Widget _buildRecentAppointments(bool isMobile) {
     return Container(
       padding: EdgeInsets.all(isMobile ? 12 : 16),
@@ -709,58 +644,6 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
     );
   }
 
-  Widget _buildRecentCustomers(bool isMobile) {
-    return Container(
-      padding: EdgeInsets.all(isMobile ? 12 : 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.person,
-                  color: Colors.orange, size: isMobile ? 16 : 20),
-              const SizedBox(width: 8),
-              Text(
-                'Khách hàng mới',
-                style: TextStyle(
-                  fontSize: isMobile ? 14 : 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.orange[800],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          if (_recentCustomers.isEmpty)
-            Center(
-              child: Text(
-                'Không có khách hàng mới',
-                style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: isMobile ? 12 : 14,
-                ),
-              ),
-            )
-          else
-            ...(_recentCustomers
-                .map((cust) => _buildCustomerItem(cust, isMobile))),
-        ],
-      ),
-    );
-  }
-
   Widget _buildAppointmentItem(Appointment appointment, bool isMobile) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -788,50 +671,6 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
                 ),
                 Text(
                   '${appointment.appointmentDate.day}/${appointment.appointmentDate.month} - ${appointment.timeSlot}',
-                  style: TextStyle(
-                    fontSize: isMobile ? 10 : 11,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCustomerItem(Customer customer, bool isMobile) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: isMobile ? 12 : 14,
-            backgroundColor: Colors.orange,
-            child: Text(
-              customer.name[0].toUpperCase(),
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: isMobile ? 10 : 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  customer.name,
-                  style: TextStyle(
-                    fontSize: isMobile ? 12 : 13,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Text(
-                  customer.occupation,
                   style: TextStyle(
                     fontSize: isMobile ? 10 : 11,
                     color: Colors.grey[600],

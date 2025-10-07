@@ -415,7 +415,6 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
         ),
       );
     }
-
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
 
@@ -770,7 +769,9 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
   void _showEditLawyerDialog(Lawyer lawyer) {
     final nameController = TextEditingController(text: lawyer.name);
     final emailController = TextEditingController(text: lawyer.email);
+    final originalEmail = lawyer.email;
     final phoneController = TextEditingController(text: lawyer.phone);
+    final passwordController = TextEditingController();
     final addressController = TextEditingController(text: lawyer.address);
     final specializationController =
         TextEditingController(text: lawyer.specialization);
@@ -815,6 +816,27 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
                   decoration: const InputDecoration(
                       labelText: 'Số điện thoại',
                       border: OutlineInputBorder())),
+              const SizedBox(height: 12),
+              FutureBuilder<User?>(
+                future: UserStorageService.getUserByEmail(originalEmail),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox.shrink();
+                  }
+                  if (snapshot.data != null &&
+                      passwordController.text.isEmpty) {
+                    passwordController.text = snapshot.data!.password;
+                  }
+                  return TextField(
+                    controller: passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Mật khẩu đăng nhập',
+                      border: OutlineInputBorder(),
+                    ),
+                  );
+                },
+              ),
               const SizedBox(height: 12),
               TextField(
                   controller: addressController,
@@ -932,6 +954,13 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
                   updatedAt: DateTime.now(),
                 );
                 await UserStorageService.updateLawyer(updated);
+                // Sync associated user account (name/email/password)
+                await UserStorageService.syncLawyerUserAccount(
+                  oldEmail: originalEmail,
+                  name: updated.name,
+                  newEmail: updated.email,
+                  newPassword: passwordController.text,
+                );
                 await _loadLawyers();
                 if (mounted) Navigator.pop(context);
                 _showSuccessSnackBar('Cập nhật luật sư thành công');

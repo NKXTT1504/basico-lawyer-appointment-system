@@ -37,6 +37,17 @@ class UserStorageService {
     await saveUsers(users);
   }
 
+  static Future<User?> getUserByEmail(String email) async {
+    final users = await getUsers();
+    try {
+      return users.firstWhere(
+        (u) => u.email.toLowerCase() == email.trim().toLowerCase(),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   static Future<User?> getCurrentUser() async {
     final prefs = await SharedPreferences.getInstance();
     final String? data = prefs.getString(_currentUserKey);
@@ -162,21 +173,6 @@ class UserStorageService {
     final lawyers = await getLawyers();
     lawyers.add(lawyer);
     await saveLawyers(lawyers);
-
-    // Ensure a corresponding login account exists for the lawyer
-    final users = await getUsers();
-    final bool hasUser = users.any((u) => u.email == lawyer.email);
-    if (!hasUser) {
-      final User lawyerUser = User(
-        id: 'user_${lawyer.id}',
-        email: lawyer.email,
-        password: 'lawyer123', // temporary default password
-        name: lawyer.name,
-        role: UserRole.lawyer,
-        createdAt: DateTime.now(),
-      );
-      await addUser(lawyerUser);
-    }
   }
 
   static Future<void> updateLawyer(Lawyer lawyer) async {
@@ -186,27 +182,14 @@ class UserStorageService {
       lawyers[index] = lawyer;
       await saveLawyers(lawyers);
 
-      // Keep associated user in sync (name/email)
+      // Basic best-effort sync by matching current lawyer email
       final users = await getUsers();
-      final int userIdxById =
-          users.indexWhere((u) => u.id == 'user_${lawyer.id}');
-      if (userIdxById != -1) {
-        final updated = users[userIdxById].copyWith(
-          name: lawyer.name,
-          email: lawyer.email,
-        );
-        users[userIdxById] = updated;
+      final int userIdxByEmail = users.indexWhere(
+          (u) => u.email.toLowerCase() == lawyer.email.toLowerCase());
+      if (userIdxByEmail != -1) {
+        users[userIdxByEmail] =
+            users[userIdxByEmail].copyWith(name: lawyer.name);
         await saveUsers(users);
-      } else {
-        final int userIdxByEmail =
-            users.indexWhere((u) => u.email == lawyer.email);
-        if (userIdxByEmail != -1) {
-          final updated = users[userIdxByEmail].copyWith(
-            name: lawyer.name,
-          );
-          users[userIdxByEmail] = updated;
-          await saveUsers(users);
-        }
       }
     }
   }
@@ -226,6 +209,58 @@ class UserStorageService {
     users.removeWhere((u) =>
         u.id == 'user_$id' || (removed != null && u.email == removed!.email));
     await saveUsers(users);
+  }
+
+  // Update user's password by email (used by admin to reset lawyer password)
+  static Future<void> updateUserPasswordByEmail(
+      String email, String newPassword) async {
+    final users = await getUsers();
+    final idx = users
+        .indexWhere((u) => u.email.toLowerCase() == email.trim().toLowerCase());
+    if (idx != -1) {
+      users[idx] = users[idx].copyWith(password: newPassword);
+      await saveUsers(users);
+    }
+  }
+
+  // Sync lawyer's associated user account when admin edits lawyer info.
+  // If a user with oldEmail exists, update name/email and optionally password.
+  // If not found but a user with newEmail exists, update name/password there.
+  static Future<void> syncLawyerUserAccount({
+    required String oldEmail,
+    required String name,
+    required String newEmail,
+    String? newPassword,
+  }) async {
+    final users = await getUsers();
+    int idx = users.indexWhere(
+        (u) => u.email.toLowerCase() == oldEmail.trim().toLowerCase());
+    if (idx == -1) {
+      idx = users.indexWhere(
+          (u) => u.email.toLowerCase() == newEmail.trim().toLowerCase());
+    }
+    if (idx != -1) {
+      var updated = users[idx].copyWith(name: name, email: newEmail.trim());
+      if (newPassword != null && newPassword.isNotEmpty) {
+        updated = updated.copyWith(password: newPassword);
+      }
+      users[idx] = updated;
+      await saveUsers(users);
+    } else {
+      // No existing user found for this lawyer profile. If a new password is
+      // provided, create a new login account for the lawyer.
+      if (newPassword != null && newPassword.isNotEmpty) {
+        final newUser = User(
+          id: 'user_lawyer_${DateTime.now().millisecondsSinceEpoch}',
+          email: newEmail.trim().toLowerCase(),
+          password: newPassword,
+          name: name,
+          role: UserRole.lawyer,
+          createdAt: DateTime.now(),
+        );
+        await addUser(newUser);
+      }
+    }
   }
 
   // Appointments Management
@@ -279,7 +314,7 @@ class UserStorageService {
     final existingUsers = await getUsers();
     if (existingUsers.isNotEmpty) return;
 
-    // Create default users
+    // Create default users (no default lawyer account; admins create lawyer accounts)
     final users = [
       User(
         id: 'user_admin_001',
@@ -287,14 +322,6 @@ class UserStorageService {
         password: 'admin123',
         name: 'Administrator',
         role: UserRole.admin,
-        createdAt: DateTime.now(),
-      ),
-      User(
-        id: 'user_lawyer_001',
-        email: 'lawyer@basico.com',
-        password: 'lawyer123',
-        name: 'Luật sư Nguyễn Văn A',
-        role: UserRole.lawyer,
         createdAt: DateTime.now(),
       ),
       User(
