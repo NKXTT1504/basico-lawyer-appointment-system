@@ -1,20 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../../admin/data/services/user_storage_service.dart';
+import '../../../admin/data/models/lawyer.dart' as model;
+import '../../../appointment/presentation/pages/appointment_list_page.dart'
+    show openBookingSheet;
 
-class _Lawyer {
-  final String name;
-  final String specialty;
-  final int yearsOfExperience;
-  final double rating;
-  final String photoAsset;
-
-  const _Lawyer({
-    required this.name,
-    required this.specialty,
-    required this.yearsOfExperience,
-    required this.rating,
-    required this.photoAsset,
-  });
-}
+// Removed mock class; now reading real lawyers from storage
 
 class LawyerListPage extends StatefulWidget {
   const LawyerListPage({super.key});
@@ -34,8 +24,10 @@ class _LawyerListPageState extends State<LawyerListPage> {
     'Gia đình',
   ];
 
-  late final Map<String, List<_Lawyer>> dataByCategory;
-  late final List<_Lawyer> allLawyers;
+  // ignore: unused_field
+  List<model.Lawyer> _allLawyers = <model.Lawyer>[];
+  List<model.Lawyer> _filtered = <model.Lawyer>[];
+  bool _loading = true;
 
   bool _showFilter = false;
   String _selectedCategory = 'Tất cả';
@@ -43,87 +35,27 @@ class _LawyerListPageState extends State<LawyerListPage> {
   @override
   void initState() {
     super.initState();
-    dataByCategory = <String, List<_Lawyer>>{
-      'Tư vấn pháp lý': const <_Lawyer>[
-        _Lawyer(
-          name: 'Nguyễn Minh Anh',
-          specialty: 'Tư vấn pháp lý',
-          yearsOfExperience: 12,
-          rating: 4.8,
-          photoAsset: 'assets/images/lawyers/lawyer1.png',
-        ),
-        _Lawyer(
-          name: 'Trần Quốc Bảo',
-          specialty: 'Tư vấn pháp lý',
-          yearsOfExperience: 8,
-          rating: 4.5,
-          photoAsset: 'assets/images/lawyers/lawyer2.png',
-        ),
-      ],
-      'Hợp đồng': const <_Lawyer>[
-        _Lawyer(
-          name: 'Lê Thu Hà',
-          specialty: 'Soạn thảo hợp đồng',
-          yearsOfExperience: 10,
-          rating: 4.7,
-          photoAsset: 'assets/images/lawyers/lawyer3.png',
-        ),
-        _Lawyer(
-          name: 'Phạm Duy Khang',
-          specialty: 'Thẩm định hợp đồng',
-          yearsOfExperience: 9,
-          rating: 4.6,
-          photoAsset: 'assets/images/lawyers/lawyer4.png',
-        ),
-      ],
-      'Đại diện': const <_Lawyer>[
-        _Lawyer(
-          name: 'Võ Hoài Nam',
-          specialty: 'Đại diện pháp lý',
-          yearsOfExperience: 11,
-          rating: 4.9,
-          photoAsset: 'assets/images/lawyers/lawyer5.png',
-        ),
-        _Lawyer(
-          name: 'Đặng Thùy Linh',
-          specialty: 'Tranh tụng',
-          yearsOfExperience: 7,
-          rating: 4.4,
-          photoAsset: 'assets/images/lawyers/lawyer6.png',
-        ),
-      ],
-      'Gia đình': const <_Lawyer>[
-        _Lawyer(
-          name: 'Ngô Bích Phương',
-          specialty: 'Luật gia đình',
-          yearsOfExperience: 13,
-          rating: 4.8,
-          photoAsset: 'assets/images/lawyers/lawyer7.png',
-        ),
-        _Lawyer(
-          name: 'Bùi Hữu Tài',
-          specialty: 'Tư vấn hôn nhân',
-          yearsOfExperience: 6,
-          rating: 4.3,
-          photoAsset: 'assets/images/lawyers/lawyer8.png',
-        ),
-      ],
-    };
-    allLawyers = <_Lawyer>[
-      ...dataByCategory['Tư vấn pháp lý']!,
-      ...dataByCategory['Hợp đồng']!,
-      ...dataByCategory['Đại diện']!,
-      ...dataByCategory['Gia đình']!,
-    ];
+    _load();
   }
 
-  List<_Lawyer> get _filteredLawyers {
-    if (_selectedCategory == 'Tất cả') return allLawyers;
-    return dataByCategory[_selectedCategory] ?? <_Lawyer>[];
+  Future<void> _load() async {
+    final list = await UserStorageService.getLawyers();
+    setState(() {
+      _allLawyers = list;
+      _filtered = list;
+      _loading = false;
+    });
   }
+
+  List<model.Lawyer> get _filteredLawyers => _filtered;
 
   @override
   Widget build(BuildContext context) {
+    if (_loading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text('Luật sư'),
@@ -143,7 +75,8 @@ class _LawyerListPageState extends State<LawyerListPage> {
                 borderRadius: BorderRadius.circular(12),
                 onTap: () => setState(() => _showFilter = !_showFilter),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                   child: Row(
                     children: <Widget>[
                       Icon(Icons.filter_list, color: primaryColor),
@@ -153,10 +86,13 @@ class _LawyerListPageState extends State<LawyerListPage> {
                           _selectedCategory == 'Tất cả'
                               ? 'Lọc theo dịch vụ'
                               : 'Dịch vụ: $_selectedCategory',
-                          style: TextStyle(color: Colors.grey.shade800, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                              color: Colors.grey.shade800,
+                              fontWeight: FontWeight.w600),
                         ),
                       ),
-                      Icon(_showFilter ? Icons.expand_less : Icons.expand_more, color: Colors.grey.shade600),
+                      Icon(_showFilter ? Icons.expand_less : Icons.expand_more,
+                          color: Colors.grey.shade600),
                     ],
                   ),
                 ),
@@ -189,14 +125,18 @@ class _LawyerListPageState extends State<LawyerListPage> {
                     },
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),
-                      side: BorderSide(color: selected ? primaryColor : Colors.grey.shade300),
+                      side: BorderSide(
+                          color:
+                              selected ? primaryColor : Colors.grey.shade300),
                     ),
                     backgroundColor: Colors.white,
                   );
                 }).toList(),
               ),
             ),
-            crossFadeState: _showFilter ? CrossFadeState.showSecond : CrossFadeState.showFirst,
+            crossFadeState: _showFilter
+                ? CrossFadeState.showSecond
+                : CrossFadeState.showFirst,
             duration: const Duration(milliseconds: 200),
           ),
           const SizedBox(height: 8),
@@ -213,7 +153,7 @@ class _LawyerListPageState extends State<LawyerListPage> {
 }
 
 class _LawyerGrid extends StatelessWidget {
-  final List<_Lawyer> lawyers;
+  final List<model.Lawyer> lawyers;
   final Color primaryColor;
 
   const _LawyerGrid({
@@ -236,7 +176,7 @@ class _LawyerGrid extends StatelessWidget {
       ),
       itemCount: lawyers.length,
       itemBuilder: (BuildContext context, int index) {
-        final _Lawyer lawyer = lawyers[index];
+        final model.Lawyer lawyer = lawyers[index];
         return _LawyerCard(lawyer: lawyer, primaryColor: primaryColor);
       },
     );
@@ -244,7 +184,7 @@ class _LawyerGrid extends StatelessWidget {
 }
 
 class _LawyerCard extends StatelessWidget {
-  final _Lawyer lawyer;
+  final model.Lawyer lawyer;
   final Color primaryColor;
 
   const _LawyerCard({
@@ -281,13 +221,7 @@ class _LawyerCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: Image.asset(
-                  lawyer.photoAsset,
-                  fit: BoxFit.cover,
-                  errorBuilder: (BuildContext _, Object __, StackTrace? ___) {
-                    return Icon(Icons.person, color: primaryColor, size: 28);
-                  },
-                ),
+                child: Icon(Icons.person, color: primaryColor, size: 28),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -306,7 +240,7 @@ class _LawyerCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      lawyer.specialty,
+                      lawyer.specialization,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
@@ -325,46 +259,45 @@ class _LawyerCard extends StatelessWidget {
               Icon(Icons.badge, size: 18, color: primaryColor),
               const SizedBox(width: 6),
               Text(
-                '${lawyer.yearsOfExperience} năm kinh nghiệm',
-              style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                '${lawyer.experienceYears} năm kinh nghiệm',
+                style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
               ),
             ],
           ),
           const SizedBox(height: 8),
           Row(
             children: <Widget>[
-              ...List<Widget>.generate(5, (int i) {
-                final bool filled = i < lawyer.rating.floor();
-                final bool half = !filled && (i + 0.5) < lawyer.rating;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 2),
-                  child: Icon(
-                    half ? Icons.star_half_rounded : Icons.star_rounded,
-                    size: 16,
-                    color: filled || half ? const Color(0xFFFFB300) : Colors.grey.shade300,
-                  ),
-                );
-              }),
+              const Icon(Icons.star_rounded,
+                  size: 16, color: Color(0xFFFFB300)),
               const SizedBox(width: 6),
-              Text(
-                lawyer.rating.toStringAsFixed(1),
-                style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
-              ),
+              Text('4.6',
+                  style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
             ],
           ),
           const Spacer(),
           SizedBox(
             width: double.infinity,
             child: OutlinedButton(
-              onPressed: () {},
+              onPressed: () {
+                openBookingSheet(
+                  context,
+                  lawyerId: lawyer.id,
+                  lawyerName: lawyer.name,
+                  service: lawyer.specialization,
+                );
+              },
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: Colors.grey.shade300),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
                 padding: const EdgeInsets.symmetric(vertical: 8),
               ),
               child: Text(
                 'Đặt lịch',
-                style: TextStyle(color: primaryColor, fontWeight: FontWeight.w600, fontSize: 13),
+                style: TextStyle(
+                    color: primaryColor,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13),
               ),
             ),
           ),

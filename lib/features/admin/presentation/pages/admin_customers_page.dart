@@ -318,6 +318,158 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
     );
   }
 
+  void _showEditCustomerDialog(Customer customer) {
+    final nameController = TextEditingController(text: customer.name);
+    final emailController = TextEditingController(text: customer.email);
+    final phoneController = TextEditingController(text: customer.phone);
+    final addressController = TextEditingController(text: customer.address);
+    final occupationController =
+        TextEditingController(text: customer.occupation);
+    final notesController = TextEditingController(text: customer.notes);
+    DateTime selectedDate = customer.dateOfBirth;
+    String selectedGender = customer.gender;
+    final originalEmail = customer.email;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Chỉnh sửa khách hàng'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: const InputDecoration(
+                    labelText: 'Họ và tên',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: emailController,
+                  decoration: const InputDecoration(
+                    labelText: 'Email',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: phoneController,
+                  decoration: const InputDecoration(
+                    labelText: 'Số điện thoại',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: addressController,
+                  decoration: const InputDecoration(
+                    labelText: 'Địa chỉ',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: occupationController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nghề nghiệp',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: selectedGender,
+                  decoration: const InputDecoration(
+                    labelText: 'Giới tính',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'Nam', child: Text('Nam')),
+                    DropdownMenuItem(value: 'Nữ', child: Text('Nữ')),
+                    DropdownMenuItem(value: 'Khác', child: Text('Khác')),
+                  ],
+                  onChanged: (v) => setState(() => selectedGender = v ?? 'Nam'),
+                ),
+                const SizedBox(height: 16),
+                InkWell(
+                  onTap: () async {
+                    final date = await showDatePicker(
+                      context: context,
+                      initialDate: selectedDate,
+                      firstDate: DateTime(1900),
+                      lastDate: DateTime.now(),
+                    );
+                    if (date != null) setState(() => selectedDate = date);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_today),
+                        const SizedBox(width: 8),
+                        Text(
+                            '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}'),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: notesController,
+                  decoration: const InputDecoration(
+                    labelText: 'Ghi chú',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Hủy')),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  final updated = customer.copyWith(
+                    name: nameController.text.trim(),
+                    email: emailController.text.trim().toLowerCase(),
+                    phone: phoneController.text.trim(),
+                    address: addressController.text.trim(),
+                    occupation: occupationController.text.trim(),
+                    gender: selectedGender,
+                    dateOfBirth: selectedDate,
+                    updatedAt: DateTime.now(),
+                  );
+                  await UserStorageService.updateCustomer(updated);
+                  await UserStorageService.syncCustomerUserAccount(
+                    oldEmail: originalEmail,
+                    name: updated.name,
+                    newEmail: updated.email,
+                  );
+                  await _loadCustomers();
+                  if (mounted) Navigator.pop(context);
+                  _showSuccessSnackBar('Cập nhật khách hàng thành công');
+                } catch (e) {
+                  _showErrorSnackBar('Lỗi khi cập nhật: $e');
+                }
+              },
+              child: const Text('Lưu'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -527,11 +679,7 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
-                  onPressed: () {
-                    // TODO: Implement edit functionality
-                    _showErrorSnackBar(
-                        'Chức năng chỉnh sửa đang được phát triển');
-                  },
+                  onPressed: () => _showEditCustomerDialog(customer),
                   icon: const Icon(Icons.edit, size: 16),
                   label: const Text('Chỉnh sửa'),
                   style: ElevatedButton.styleFrom(
@@ -560,11 +708,7 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                 children: [
                   Expanded(
                     child: ElevatedButton.icon(
-                      onPressed: () {
-                        // TODO: Implement edit functionality
-                        _showErrorSnackBar(
-                            'Chức năng chỉnh sửa đang được phát triển');
-                      },
+                      onPressed: () => _showEditCustomerDialog(customer),
                       icon: const Icon(Icons.edit, size: 16),
                       label: const Text('Chỉnh sửa'),
                       style: ElevatedButton.styleFrom(

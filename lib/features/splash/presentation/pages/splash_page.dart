@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../admin/data/services/user_storage_service.dart';
+import '../../../admin/data/models/admin_user.dart';
 
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
@@ -17,9 +19,26 @@ class _SplashPageState extends State<SplashPage> {
 
   Future<void> _navigateToNext() async {
     await Future.delayed(const Duration(seconds: 2));
-    
-    if (mounted) {
-      // Navigate to home page directly for demo
+    try {
+      final user = await UserStorageService.getCurrentUser();
+      if (!mounted) return;
+      if (user == null) {
+        context.go('/login');
+        return;
+      }
+      switch (user.role) {
+        case UserRole.admin:
+          context.go('/admin/dashboard');
+          break;
+        case UserRole.lawyer:
+          context.go('/lawyer/dashboard');
+          break;
+        case UserRole.customer:
+          context.go('/home');
+          break;
+      }
+    } catch (e) {
+      if (!mounted) return;
       context.go('/home');
     }
   }
@@ -40,15 +59,15 @@ class _SplashPageState extends State<SplashPage> {
             Text(
               'Basico Lawyer',
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
             ),
             const SizedBox(height: 8),
             Text(
               'Đặt lịch tư vấn pháp lý',
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Colors.grey[600],
-              ),
+                    color: Colors.grey[600],
+                  ),
             ),
             const SizedBox(height: 48),
             const CircularProgressIndicator(),

@@ -22,15 +22,22 @@ class _ProfileFormState extends State<ProfileForm> {
   late TextEditingController _fullNameController;
   late TextEditingController _phoneNumberController;
   late TextEditingController _emailController;
-  
+  late TextEditingController _addressController;
+  late TextEditingController _occupationController;
+  String _gender = 'Nam';
+  DateTime? _dob;
+
   final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     super.initState();
     _fullNameController = TextEditingController(text: widget.profile.fullName);
-    _phoneNumberController = TextEditingController(text: widget.profile.phoneNumber);
+    _phoneNumberController =
+        TextEditingController(text: widget.profile.phoneNumber);
     _emailController = TextEditingController(text: widget.profile.email);
+    _addressController = TextEditingController();
+    _occupationController = TextEditingController();
   }
 
   @override
@@ -38,17 +45,28 @@ class _ProfileFormState extends State<ProfileForm> {
     _fullNameController.dispose();
     _phoneNumberController.dispose();
     _emailController.dispose();
+    _addressController.dispose();
+    _occupationController.dispose();
     super.dispose();
   }
 
   void _saveChanges() {
     if (_formKey.currentState?.validate() ?? false) {
       context.read<ProfileBloc>().add(
-        UpdateProfileRequested(
-          fullName: _fullNameController.text.trim(),
-          phoneNumber: _phoneNumberController.text.trim(),
-        ),
-      );
+            UpdateProfileRequested(
+              fullName: _fullNameController.text.trim(),
+              phoneNumber: _phoneNumberController.text.trim(),
+              address: _addressController.text.trim().isEmpty
+                  ? null
+                  : _addressController.text.trim(),
+              gender: _gender,
+              dateOfBirth: _dob,
+              occupation: _occupationController.text.trim().isEmpty
+                  ? null
+                  : _occupationController.text.trim(),
+              // notes field removed in customer profile UI
+            ),
+          );
     }
   }
 
@@ -65,44 +83,75 @@ class _ProfileFormState extends State<ProfileForm> {
   Widget build(BuildContext context) {
     final isTablet = ResponsiveHelper.isTablet(context);
     final screenWidth = MediaQuery.of(context).size.width;
-    
+
     return Container(
       width: isTablet ? screenWidth * 0.8 : screenWidth * 0.95,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: const BorderRadius.all(Radius.circular(12)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withValues(alpha: 0.1),
-              spreadRadius: 2,
-              blurRadius: 10,
-              offset: const Offset(0, 2),
-            ),
-          ],
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withValues(alpha: 0.1),
+            spreadRadius: 2,
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          // Header Banner
+          // Header card style with avatar, name, and edit icon
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              color: Color(0xFF1E3A8A),
-              borderRadius: BorderRadius.only(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
             ),
-            child: Text(
-              'Thông tin cá nhân',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: isTablet ? 24 : 20,
-                fontWeight: FontWeight.bold,
-              ),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: isTablet ? 28 : 24,
+                  backgroundColor: const Color(0xFF1E3A8A).withOpacity(0.1),
+                  child: const Icon(Icons.person, color: Color(0xFF1E3A8A)),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.profile.fullName,
+                        style: TextStyle(
+                          fontSize: isTablet ? 18 : 16,
+                          fontWeight: FontWeight.w700,
+                          color: const Color(0xFF1E3A8A),
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        widget.profile.email,
+                        style: TextStyle(color: Colors.grey.shade700),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.edit,
+                    size: isTablet ? 20 : 18, color: Colors.grey.shade500),
+              ],
             ),
           ),
-          
+
           // Form Content
           Padding(
             padding: EdgeInsets.all(isTablet ? 40 : 30),
@@ -117,9 +166,9 @@ class _ProfileFormState extends State<ProfileForm> {
                     icon: Icons.person,
                     enabled: true,
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   _buildTextField(
                     label: 'Email',
                     controller: _emailController,
@@ -127,9 +176,9 @@ class _ProfileFormState extends State<ProfileForm> {
                     enabled: false,
                     helperText: 'Email không thể thay đổi',
                   ),
-                  
+
                   const SizedBox(height: 24),
-                  
+
                   _buildTextField(
                     label: 'Số điện thoại',
                     controller: _phoneNumberController,
@@ -137,9 +186,60 @@ class _ProfileFormState extends State<ProfileForm> {
                     enabled: true,
                     keyboardType: TextInputType.phone,
                   ),
-                  
+                  const SizedBox(height: 24),
+                  _buildTextField(
+                    label: 'Địa chỉ',
+                    controller: _addressController,
+                    icon: Icons.location_on,
+                    enabled: true,
+                  ),
+                  const SizedBox(height: 24),
+                  DropdownButtonFormField<String>(
+                    value: _gender,
+                    decoration: InputDecoration(
+                      prefixIcon:
+                          Icon(Icons.transgender, color: Colors.grey.shade600),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide(color: Colors.grey.shade300),
+                      ),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: 'Nam', child: Text('Nam')),
+                      DropdownMenuItem(value: 'Nữ', child: Text('Nữ')),
+                      DropdownMenuItem(value: 'Khác', child: Text('Khác')),
+                    ],
+                    onChanged: (v) => setState(() => _gender = v ?? 'Nam'),
+                  ),
+                  const SizedBox(height: 24),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      final now = DateTime.now();
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate:
+                            _dob ?? DateTime(now.year - 25, now.month, now.day),
+                        firstDate: DateTime(1900),
+                        lastDate: now,
+                      );
+                      if (picked != null) setState(() => _dob = picked);
+                    },
+                    icon: const Icon(Icons.cake),
+                    label: Text(_dob == null
+                        ? 'Chọn ngày sinh'
+                        : '${_dob!.day}/${_dob!.month}/${_dob!.year}'),
+                  ),
+                  const SizedBox(height: 24),
+                  _buildTextField(
+                    label: 'Nghề nghiệp',
+                    controller: _occupationController,
+                    icon: Icons.work,
+                    enabled: true,
+                  ),
+                  // Removed Notes field per request
+
                   const SizedBox(height: 40),
-                  
+
                   // Action Buttons
                   Row(
                     mainAxisAlignment: MainAxisAlignment.end,
@@ -164,20 +264,17 @@ class _ProfileFormState extends State<ProfileForm> {
                           ),
                         ),
                       ),
-                      
                       const SizedBox(width: 16),
-                      
                       ElevatedButton(
                         onPressed: _saveChanges,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF1E3A8A),
                           padding: EdgeInsets.symmetric(
-                            horizontal: isTablet ? 24 : 20,
+                            horizontal: isTablet ? 28 : 24,
                             vertical: isTablet ? 12 : 10,
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
+                          shape: const StadiumBorder(),
+                          elevation: 0,
                         ),
                         child: Text(
                           'Lưu thay đổi',
@@ -278,3 +375,5 @@ class _ProfileFormState extends State<ProfileForm> {
     );
   }
 }
+
+extension _Dummy on Object {}

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/services/user_storage_service.dart';
 import '../../data/models/admin_user.dart';
+import '../../data/models/lawyer.dart';
 
 class LawyerProfilePage extends StatefulWidget {
   const LawyerProfilePage({super.key});
@@ -13,6 +14,7 @@ class LawyerProfilePage extends StatefulWidget {
 class _LawyerProfilePageState extends State<LawyerProfilePage> {
   User? _currentUser;
   bool _isLoading = true;
+  Lawyer? _lawyerProfile;
 
   @override
   void initState() {
@@ -24,8 +26,16 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
     try {
       final user = await UserStorageService.getCurrentUser();
       if (user != null && user.role == UserRole.lawyer) {
+        // Load associated lawyer profile by email
+        final lawyers = await UserStorageService.getLawyers();
+        Lawyer? lawyer;
+        try {
+          lawyer = lawyers.firstWhere(
+              (l) => l.email.toLowerCase() == user.email.toLowerCase());
+        } catch (_) {}
         setState(() {
           _currentUser = user;
+          _lawyerProfile = lawyer;
           _isLoading = false;
         });
       } else {
@@ -45,10 +55,15 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
         TextEditingController(text: _currentUser?.name ?? '');
     final emailController =
         TextEditingController(text: _currentUser?.email ?? '');
-    final phoneController = TextEditingController();
-    final addressController = TextEditingController();
-    final specializationController = TextEditingController();
-    final bioController = TextEditingController();
+    final phoneController =
+        TextEditingController(text: _lawyerProfile?.phone ?? '');
+    final addressController =
+        TextEditingController(text: _lawyerProfile?.address ?? '');
+    final specializationController =
+        TextEditingController(text: _lawyerProfile?.specialization ?? '');
+    final bioController =
+        TextEditingController(text: _lawyerProfile?.bio ?? '');
+    final originalEmail = _currentUser?.email ?? '';
 
     showDialog(
       context: context,
@@ -116,10 +131,165 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
             child: const Text('Hủy'),
           ),
           ElevatedButton(
-            onPressed: () {
-              // TODO: Implement update functionality
-              Navigator.pop(context);
-              _showSuccessSnackBar('Cập nhật thông tin thành công');
+            onPressed: () async {
+              try {
+                // Find lawyer profile by original email
+                final lawyers = await UserStorageService.getLawyers();
+                Lawyer? lawyer;
+                try {
+                  lawyer = lawyers.firstWhere((l) =>
+                      l.email.toLowerCase() == originalEmail.toLowerCase());
+                } catch (_) {}
+
+                if (lawyer != null) {
+                  final updated = lawyer.copyWith(
+                    name: nameController.text.trim().isEmpty
+                        ? lawyer.name
+                        : nameController.text.trim(),
+                    email: emailController.text.trim().isEmpty
+                        ? lawyer.email
+                        : emailController.text.trim().toLowerCase(),
+                    phone: phoneController.text.trim().isEmpty
+                        ? lawyer.phone
+                        : phoneController.text.trim(),
+                    address: addressController.text.trim().isEmpty
+                        ? lawyer.address
+                        : addressController.text.trim(),
+                    specialization: specializationController.text.trim().isEmpty
+                        ? lawyer.specialization
+                        : specializationController.text.trim(),
+                    bio: bioController.text.trim().isEmpty
+                        ? lawyer.bio
+                        : bioController.text.trim(),
+                    updatedAt: DateTime.now(),
+                  );
+                  await UserStorageService.updateLawyer(updated);
+                  await UserStorageService.syncLawyerUserAccount(
+                    oldEmail: originalEmail,
+                    name: updated.name,
+                    newEmail: updated.email,
+                  );
+                  // Refresh current user if email/name changed
+                  final refreshed =
+                      await UserStorageService.getUserByEmail(updated.email);
+                  if (refreshed != null) {
+                    await UserStorageService.setCurrentUser(refreshed);
+                    setState(() {
+                      _currentUser = refreshed;
+                      _lawyerProfile = updated;
+                    });
+                  }
+                } else {
+                  // If no lawyer profile found, update only user record
+                  final users = await UserStorageService.getUsers();
+                  final idx = users.indexWhere((u) =>
+                      u.email.toLowerCase() == originalEmail.toLowerCase());
+                  if (idx != -1) {
+                    final updatedUser = users[idx].copyWith(
+                      name: nameController.text.trim().isEmpty
+                          ? users[idx].name
+                          : nameController.text.trim(),
+                      email: emailController.text.trim().isEmpty
+                          ? users[idx].email
+                          : emailController.text.trim().toLowerCase(),
+                    );
+                    users[idx] = updatedUser;
+                    await UserStorageService.saveUsers(users);
+                    await UserStorageService.setCurrentUser(updatedUser);
+                    setState(() => _currentUser = updatedUser);
+                  }
+                }
+
+                if (mounted) Navigator.pop(context);
+                _showSuccessSnackBar('Cập nhật thông tin thành công');
+              } catch (e) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text('Lỗi khi cập nhật: $e'),
+                      backgroundColor: Colors.red),
+                );
+              }
+            },
+            child: const Text('Lưu'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showChangePasswordDialog() {
+    final oldController = TextEditingController();
+    final newController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Đổi mật khẩu'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: oldController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Mật khẩu hiện tại',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: newController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Mật khẩu mới',
+                border: OutlineInputBorder(),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Hủy')),
+          ElevatedButton(
+            onPressed: () async {
+              try {
+                final user = await UserStorageService.getCurrentUser();
+                if (user == null) return;
+                if (user.password != oldController.text) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Mật khẩu hiện tại không đúng'),
+                        backgroundColor: Colors.red),
+                  );
+                  return;
+                }
+                if (newController.text.trim().length < 6) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                        content: Text('Mật khẩu mới phải ≥ 6 ký tự'),
+                        backgroundColor: Colors.red),
+                  );
+                  return;
+                }
+                await UserStorageService.updateUserPasswordByEmail(
+                    user.email, newController.text.trim());
+                final refreshed =
+                    await UserStorageService.getUserByEmail(user.email);
+                if (refreshed != null) {
+                  await UserStorageService.setCurrentUser(refreshed);
+                  setState(() => _currentUser = refreshed);
+                }
+                if (mounted) Navigator.pop(context);
+                _showSuccessSnackBar('Đổi mật khẩu thành công');
+              } catch (e) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text('Đổi mật khẩu thất bại: $e'),
+                      backgroundColor: Colors.red),
+                );
+              }
             },
             child: const Text('Lưu'),
           ),
@@ -259,11 +429,29 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                     _buildInfoRow(
                         Icons.email, 'Email', _currentUser?.email ?? ''),
                     _buildInfoRow(
-                        Icons.phone, 'Số điện thoại', 'Chưa cập nhật'),
+                        Icons.phone,
+                        'Số điện thoại',
+                        (_lawyerProfile?.phone ?? '').isNotEmpty
+                            ? _lawyerProfile!.phone
+                            : 'Chưa cập nhật'),
                     _buildInfoRow(
-                        Icons.location_on, 'Địa chỉ', 'Chưa cập nhật'),
-                    _buildInfoRow(Icons.work, 'Chuyên môn', 'Chưa cập nhật'),
-                    _buildInfoRow(Icons.info, 'Tiểu sử', 'Chưa cập nhật'),
+                        Icons.location_on,
+                        'Địa chỉ',
+                        (_lawyerProfile?.address ?? '').isNotEmpty
+                            ? _lawyerProfile!.address
+                            : 'Chưa cập nhật'),
+                    _buildInfoRow(
+                        Icons.work,
+                        'Chuyên môn',
+                        (_lawyerProfile?.specialization ?? '').isNotEmpty
+                            ? _lawyerProfile!.specialization
+                            : 'Chưa cập nhật'),
+                    _buildInfoRow(
+                        Icons.info,
+                        'Tiểu sử',
+                        (_lawyerProfile?.bio ?? '').isNotEmpty
+                            ? _lawyerProfile!.bio
+                            : 'Chưa cập nhật'),
                   ],
                 ),
               ),
@@ -391,29 +579,8 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
               // Mobile layout - stacked buttons
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: _showEditDialog,
-                  icon: const Icon(Icons.edit),
-                  label: const Text('Chỉnh sửa thông tin'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue[600],
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () {
-                    // TODO: Implement change password
-                    _showSuccessSnackBar(
-                        'Chức năng đổi mật khẩu đang được phát triển');
-                  },
+                  onPressed: _showChangePasswordDialog,
                   icon: const Icon(Icons.lock),
                   label: const Text('Đổi mật khẩu'),
                   style: OutlinedButton.styleFrom(
@@ -426,6 +593,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                   ),
                 ),
               ),
+              const SizedBox(height: 12),
             ] else ...[
               // Desktop layout - inline buttons
               Row(
@@ -434,7 +602,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                     child: ElevatedButton.icon(
                       onPressed: _showEditDialog,
                       icon: const Icon(Icons.edit),
-                      label: const Text('Chỉnh sửa thông tin'),
+                      label: const Text('Chỉnh sửa (trên thanh tiêu đề)'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue[600],
                         foregroundColor: Colors.white,
@@ -448,11 +616,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                   const SizedBox(width: 16),
                   Expanded(
                     child: OutlinedButton.icon(
-                      onPressed: () {
-                        // TODO: Implement change password
-                        _showSuccessSnackBar(
-                            'Chức năng đổi mật khẩu đang được phát triển');
-                      },
+                      onPressed: _showChangePasswordDialog,
                       icon: const Icon(Icons.lock),
                       label: const Text('Đổi mật khẩu'),
                       style: OutlinedButton.styleFrom(

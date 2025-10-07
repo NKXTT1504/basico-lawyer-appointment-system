@@ -55,6 +55,43 @@ class UserStorageService {
     return User.fromJson(json.decode(data));
   }
 
+  // Session helpers
+  static Future<bool> isLoggedIn() async {
+    final current = await getCurrentUser();
+    return current != null && current.isActive;
+  }
+
+  static Future<UserRole?> getCurrentUserRole() async {
+    final current = await getCurrentUser();
+    return current?.role;
+  }
+
+  static Future<Customer?> getCurrentCustomerProfile() async {
+    final current = await getCurrentUser();
+    if (current == null) return null;
+    final customers = await getCustomers();
+    try {
+      return customers.firstWhere(
+          (c) => c.email.toLowerCase() == current.email.toLowerCase());
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Profile is considered complete if these fields are non-empty and valid
+  /// Adjust the rules as the business requires
+  static Future<bool> isProfileCompleteForCurrentUser() async {
+    final role = await getCurrentUserRole();
+    if (role != UserRole.customer) return true; // only enforce for customers
+    final profile = await getCurrentCustomerProfile();
+    if (profile == null) return false;
+    final bool hasBasics =
+        profile.name.trim().isNotEmpty && profile.email.trim().isNotEmpty;
+    final bool hasContact = profile.phone.trim().isNotEmpty;
+    // Address is currently not editable in the profile form, so don't block on it
+    return hasBasics && hasContact && profile.isActive;
+  }
+
   static Future<void> setCurrentUser(User? user) async {
     final prefs = await SharedPreferences.getInstance();
     if (user == null) {
@@ -226,6 +263,26 @@ class UserStorageService {
     }
   }
 
+  // Sync customer's associated user account when admin edits customer info
+  static Future<void> syncCustomerUserAccount({
+    required String oldEmail,
+    required String name,
+    required String newEmail,
+  }) async {
+    final users = await getUsers();
+    int idx = users.indexWhere(
+        (u) => u.email.toLowerCase() == oldEmail.trim().toLowerCase());
+    if (idx == -1) {
+      idx = users.indexWhere(
+          (u) => u.email.toLowerCase() == newEmail.trim().toLowerCase());
+    }
+    if (idx != -1) {
+      users[idx] =
+          users[idx].copyWith(name: name, email: newEmail.trim().toLowerCase());
+      await saveUsers(users);
+    }
+  }
+
   // Sync lawyer's associated user account when admin edits lawyer info.
   // If a user with oldEmail exists, update name/email and optionally password.
   // If not found but a user with newEmail exists, update name/password there.
@@ -371,122 +428,75 @@ class UserStorageService {
       await addEmployee(employee);
     }
 
-    // Create sample customers
-    final customers = [
-      Customer(
-        id: 'cust_001',
-        name: 'Lê Văn C',
-        email: 'levanc@gmail.com',
-        phone: '0111222333',
-        address: '789 Đường DEF, Quận 3, TP.HCM',
-        dateOfBirth: DateTime(1985, 3, 15),
-        gender: 'Nam',
-        occupation: 'Kỹ sư',
-        notes: 'Khách hàng VIP',
+    // Seed 10 customers
+    for (int i = 1; i <= 10; i++) {
+      final cust = Customer(
+        id: 'cust_${i.toString().padLeft(3, '0')}',
+        name: 'Khách hàng ${i.toString().padLeft(2, '0')}',
+        email: 'customer${i}@basico.com',
+        phone: '0900000${(100 + i).toString()}',
+        address: 'Số ${i}, Quận ${i % 12 + 1}, TP.HCM',
+        dateOfBirth: DateTime(1990 + (i % 10), (i % 12) + 1, (i % 27) + 1),
+        gender: i % 2 == 0 ? 'Nam' : 'Nữ',
+        occupation: i % 2 == 0 ? 'Kỹ sư' : 'Nhân viên',
         createdAt: DateTime.now(),
-      ),
-      Customer(
-        id: 'cust_002',
-        name: 'Phạm Thị D',
-        email: 'phamthid@gmail.com',
-        phone: '0444555666',
-        address: '321 Đường GHI, Quận 4, TP.HCM',
-        dateOfBirth: DateTime(1990, 7, 22),
-        gender: 'Nữ',
-        occupation: 'Giáo viên',
+      );
+      await addCustomer(cust);
+      // Also create login user for customer i
+      await addUser(User(
+        id: 'user_customer_${i.toString().padLeft(3, '0')}',
+        email: 'customer${i}@basico.com',
+        password: '123456',
+        name: 'Khách hàng ${i.toString().padLeft(2, '0')}',
+        role: UserRole.customer,
         createdAt: DateTime.now(),
-      ),
-    ];
-    for (final customer in customers) {
-      await addCustomer(customer);
+      ));
     }
 
-    // Create sample lawyers
-    final lawyers = [
-      Lawyer(
-        id: 'law_001',
-        name: 'Luật sư Nguyễn Văn E',
-        email: 'luatsue@basico.com',
-        phone: '0777888999',
-        address: '555 Đường JKL, Quận 5, TP.HCM',
-        specialization: 'Luật Dân sự',
-        licenseNumber: 'LS001234',
-        experienceYears: 8,
-        hourlyRate: 500000,
-        baseSalary: 15000000,
-        commissionRate: 0.12,
-        successRate: 0.78,
-        ongoingCases: 1,
-        bio: 'Chuyên gia về luật dân sự với 8 năm kinh nghiệm',
-        languages: ['Tiếng Việt', 'Tiếng Anh'],
-        certifications: ['Chứng chỉ luật sư', 'Chứng chỉ quốc tế'],
-        createdAt: DateTime.now(),
-      ),
-      Lawyer(
-        id: 'law_002',
-        name: 'Luật sư Trần Thị F',
-        email: 'luatsuf@basico.com',
-        phone: '0333444555',
-        address: '999 Đường MNO, Quận 6, TP.HCM',
-        specialization: 'Luật Hình sự',
-        licenseNumber: 'LS005678',
-        experienceYears: 12,
-        hourlyRate: 700000,
-        baseSalary: 22000000,
-        commissionRate: 0.15,
-        successRate: 0.85,
-        ongoingCases: 2,
-        bio: 'Chuyên gia về luật hình sự với 12 năm kinh nghiệm',
-        languages: ['Tiếng Việt', 'Tiếng Anh', 'Tiếng Pháp'],
-        certifications: [
-          'Chứng chỉ luật sư',
-          'Chứng chỉ quốc tế',
-          'Chứng chỉ đặc biệt'
-        ],
-        createdAt: DateTime.now(),
-      ),
+    // Seed 10 lawyers + login accounts
+    final specs = [
+      'Luật Dân sự',
+      'Luật Hình sự',
+      'Luật Doanh nghiệp',
+      'Hôn nhân & Gia đình',
+      'Sở hữu trí tuệ',
+      'Lao động',
+      'Đất đai',
+      'Thuế',
+      'Hợp đồng',
+      'Tố tụng'
     ];
-    for (final lawyer in lawyers) {
-      await addLawyer(lawyer);
+    for (int i = 1; i <= 10; i++) {
+      final law = Lawyer(
+        id: 'law_${i.toString().padLeft(3, '0')}',
+        name: 'Luật sư ${i.toString().padLeft(2, '0')}',
+        email: 'lawyer${i}@basico.com',
+        phone: '0777000${(100 + i).toString()}',
+        address: 'Văn phòng ${i}, TP.HCM',
+        specialization: specs[i - 1],
+        licenseNumber: 'LS${(100000 + i).toString()}',
+        experienceYears: 3 + (i % 12),
+        hourlyRate: 400000 + (i * 20000),
+        baseSalary: 12000000 + (i * 500000),
+        commissionRate: 0.1 + (i % 5) * 0.01,
+        successRate: 0.7 + (i % 10) * 0.01,
+        ongoingCases: i % 3,
+        bio: 'Luật sư chuyên môn ${specs[i - 1]} với kinh nghiệm thực tiễn.',
+        languages: ['Tiếng Việt', if (i % 2 == 0) 'Tiếng Anh'],
+        certifications: ['Chứng chỉ luật sư'],
+        createdAt: DateTime.now(),
+      );
+      await addLawyer(law);
+      await addUser(User(
+        id: 'user_lawyer_${i.toString().padLeft(3, '0')}',
+        email: 'lawyer${i}@basico.com',
+        password: '123456',
+        name: law.name,
+        role: UserRole.lawyer,
+        createdAt: DateTime.now(),
+      ));
     }
 
-    // Create sample appointments
-    final appointments = [
-      Appointment(
-        id: 'apt_001',
-        customerId: 'cust_001',
-        customerName: 'Lê Văn C',
-        lawyerId: 'law_001',
-        lawyerName: 'Luật sư Nguyễn Văn E',
-        appointmentDate: DateTime.now().add(const Duration(days: 1)),
-        timeSlot: '09:00 - 10:00',
-        duration: '1 giờ',
-        type: 'Tư vấn pháp lý',
-        description: 'Tư vấn về hợp đồng lao động',
-        status: AppointmentStatus.confirmed,
-        notes: 'Khách hàng cần tư vấn về quyền lợi lao động',
-        fee: 500000,
-        createdAt: DateTime.now(),
-      ),
-      Appointment(
-        id: 'apt_002',
-        customerId: 'cust_002',
-        customerName: 'Phạm Thị D',
-        lawyerId: 'law_002',
-        lawyerName: 'Luật sư Trần Thị F',
-        appointmentDate: DateTime.now().add(const Duration(days: 3)),
-        timeSlot: '14:00 - 15:30',
-        duration: '1.5 giờ',
-        type: 'Tư vấn pháp lý',
-        description: 'Tư vấn về ly hôn',
-        status: AppointmentStatus.pending,
-        notes: 'Khách hàng cần tư vấn về thủ tục ly hôn',
-        fee: 1050000,
-        createdAt: DateTime.now(),
-      ),
-    ];
-    for (final appointment in appointments) {
-      await addAppointment(appointment);
-    }
+    // No seeded appointments; customers will create real bookings via app
   }
 }

@@ -14,14 +14,32 @@ class GetProfileRequested extends ProfileEvent {
 class UpdateProfileRequested extends ProfileEvent {
   final String fullName;
   final String phoneNumber;
+  final String? address;
+  final String? gender;
+  final DateTime? dateOfBirth;
+  final String? occupation;
+  final String? notes;
 
   const UpdateProfileRequested({
     required this.fullName,
     required this.phoneNumber,
+    this.address,
+    this.gender,
+    this.dateOfBirth,
+    this.occupation,
+    this.notes,
   });
 
   @override
-  List<Object> get props => [fullName, phoneNumber];
+  List<Object> get props => [
+        fullName,
+        phoneNumber,
+        address ?? '',
+        gender ?? '',
+        (dateOfBirth?.millisecondsSinceEpoch ?? 0),
+        occupation ?? '',
+        notes ?? ''
+      ];
 }
 
 class ChangePasswordRequested extends ProfileEvent {

@@ -111,7 +111,7 @@ class HeroSection extends StatelessWidget {
                             Expanded(
                               child: ElevatedButton(
                                 onPressed: () {
-                                  context.go('/appointments');
+                                  context.go('/lawyers');
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
@@ -187,7 +187,7 @@ class HeroSection extends StatelessWidget {
                           children: [
                             ElevatedButton(
                               onPressed: () {
-                                context.go('/appointments');
+                                context.go('/lawyers');
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,

@@ -1,6 +1,8 @@
 import '../../features/appointment/domain/entities/appointment.dart'
     as home_appointment;
 import '../../features/admin/data/models/appointment.dart' as admin_appointment;
+import '../../features/admin/data/services/user_storage_service.dart';
+import '../../features/admin/data/models/admin_user.dart' as admin_model;
 
 class AppointmentSyncService {
   /// Convert from home appointment format to admin appointment format
@@ -15,8 +17,7 @@ class AppointmentSyncService {
 
     // Parse time from string format (e.g., "08:00 ~ 10:00")
     final timeParts = homeAppointment.time.split(' ~ ');
-    final startTime = timeParts[0];
-    final endTime = timeParts.length > 1 ? timeParts[1] : startTime;
+    final startTime = timeParts.isNotEmpty ? timeParts[0] : '';
 
     return admin_appointment.Appointment(
       id: homeAppointment.id,
@@ -26,7 +27,9 @@ class AppointmentSyncService {
       lawyerId: 'lawyer_${homeAppointment.id}', // Generate lawyer ID
       lawyerName: homeAppointment.lawyerName,
       appointmentDate: appointmentDate,
-      timeSlot: homeAppointment.time,
+      timeSlot: timeParts.length == 2 && startTime.isNotEmpty
+          ? '$startTime - ${timeParts[1]}'
+          : homeAppointment.time,
       duration: '2 giờ', // Default duration
       type: homeAppointment.service,
       description: 'Dịch vụ ${homeAppointment.service}',
@@ -104,138 +107,133 @@ class AppointmentSyncService {
   /// Get all appointments in home format
   static Future<List<home_appointment.Appointment>>
       getHomeAppointments() async {
-    // This would typically fetch from a shared data source
-    // For now, we'll return mock data that matches the home format
-    return [
-      const home_appointment.Appointment(
-        id: '1',
-        lawyerName: 'Nguyễn Văn A',
-        date: '28/07/2025',
-        time: '08:00 ~ 10:00',
-        dayOfWeek: 'Thứ Hai',
-        service: 'Luật Doanh Nghiệp',
-        status: home_appointment.AppointmentStatus.cancelled,
-        action: '-',
-      ),
-      const home_appointment.Appointment(
-        id: '2',
-        lawyerName: 'Nguyễn Văn A',
-        date: '28/07/2025',
-        time: '10:00 ~ 12:00',
-        dayOfWeek: 'Thứ Hai',
-        service: 'Luật Doanh Nghiệp',
-        status: home_appointment.AppointmentStatus.completed,
-        action: '-',
-      ),
-      const home_appointment.Appointment(
-        id: '3',
-        lawyerName: 'Nguyễn Văn A',
-        date: '28/07/2025',
-        time: '08:00 ~ 10:00',
-        dayOfWeek: 'Thứ Hai',
-        service: 'Luật Doanh Nghiệp',
-        status: home_appointment.AppointmentStatus.completed,
-        action: '-',
-      ),
-      const home_appointment.Appointment(
-        id: '4',
-        lawyerName: 'Nguyễn Văn D',
-        date: '25/07/2025',
-        time: '08:00 ~ 10:00',
-        dayOfWeek: 'Thứ Sáu',
-        service: 'Luật Doanh Nghiệp',
-        status: home_appointment.AppointmentStatus.completed,
-        action: '-',
-      ),
-      const home_appointment.Appointment(
-        id: '5',
-        lawyerName: 'Trần Thị An',
-        date: '30/07/2025',
-        time: '13:00 ~ 15:00',
-        dayOfWeek: 'Thứ Tư',
-        service: 'Luật Doanh Nghiệp',
-        status: home_appointment.AppointmentStatus.completed,
-        action: '-',
-      ),
-      const home_appointment.Appointment(
-        id: '6',
-        lawyerName: 'Lê Văn B',
-        date: '15/08/2025',
-        time: '09:00 ~ 11:00',
-        dayOfWeek: 'Thứ Năm',
-        service: 'Luật Hôn Nhân Gia Đình',
-        status: home_appointment.AppointmentStatus.confirmed,
-        action: 'Hủy',
-      ),
-      const home_appointment.Appointment(
-        id: '7',
-        lawyerName: 'Phạm Thị C',
-        date: '20/08/2025',
-        time: '14:00 ~ 16:00',
-        dayOfWeek: 'Thứ Ba',
-        service: 'Luật Lao Động',
-        status: home_appointment.AppointmentStatus.confirmed,
-        action: 'Hủy',
-      ),
-    ];
+    final adminList = await UserStorageService.getAppointments();
+    return adminList.map(convertToHomeFormat).toList();
+  }
+
+  /// Get appointments for the current logged-in customer only
+  static Future<List<home_appointment.Appointment>>
+      getHomeAppointmentsForCurrentCustomer() async {
+    final user = await UserStorageService.getCurrentUser();
+    if (user == null || user.role != admin_model.UserRole.customer) {
+      return <home_appointment.Appointment>[];
+    }
+    final customer = await UserStorageService.getCurrentCustomerProfile();
+    if (customer == null) return <home_appointment.Appointment>[];
+    final adminList = await UserStorageService.getAppointments();
+    final mine = adminList.where((a) => a.customerId == customer.id).toList();
+    return mine.map(convertToHomeFormat).toList();
   }
 
   /// Get all appointments in admin format
   static Future<List<admin_appointment.Appointment>>
       getAdminAppointments() async {
-    // This would typically fetch from a shared data source
-    // For now, we'll return mock data that matches the admin format
-    return [
-      admin_appointment.Appointment(
-        id: '1',
-        customerId: 'customer_1',
-        customerName: 'Nguyễn Thị A',
-        lawyerId: 'lawyer_1',
-        lawyerName: 'Nguyễn Văn A',
-        appointmentDate: DateTime(2025, 7, 28),
-        timeSlot: '08:00 - 10:00',
-        duration: '2 giờ',
-        type: 'Luật Doanh Nghiệp',
-        description: 'Tư vấn về hợp đồng lao động',
-        status: admin_appointment.AppointmentStatus.cancelled,
-        notes: 'Khách hàng hủy lịch',
-        fee: 500000.0,
-        createdAt: DateTime.now().subtract(const Duration(days: 5)),
-        updatedAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      admin_appointment.Appointment(
-        id: '2',
-        customerId: 'customer_2',
-        customerName: 'Trần Văn B',
-        lawyerId: 'lawyer_1',
-        lawyerName: 'Nguyễn Văn A',
-        appointmentDate: DateTime(2025, 7, 28),
-        timeSlot: '10:00 - 12:00',
-        duration: '2 giờ',
-        type: 'Luật Doanh Nghiệp',
-        description: 'Tư vấn về thành lập công ty',
-        status: admin_appointment.AppointmentStatus.completed,
-        notes: 'Hoàn thành tốt',
-        fee: 800000.0,
-        createdAt: DateTime.now().subtract(const Duration(days: 4)),
-        updatedAt: DateTime.now().subtract(const Duration(days: 1)),
-      ),
-      admin_appointment.Appointment(
-        id: '3',
-        customerId: 'customer_3',
-        customerName: 'Lê Thị C',
-        lawyerId: 'lawyer_2',
-        lawyerName: 'Trần Thị An',
-        appointmentDate: DateTime(2025, 7, 30),
-        timeSlot: '13:00 - 15:00',
-        duration: '2 giờ',
-        type: 'Luật Hôn Nhân Gia Đình',
-        description: 'Tư vấn về ly hôn',
-        status: admin_appointment.AppointmentStatus.confirmed,
-        notes: '',
-        fee: 600000.0,
-        createdAt: DateTime.now().subtract(const Duration(days: 3)),
-      ),
-    ];
+    return await UserStorageService.getAppointments();
+  }
+
+  /// Create a new admin-format appointment and persist
+  static Future<void> addAdminAppointment(
+      admin_appointment.Appointment appointment) async {
+    await UserStorageService.addAppointment(appointment);
+  }
+
+  /// Create from home-format (customer side) and persist in admin storage
+  static Future<void> addFromHomeAppointment(
+      home_appointment.Appointment homeAppointment) async {
+    final admin = convertToAdminFormat(homeAppointment);
+    await UserStorageService.addAppointment(admin);
+  }
+
+  /// Create a new booking for the current customer with a given lawyer
+  static Future<bool> createBookingForLawyer({
+    required String lawyerId,
+    required String lawyerName,
+    required String service,
+    DateTime? date,
+    String timeSlot = '14:00 - 15:00',
+  }) async {
+    final user = await UserStorageService.getCurrentUser();
+    if (user == null || user.role != admin_model.UserRole.customer)
+      return false;
+    final customer = await UserStorageService.getCurrentCustomerProfile();
+    if (customer == null) return false;
+
+    final now = DateTime.now();
+    final chosenDate = date ?? now.add(const Duration(days: 1));
+
+    // Conflict check: prevent overlapping bookings for the same lawyer at the same day/time
+    final existing = await UserStorageService.getAppointments();
+    final hasConflict = existing.any((a) =>
+        a.lawyerId == lawyerId &&
+        a.appointmentDate.year == chosenDate.year &&
+        a.appointmentDate.month == chosenDate.month &&
+        a.appointmentDate.day == chosenDate.day &&
+        a.timeSlot == timeSlot &&
+        a.status != admin_appointment.AppointmentStatus.cancelled);
+    if (hasConflict) return false;
+    final newApt = admin_appointment.Appointment(
+      id: 'apt_${DateTime.now().millisecondsSinceEpoch}',
+      customerId: customer.id,
+      customerName: customer.name,
+      lawyerId: lawyerId,
+      lawyerName: lawyerName,
+      appointmentDate:
+          DateTime(chosenDate.year, chosenDate.month, chosenDate.day, 0, 0),
+      timeSlot: timeSlot,
+      duration: '1 giờ',
+      type: service,
+      description: 'Đặt lịch qua ứng dụng',
+      status: admin_appointment.AppointmentStatus.pending,
+      notes: '',
+      fee: 0,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    await UserStorageService.addAppointment(newApt);
+    return true;
+  }
+
+  /// Return occupied time slots for a lawyer on a specific day (not cancelled)
+  static Future<Set<String>> getOccupiedTimeSlots({
+    required String lawyerId,
+    required DateTime date,
+  }) async {
+    final list = await UserStorageService.getAppointments();
+    final dayMatches = list.where((a) =>
+        a.lawyerId == lawyerId &&
+        a.appointmentDate.year == date.year &&
+        a.appointmentDate.month == date.month &&
+        a.appointmentDate.day == date.day &&
+        a.status != admin_appointment.AppointmentStatus.cancelled);
+    return dayMatches.map((a) => a.timeSlot).toSet();
+  }
+
+  /// Update appointment status by id
+  static Future<void> updateAdminAppointmentStatus(
+      {required String id,
+      required admin_appointment.AppointmentStatus status,
+      String? notes}) async {
+    final list = await UserStorageService.getAppointments();
+    final index = list.indexWhere((a) => a.id == id);
+    if (index == -1) return;
+    final existing = list[index];
+    final updated = admin_appointment.Appointment(
+      id: existing.id,
+      customerId: existing.customerId,
+      customerName: existing.customerName,
+      lawyerId: existing.lawyerId,
+      lawyerName: existing.lawyerName,
+      appointmentDate: existing.appointmentDate,
+      timeSlot: existing.timeSlot,
+      duration: existing.duration,
+      type: existing.type,
+      description: existing.description,
+      status: status,
+      notes: notes ?? existing.notes,
+      fee: existing.fee,
+      createdAt: existing.createdAt,
+      updatedAt: DateTime.now(),
+    );
+    await UserStorageService.updateAppointment(updated);
   }
 }

@@ -12,8 +12,8 @@ import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/profile/presentation/pages/profile_demo_page.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
 import '../../responsive_test_page.dart';
-import '../layout/main_shell.dart';
 import '../../features/services/presentation/pages/services_page.dart';
+import '../../features/admin/data/services/user_storage_service.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart'
     as admin_pages;
 import '../../features/admin/presentation/pages/admin_appointments_page.dart';
@@ -24,6 +24,7 @@ import '../../features/admin/presentation/pages/lawyer_dashboard_page.dart'
 import '../../features/admin/presentation/pages/lawyer_appointments_page.dart';
 import '../../features/admin/presentation/pages/lawyer_profile_page.dart';
 import '../../features/admin/presentation/widgets/main_navigation.dart';
+import '../../features/admin/data/models/admin_user.dart' show UserRole;
 
 class AppRouter {
   static final GoRouter router = GoRouter(
@@ -117,14 +118,40 @@ class AppRouter {
       ),
       GoRoute(
         path: '/appointments',
+        redirect: (context, state) async {
+          // Require login and completed profile for customers before viewing appointments
+          final loggedIn = await UserStorageService.isLoggedIn();
+          if (!loggedIn) return '/login';
+          final role = await UserStorageService.getCurrentUserRole();
+          if (role == UserRole.customer) {
+            final complete =
+                await UserStorageService.isProfileCompleteForCurrentUser();
+            if (!complete) return '/profile';
+          }
+          return null;
+        },
         builder: (context, state) => MainNavigation(
           currentPath: '/appointments',
           child: const AppointmentListPage(),
         ),
       ),
       GoRoute(
-        path: '/book-appointment',
-        redirect: (context, state) => '/appointments',
+        path: '/book-appointment/:lawyerId',
+        redirect: (context, state) async {
+          final loggedIn = await UserStorageService.isLoggedIn();
+          if (!loggedIn) return '/login';
+          final role = await UserStorageService.getCurrentUserRole();
+          if (role == UserRole.customer) {
+            final complete =
+                await UserStorageService.isProfileCompleteForCurrentUser();
+            if (!complete) return '/profile';
+          }
+          return null;
+        },
+        builder: (context, state) => MainNavigation(
+          currentPath: '/appointments',
+          child: const AppointmentListPage(),
+        ),
       ),
       GoRoute(
         path: '/appointments/:id',
@@ -135,9 +162,37 @@ class AppRouter {
       ),
       GoRoute(
         path: '/lawyers',
+        redirect: (context, state) async {
+          // Must be logged in to see lawyers list
+          final loggedIn = await UserStorageService.isLoggedIn();
+          if (!loggedIn) return '/login';
+          return null;
+        },
         builder: (context, state) => MainNavigation(
           currentPath: '/lawyers',
           child: const LawyerListPage(),
+        ),
+      ),
+      GoRoute(
+        path: '/book-appointment/:lawyerId/:lawyerName/:service',
+        redirect: (context, state) async {
+          final loggedIn = await UserStorageService.isLoggedIn();
+          if (!loggedIn) return '/login';
+          final role = await UserStorageService.getCurrentUserRole();
+          if (role == UserRole.customer) {
+            final complete =
+                await UserStorageService.isProfileCompleteForCurrentUser();
+            if (!complete) return '/profile';
+          }
+          return null;
+        },
+        builder: (context, state) => MainNavigation(
+          currentPath: '/appointments',
+          child: BookingPage(
+            lawyerId: state.pathParameters['lawyerId']!,
+            lawyerName: state.pathParameters['lawyerName']!,
+            service: state.pathParameters['service']!,
+          ),
         ),
       ),
       GoRoute(
@@ -156,9 +211,26 @@ class AppRouter {
       ),
       GoRoute(
         path: '/profile',
+        redirect: (context, state) async {
+          final loggedIn = await UserStorageService.isLoggedIn();
+          if (!loggedIn) return '/login';
+          return null;
+        },
         builder: (context, state) => MainNavigation(
           currentPath: '/profile',
-          child: const ProfilePage(),
+          child: const ProfilePage(readOnly: true),
+        ),
+      ),
+      GoRoute(
+        path: '/profile/edit',
+        redirect: (context, state) async {
+          final loggedIn = await UserStorageService.isLoggedIn();
+          if (!loggedIn) return '/login';
+          return null;
+        },
+        builder: (context, state) => MainNavigation(
+          currentPath: '/profile',
+          child: const ProfilePage(readOnly: false),
         ),
       ),
       GoRoute(

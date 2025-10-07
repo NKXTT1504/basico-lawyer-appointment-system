@@ -590,7 +590,8 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
         crossAxisCount: isTablet ? 2 : 1,
         crossAxisSpacing: screenWidth * 0.03,
         mainAxisSpacing: screenWidth * 0.03,
-        childAspectRatio: isTablet ? 1.2 : 1.5,
+        // Use fixed item height to avoid pixel overflow on small screens
+        mainAxisExtent: isTablet ? 320 : 380,
       ),
       itemCount: _filteredLawyers.length,
       itemBuilder: (context, index) {

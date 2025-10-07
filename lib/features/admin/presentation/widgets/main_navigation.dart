@@ -132,23 +132,25 @@ class _MainNavigationState extends State<MainNavigation> {
                 )
               : null,
           title: Text(pageTitle),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: () => context.go(widget.currentPath),
-              tooltip: 'Làm mới',
-            ),
-            PopupMenuButton<String>(
-              onSelected: (value) {
-                if (value == 'logout') {
-                  _logout();
-                }
-              },
-              itemBuilder: (context) => const [
-                PopupMenuItem(value: 'logout', child: Text('Đăng xuất')),
-              ],
-            ),
-          ],
+          actions: role == UserRole.customer
+              ? const []
+              : [
+                  IconButton(
+                    icon: const Icon(Icons.refresh),
+                    onPressed: () => context.go(widget.currentPath),
+                    tooltip: 'Làm mới',
+                  ),
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'logout') {
+                        _logout();
+                      }
+                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(value: 'logout', child: Text('Đăng xuất')),
+                    ],
+                  ),
+                ],
         ),
         drawer: Drawer(
           backgroundColor: Colors.white,
@@ -194,35 +196,42 @@ class _MainNavigationState extends State<MainNavigation> {
                       if (!_isCollapsed) ...[
                         const SizedBox(width: 12),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                userName,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 8, vertical: 2),
-                                decoration: BoxDecoration(
-                                  color: Colors.blue[400],
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Text(
-                                  _getRoleText(role),
-                                  style: const TextStyle(
+                          child: FutureBuilder<User?>(
+                            future: UserStorageService.getCurrentUser(),
+                            builder: (context, snapshot) {
+                              final displayName =
+                                  snapshot.data?.name ?? userName;
+                              return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    displayName,
+                                    style: const TextStyle(
                                       color: Colors.white,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w600),
-                                ),
-                              ),
-                            ],
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue[400],
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Text(
+                                      _getRoleText(role),
+                                      style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                ],
+                              );
+                            },
                           ),
                         ),
                       ],
@@ -302,19 +311,26 @@ class _MainNavigationState extends State<MainNavigation> {
                 ),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        userName,
-                        style: const TextStyle(
-                            color: Colors.white, fontWeight: FontWeight.bold),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(_getRoleText(role),
-                          style: const TextStyle(
-                              color: Colors.white70, fontSize: 12)),
-                    ],
+                  child: FutureBuilder<User?>(
+                    future: UserStorageService.getCurrentUser(),
+                    builder: (context, snapshot) {
+                      final displayName = snapshot.data?.name ?? userName;
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayName,
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          Text(_getRoleText(role),
+                              style: const TextStyle(
+                                  color: Colors.white70, fontSize: 12)),
+                        ],
+                      );
+                    },
                   ),
                 ),
               ],
