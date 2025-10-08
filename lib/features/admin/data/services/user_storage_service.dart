@@ -497,6 +497,66 @@ class UserStorageService {
       ));
     }
 
-    // No seeded appointments; customers will create real bookings via app
+    // Seed sample appointments across months if none exist
+    final existingApts = await getAppointments();
+    if (existingApts.isEmpty) {
+      final now = DateTime.now();
+      final year = now.year;
+      final months = <int>[6, 7, 8, 9, 10];
+      final slots = <String>[
+        '09:00 - 10:00',
+        '10:00 - 11:00',
+        '14:00 - 15:00',
+        '15:00 - 16:00'
+      ];
+      int idCounter = 1000;
+      int custIdx = 1;
+      int lawIdx = 1;
+      for (final m in months) {
+        for (int d = 3; d <= 21; d += 6) {
+          // round robin pick
+          final custId = 'cust_${custIdx.toString().padLeft(3, '0')}';
+          final lawId = 'law_${lawIdx.toString().padLeft(3, '0')}';
+          final custs = await getCustomers();
+          final laws = await getLawyers();
+          final cust = custs.firstWhere((c) => c.id == custId,
+              orElse: () => custs.first);
+          final law =
+              laws.firstWhere((l) => l.id == lawId, orElse: () => laws.first);
+          final day = DateTime(year, m, d, 9);
+          for (int s = 0; s < slots.length; s++) {
+            final status = (s % 4 == 0)
+                ? AppointmentStatus.completed
+                : (s % 4 == 1)
+                    ? AppointmentStatus.confirmed
+                    : (s % 4 == 2)
+                        ? AppointmentStatus.pending
+                        : AppointmentStatus.cancelled;
+            final apt = Appointment(
+              id: 'apt_${idCounter++}',
+              customerId: cust.id,
+              customerName: cust.name,
+              lawyerId: law.id,
+              lawyerName: law.name,
+              appointmentDate: DateTime(year, m, d),
+              timeSlot: slots[s],
+              duration: slots[s].contains('10:00 - 11:00') ? '1 giờ' : '1 giờ',
+              type: law.specialization,
+              description: 'Lịch mẫu tháng $m',
+              status: status,
+              notes: '',
+              fee: status == AppointmentStatus.completed
+                  ? (400000 + (s * 50000)).toDouble()
+                  : 0,
+              createdAt: day.subtract(const Duration(days: 2)),
+              updatedAt: day,
+            );
+            await addAppointment(apt);
+          }
+          custIdx = custIdx % 10 + 1;
+          lawIdx = lawIdx % 10 + 1;
+        }
+      }
+    }
   }
 }

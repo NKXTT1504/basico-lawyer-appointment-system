@@ -4,7 +4,7 @@ import '../../data/services/user_storage_service.dart';
 import '../../data/models/admin_user.dart';
 import '../../data/models/appointment.dart';
 import '../../data/models/customer.dart';
-import '../../data/models/lawyer.dart';
+import '../../../../core/services/admin_report_service.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -21,12 +21,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   int _pendingAppointments = 0;
   int _confirmedAppointments = 0;
   int _completedAppointments = 0;
-  int _cancelledAppointments = 0;
-  double _totalRevenue = 0;
+  // int _cancelledAppointments = 0; // kept for future charts (unused)
+  double _totalRevenue = 0; // kept for future charts
   double _monthlyRevenue = 0;
   List<Appointment> _recentAppointments = [];
   List<Customer> _recentCustomers = [];
-  List<Lawyer> _activeLawyers = [];
+  // List<Lawyer> _activeLawyers = [];
   bool _isLoading = true;
 
   @override
@@ -80,8 +80,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             .take(5)
             .toList();
 
-        final activeLawyers =
-            lawyers.where((lawyer) => lawyer.isActive).take(5).toList();
+        // final activeLawyers = lawyers.where((lawyer) => lawyer.isActive).take(5).toList();
 
         if (mounted) {
           setState(() {
@@ -98,14 +97,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             _completedAppointments = appointments
                 .where((apt) => apt.status == AppointmentStatus.completed)
                 .length;
-            _cancelledAppointments = appointments
-                .where((apt) => apt.status == AppointmentStatus.cancelled)
-                .length;
+            // cancelled derived at render time
             _totalRevenue = totalRevenue;
             _monthlyRevenue = monthlyRevenue;
             _recentAppointments = recentAppointments;
             _recentCustomers = recentCustomers;
-            _activeLawyers = activeLawyers;
+            // _activeLawyers = activeLawyers;
             _isLoading = false;
           });
         }
@@ -133,12 +130,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Future<void> _logout() async {
-    await UserStorageService.setCurrentUser(null);
-    if (mounted) {
-      context.go('/role-login');
-    }
-  }
+  // removed unused logout (handled elsewhere)
 
   @override
   Widget build(BuildContext context) {
@@ -199,7 +191,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
             SizedBox(height: isMobile ? 20 : 24),
 
-            // Statistics cards
+            // Statistics cards (re-computed via report service)
             Text(
               'Thống kê tổng quan',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
@@ -221,39 +213,46 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   crossAxisCount = 3;
                 }
 
-                return GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: crossAxisCount,
-                  crossAxisSpacing: isMobile ? 12 : 16,
-                  mainAxisSpacing: isMobile ? 12 : 16,
-                  childAspectRatio: isMobile ? 1.3 : 1.5,
-                  children: [
-                    _buildStatCard(
-                      'Khách hàng',
-                      _totalCustomers.toString(),
-                      Icons.person,
-                      Colors.green,
-                    ),
-                    _buildStatCard(
-                      'Luật sư',
-                      _totalLawyers.toString(),
-                      Icons.gavel,
-                      Colors.orange,
-                    ),
-                    _buildStatCard(
-                      'Đặt lịch',
-                      _totalAppointments.toString(),
-                      Icons.calendar_today,
-                      Colors.purple,
-                    ),
-                    _buildStatCard(
-                      'Doanh thu tháng',
-                      '₫${_monthlyRevenue.toStringAsFixed(0)}',
-                      Icons.attach_money,
-                      Colors.blue,
-                    ),
-                  ],
+                return FutureBuilder<AdminKpi>(
+                  future: AdminReportService.getKpis(),
+                  builder: (context, snap) {
+                    final kpi = snap.data;
+                    return GridView.count(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      crossAxisCount: crossAxisCount,
+                      crossAxisSpacing: isMobile ? 12 : 16,
+                      mainAxisSpacing: isMobile ? 12 : 16,
+                      childAspectRatio: isMobile ? 1.3 : 1.5,
+                      children: [
+                        _buildStatCard(
+                          'Khách hàng',
+                          _totalCustomers.toString(),
+                          Icons.person,
+                          Colors.green,
+                        ),
+                        _buildStatCard(
+                          'Luật sư',
+                          _totalLawyers.toString(),
+                          Icons.gavel,
+                          Colors.orange,
+                        ),
+                        _buildStatCard(
+                          'Đặt lịch',
+                          (kpi?.totalAppointments ?? _totalAppointments)
+                              .toString(),
+                          Icons.calendar_today,
+                          Colors.purple,
+                        ),
+                        _buildStatCard(
+                          'Doanh thu',
+                          '₫${(kpi?.revenue ?? _monthlyRevenue).toStringAsFixed(0)}',
+                          Icons.attach_money,
+                          Colors.blue,
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
             ),
