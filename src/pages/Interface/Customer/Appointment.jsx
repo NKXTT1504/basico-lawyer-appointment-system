@@ -1,5 +1,5 @@
 import { message } from 'antd';
-import AppointmentForm from '../../../components/AppointmentForm';
+import AppointmentForm from '../../../components/AppoitnmentForm/AppointmentForm';
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRef } from 'react';

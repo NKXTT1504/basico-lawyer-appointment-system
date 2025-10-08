@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
+import ChatBox from './components/ChatBox';
 
 // Pages
 import Home from './pages/Interface/Customer/Home';
@@ -106,6 +107,7 @@ function App() {
              <Route path="/change-password" element={<ChangePassword />} />
           </Routes>
         </div>
+        <ChatBox />
         <Footer />
       </div >
     </Router >
