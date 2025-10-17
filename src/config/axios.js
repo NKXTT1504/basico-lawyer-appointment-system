@@ -1,10 +1,10 @@
 import axios from 'axios';
 
 const API_URLS = {
-  AUTH: 'https://localhost:7071/',
-  APPOINTMENT: 'https://localhost:7073/',
-  LAWYER: 'https://localhost:7110/',
-  AI: 'https://localhost:7120/',
+  AUTH: 'https://localhost:5000/api/users',
+  APPOINTMENT: 'https://localhost:5000/api/appointments',
+  LAWYER: 'https://localhost:5000/api/lawyers',
+  AI: 'https://localhost:5000/api/chat',
   // Thêm các service khác nếu cần
 };
 
