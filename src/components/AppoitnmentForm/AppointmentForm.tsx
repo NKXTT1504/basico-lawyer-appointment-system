@@ -7,6 +7,7 @@ import Step1ServiceLawyer from './Step1ServiceLawyer';
 import Step2DateTime from './Step2DateTime';
 import Step3Notes from './Step3Notes';
 import AppointmentSuccess from './AppointmentSuccess';
+import { createPaymentForAppointment } from '../../services/payment';
 
 const AppointmentForm = ({
   initialService = '',
@@ -14,7 +15,7 @@ const AppointmentForm = ({
 }) => {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
-    service: initialService,
+    service: initialService ? [initialService] : [], // <-- store as string[]
     lawyer: initialLawyer,
     date: '',
     time: '',
@@ -88,7 +89,7 @@ const AppointmentForm = ({
     fetchSlots();
   }, [formData.lawyer]);
 
-  const updateFormData = (field: string, value: string) => {
+  const updateFormData = (field: string, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (errors[field]) {
       setErrors(prev => {
@@ -98,6 +99,14 @@ const AppointmentForm = ({
       });
     }
   };
+
+  // helper: array of selected service ids (strings)
+  const selectedServices: string[] = Array.isArray(formData.service)
+    ? formData.service
+    : formData.service ? [String(formData.service)] : [];
+
+  // if you still need a primary/first service for summaries:
+  const selectedService = services.find(s => String(s.id) === selectedServices[0]);
 
   const validateStep = (stepNum: number) => {
     const newErrors: Record<string, string> = {};
@@ -165,11 +174,6 @@ const AppointmentForm = ({
       }
     }
   };
-
-  const selectedService = services.find(s => s.id === formData.service);
-  const selectedLawyer = lawyers.find(
-    l => String(l.lawyerProfile.id) === String(formData.lawyer)
-  );
 
   const dayIndexToName = [
     "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
