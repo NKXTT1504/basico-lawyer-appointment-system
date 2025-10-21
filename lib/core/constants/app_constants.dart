@@ -5,7 +5,7 @@ class AppConstants {
 
   // API Configuration
   // Point directly to Users service (Swagger on 7071)
-  static const String baseUrl = 'https://localhost:7071';
+  static const String baseUrl = 'https://localhost:5000';
   static const String apiVersion = 'v1';
   static const Duration apiTimeout = Duration(seconds: 30);
 

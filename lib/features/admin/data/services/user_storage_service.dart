@@ -115,9 +115,9 @@ class UserStorageService {
       );
 
       final response = await dio.post(
-        '/api/auth/login',
+        '/api/users/api/Auth/login',
         data: {
-          // Match Users.Services.API LoginRequestDTO
+          // Users service format: { Email, Password }
           'Email': email.trim(),
           'Password': password,
         },
@@ -166,6 +166,8 @@ class UserStorageService {
       final prefs = await SharedPreferences.getInstance();
       if (token != null && token.isNotEmpty) {
         await prefs.setString(AppConstants.tokenKey, token);
+        // Store user data for profile access
+        await prefs.setString('user_data', json.encode(backendUser));
       }
       await setCurrentUser(user);
       return user;

@@ -44,28 +44,91 @@ class Lawyer extends Equatable {
   });
 
   factory Lawyer.fromJson(Map<String, dynamic> json) {
+    // The backend (Swagger) may use different field names than
+    // the existing mobile model. We normalize here to be resilient
+    // to both shapes.
+
+    String parseId(dynamic value) {
+      if (value == null) return '';
+      return value.toString();
+    }
+
+    String parseString(dynamic value, {String fallback = ''}) {
+      if (value == null) return fallback;
+      if (value is String) return value;
+      return value.toString();
+    }
+
+    int parseInt(dynamic value, {int fallback = 0}) {
+      if (value == null) return fallback;
+      if (value is int) return value;
+      if (value is num) return value.toInt();
+      final parsed = int.tryParse(value.toString());
+      return parsed ?? fallback;
+    }
+
+    double parseDouble(dynamic value, {double fallback = 0}) {
+      if (value == null) return fallback;
+      if (value is double) return value;
+      if (value is num) return value.toDouble();
+      final parsed = double.tryParse(value.toString());
+      return parsed ?? fallback;
+    }
+
+    // specialization may come as a list of practice areas
+    String resolveSpecialization(Map<String, dynamic> map) {
+      final direct = parseString(map['specialization']);
+      if (direct.isNotEmpty) return direct;
+      final areas = map['practiceAreas'];
+      if (areas is List && areas.isNotEmpty) {
+        final names = areas
+            .map((e) =>
+                (e is Map && e['name'] != null) ? e['name'].toString() : null)
+            .whereType<String>()
+            .toList();
+        if (names.isNotEmpty) {
+          return names.join(', ');
+        }
+      }
+      return '';
+    }
+
+    DateTime parseDate(dynamic value, {DateTime? fallback}) {
+      if (value == null) return fallback ?? DateTime.now();
+      if (value is DateTime) return value;
+      try {
+        return DateTime.parse(value.toString());
+      } catch (_) {
+        return fallback ?? DateTime.now();
+      }
+    }
+
     return Lawyer(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      email: json['email'] as String,
-      phone: json['phone'] as String,
-      address: json['address'] as String,
-      specialization: json['specialization'] as String,
-      licenseNumber: json['licenseNumber'] as String,
-      experienceYears: json['experienceYears'] as int,
-      hourlyRate: (json['hourlyRate'] as num).toDouble(),
-      baseSalary: (json['baseSalary'] as num?)?.toDouble() ?? 0,
-      commissionRate: (json['commissionRate'] as num?)?.toDouble() ?? 0.1,
-      successRate: (json['successRate'] as num?)?.toDouble() ?? 0.7,
-      ongoingCases: json['ongoingCases'] as int? ?? 0,
-      bio: json['bio'] as String? ?? '',
-      languages: List<String>.from(json['languages'] as List? ?? []),
-      certifications: List<String>.from(json['certifications'] as List? ?? []),
-      isActive: json['isActive'] as bool? ?? true,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : null,
+      id: parseId(json['id'] ?? json['lawyerId'] ?? json['userId']),
+      name: parseString(json['name'] ?? json['fullName']),
+      email: parseString(json['email'] ?? json['userEmail']),
+      phone: parseString(json['phone'] ?? json['phoneNumber']),
+      address: parseString(json['address']),
+      specialization: resolveSpecialization(json),
+      licenseNumber: parseString(json['licenseNumber'] ?? json['licenseNum']),
+      experienceYears:
+          parseInt(json['experienceYears'] ?? json['expYears'], fallback: 0),
+      hourlyRate:
+          parseDouble(json['hourlyRate'] ?? json['pricePerHour'], fallback: 0),
+      baseSalary: parseDouble(json['baseSalary'], fallback: 0),
+      commissionRate: parseDouble(json['commissionRate'], fallback: 0.1),
+      successRate: parseDouble(json['successRate'], fallback: 0.7),
+      ongoingCases: parseInt(json['ongoingCases'], fallback: 0),
+      bio: parseString(json['bio']),
+      languages: List<String>.from(json['languages'] as List? ?? const []),
+      certifications:
+          List<String>.from(json['certifications'] as List? ?? const []),
+      isActive: (json['isActive'] is bool)
+          ? (json['isActive'] as bool)
+          : (json['isActive']?.toString().toLowerCase() == 'true'),
+      createdAt: parseDate(json['createdAt']),
+      updatedAt:
+          json['updatedAt'] != null ? parseDate(json['updatedAt']) : null,
     );
   }
 

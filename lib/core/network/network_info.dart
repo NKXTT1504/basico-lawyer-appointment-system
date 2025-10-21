@@ -14,14 +14,14 @@ class NetworkInfoImpl implements NetworkInfo {
   Future<bool> get isConnected async {
     try {
       final connectivityResult = await _connectivity.checkConnectivity();
-      
+
       if (connectivityResult == ConnectivityResult.none) {
         return false;
       }
-      
-      // Additional check to ensure we can actually reach the internet
-      final result = await InternetAddress.lookup('google.com');
-      return result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+
+      // For localhost development, just check if we have any connectivity
+      // Don't ping external sites as localhost doesn't need internet
+      return true;
     } catch (_) {
       return false;
     }

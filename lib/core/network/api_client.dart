@@ -28,11 +28,18 @@ class ApiClient {
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
           }
-          
+
           // Add common headers
           options.headers['Content-Type'] = 'application/json';
           options.headers['Accept'] = 'application/json';
-          
+
+          // Add CORS headers for development
+          options.headers['Access-Control-Allow-Origin'] = '*';
+          options.headers['Access-Control-Allow-Methods'] =
+              'GET, POST, PUT, DELETE, OPTIONS';
+          options.headers['Access-Control-Allow-Headers'] =
+              'Content-Type, Authorization';
+
           handler.next(options);
         },
         onResponse: (response, handler) {
@@ -70,7 +77,7 @@ class ApiClient {
     if (!await _networkInfo.isConnected) {
       throw Exception('No internet connection');
     }
-    
+
     return await _dio.get(
       path,
       queryParameters: queryParameters,
@@ -87,7 +94,7 @@ class ApiClient {
     if (!await _networkInfo.isConnected) {
       throw Exception('No internet connection');
     }
-    
+
     return await _dio.post(
       path,
       data: data,
@@ -105,7 +112,7 @@ class ApiClient {
     if (!await _networkInfo.isConnected) {
       throw Exception('No internet connection');
     }
-    
+
     return await _dio.put(
       path,
       data: data,
@@ -123,7 +130,7 @@ class ApiClient {
     if (!await _networkInfo.isConnected) {
       throw Exception('No internet connection');
     }
-    
+
     return await _dio.delete(
       path,
       data: data,

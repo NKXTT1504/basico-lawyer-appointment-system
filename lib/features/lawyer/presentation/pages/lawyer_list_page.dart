@@ -3,6 +3,7 @@ import '../../../admin/data/services/user_storage_service.dart';
 import '../../../admin/data/models/lawyer.dart' as model;
 import '../../../appointment/presentation/pages/appointment_list_page.dart'
     show openBookingSheet;
+import '../../data/services/lawyer_api_service.dart';
 
 // Removed mock class; now reading real lawyers from storage
 
@@ -31,6 +32,18 @@ class _LawyerListPageState extends State<LawyerListPage> {
 
   bool _showFilter = false;
   String _selectedCategory = 'Tất cả';
+  void _applyFilter() {
+    if (_selectedCategory == 'Tất cả') {
+      _filtered = List<model.Lawyer>.from(_allLawyers);
+    } else {
+      final String keyword = _selectedCategory.toLowerCase();
+      _filtered = _allLawyers.where((model.Lawyer l) {
+        final String spec = l.specialization.toLowerCase();
+        return spec.contains(keyword);
+      }).toList();
+    }
+    setState(() {});
+  }
 
   @override
   void initState() {
@@ -39,10 +52,55 @@ class _LawyerListPageState extends State<LawyerListPage> {
   }
 
   Future<void> _load() async {
+    try {
+      // Try to load from API first
+      final response = await LawyerApiService.getLawyers();
+      if (response.statusCode == 200) {
+        // Swagger may return either a raw list or a wrapped object
+        final dynamic data = response.data;
+        List<dynamic> lawyersData;
+        if (data is List) {
+          lawyersData = data;
+        } else if (data is Map<String, dynamic>) {
+          // common keys: 'result', 'data', 'payload'
+          final dynamic inner =
+              data['result'] ?? data['data'] ?? data['payload'];
+          if (inner is List) {
+            lawyersData = inner;
+          } else {
+            // fallback: try to find first list value in map
+            final List<dynamic>? firstList = data.values.firstWhere(
+              (v) => v is List,
+              orElse: () => <dynamic>[],
+            ) as List<dynamic>?;
+            lawyersData = firstList ?? <dynamic>[];
+          }
+        } else {
+          lawyersData = <dynamic>[];
+        }
+
+        final lawyers = lawyersData
+            .whereType<Map<String, dynamic>>()
+            .map((json) => model.Lawyer.fromJson(json))
+            .toList();
+        setState(() {
+          _allLawyers = lawyers;
+          _filtered = lawyers;
+          _selectedCategory = 'Tất cả';
+          _loading = false;
+        });
+        return;
+      }
+    } catch (e) {
+      print('API load failed, falling back to local storage: $e');
+    }
+
+    // Fallback to local storage
     final list = await UserStorageService.getLawyers();
     setState(() {
       _allLawyers = list;
       _filtered = list;
+      _selectedCategory = 'Tất cả';
       _loading = false;
     });
   }
@@ -118,10 +176,9 @@ class _LawyerListPageState extends State<LawyerListPage> {
                       fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
                     ),
                     onSelected: (_) {
-                      setState(() {
-                        _selectedCategory = c;
-                        _showFilter = false; // thu gọn sau khi chọn
-                      });
+                      _selectedCategory = c;
+                      _showFilter = false; // thu gọn sau khi chọn
+                      _applyFilter();
                     },
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(24),

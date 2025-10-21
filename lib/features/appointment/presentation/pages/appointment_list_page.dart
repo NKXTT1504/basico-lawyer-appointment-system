@@ -6,6 +6,8 @@ import '../../domain/entities/appointment.dart';
 import '../../../../core/services/appointment_sync_service.dart';
 import '../widgets/appointment_table.dart';
 import '../widgets/appointment_tabs.dart';
+import '../../data/services/appointment_api_service.dart';
+import '../../../admin/data/services/user_storage_service.dart';
 
 class AppointmentListPage extends StatefulWidget {
   const AppointmentListPage({super.key});
@@ -74,30 +76,76 @@ class _BookingPageState extends State<BookingPage> {
   Future<void> _confirm() async {
     if (_selectedSlot == null) return;
     setState(() => _loading = true);
-    final ok = await AppointmentSyncService.createBookingForLawyer(
-      lawyerId: widget.lawyerId,
-      lawyerName: widget.lawyerName,
-      service: widget.service,
-      date: _selectedDate,
-      timeSlot: _selectedSlot!,
-    );
-    if (!mounted) return;
-    setState(() => _loading = false);
-    if (ok) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Đặt lịch thành công')),
-      );
-      // Điều hướng về danh sách lịch hẹn thay vì pop để tránh trang trắng
-      if (mounted) {
-        // ignore: use_build_context_synchronously
-        Navigator.of(context).pushReplacementNamed('/appointments');
+
+    try {
+      // Get current user
+      final currentUser = await UserStorageService.getCurrentUser();
+      if (currentUser == null) {
+        setState(() => _loading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Vui lòng đăng nhập để đặt lịch')),
+        );
+        return;
       }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Khung giờ đã có người đặt')),
+
+      // Try API first
+      try {
+        final appointmentData = {
+          'userId': currentUser.id,
+          'lawyerId': widget.lawyerId,
+          'scheduledAt': _selectedDate.toIso8601String(),
+          'slot': _selectedSlot!,
+          'spec': widget.service,
+          'services': [widget.service],
+          'note': 'Đặt lịch từ mobile app',
+        };
+
+        final response =
+            await AppointmentApiService.createAppointment(appointmentData);
+        if (response.statusCode == 200 && response.data['success'] == true) {
+          setState(() => _loading = false);
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đặt lịch thành công')),
+          );
+          if (mounted) {
+            Navigator.of(context).pushReplacementNamed('/appointments');
+          }
+          return;
+        }
+      } catch (e) {
+        print('API booking failed, falling back to local: $e');
+      }
+
+      // Fallback to local storage
+      final ok = await AppointmentSyncService.createBookingForLawyer(
+        lawyerId: widget.lawyerId,
+        lawyerName: widget.lawyerName,
+        service: widget.service,
+        date: _selectedDate,
+        timeSlot: _selectedSlot!,
       );
-      await _loadOccupied();
+      if (!mounted) return;
+      setState(() => _loading = false);
+      if (ok) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Đặt lịch thành công')),
+        );
+        if (mounted) {
+          Navigator.of(context).pushReplacementNamed('/appointments');
+        }
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Khung giờ đã có người đặt')),
+        );
+        await _loadOccupied();
+      }
+    } catch (e) {
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Lỗi đặt lịch: $e')),
+      );
     }
   }
 
@@ -377,7 +425,58 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
     });
 
     try {
-      // Show only current customer's appointments
+      // Get current user
+      final currentUser = await UserStorageService.getCurrentUser();
+      if (currentUser == null) {
+        setState(() {
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Try to load from API first
+      try {
+        final response = await AppointmentApiService.getAllAppointments();
+        if (response.statusCode == 200) {
+          // Swagger API response format - filter by current user
+          final appointmentsData = response.data as List<dynamic>;
+          final allAppointments = appointmentsData
+              .map((json) => Appointment.fromJson(json))
+              .toList();
+          // Filter appointments for current user
+          // Note: Assuming API returns userId field, adjust based on actual API response
+          final appointments = allAppointments.where((apt) {
+            // Check if appointment has userId field matching current user
+            final aptJson = apt.toJson();
+            return aptJson['userId'] == currentUser.id ||
+                aptJson['customerId'] == currentUser.id ||
+                aptJson['customerEmail'] == currentUser.email;
+          }).toList();
+
+          final upcoming = appointments
+              .where((a) =>
+                  a.status == AppointmentStatus.confirmed ||
+                  a.status == AppointmentStatus.pending)
+              .toList();
+          final history = appointments
+              .where((a) =>
+                  a.status == AppointmentStatus.completed ||
+                  a.status == AppointmentStatus.cancelled)
+              .toList();
+
+          setState(() {
+            _appointments = appointments;
+            _upcomingAppointments = upcoming;
+            _historyAppointments = history;
+            _isLoading = false;
+          });
+          return;
+        }
+      } catch (e) {
+        print('API load failed, falling back to local storage: $e');
+      }
+
+      // Fallback to local storage
       final list =
           await AppointmentSyncService.getHomeAppointmentsForCurrentCustomer();
       final appointments = list;

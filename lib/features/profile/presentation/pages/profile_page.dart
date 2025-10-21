@@ -7,6 +7,7 @@ import '../bloc/profile_bloc.dart';
 import '../../../admin/data/models/customer.dart' as admin_customer;
 import '../../../admin/data/services/user_storage_service.dart' as storage;
 import '../widgets/profile_form.dart';
+import '../../../auth/data/services/auth_api_service.dart';
 
 class ProfilePage extends StatefulWidget {
   final bool readOnly;
