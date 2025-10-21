@@ -1,22 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_text_styles.dart';
 import '../../domain/entities/appointment.dart';
 
 class AppointmentTable extends StatelessWidget {
   final List<Appointment> appointments;
+  final VoidCallback? onBookAppointment;
 
   const AppointmentTable({
     super.key,
     required this.appointments,
+    this.onBookAppointment,
   });
 
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final isTablet = screenWidth > 600;
-    
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -53,7 +54,7 @@ class AppointmentTable extends StatelessWidget {
 
   Widget _buildTableHeader(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    
+
     return Container(
       padding: EdgeInsets.all(screenWidth * 0.04), // 4% of screen width
       decoration: const BoxDecoration(
@@ -92,7 +93,7 @@ class AppointmentTable extends StatelessWidget {
 
   Widget _buildHeaderCell(BuildContext context, String text) {
     final screenWidth = MediaQuery.of(context).size.width;
-    
+
     return Text(
       text,
       style: TextStyle(
@@ -106,7 +107,7 @@ class AppointmentTable extends StatelessWidget {
 
   Widget _buildTableRow(Appointment appointment, int index) {
     final isEven = index % 2 == 0;
-    
+
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
@@ -203,10 +204,11 @@ class AppointmentTable extends StatelessWidget {
     );
   }
 
-  Widget _buildMobileAppointmentCard(BuildContext context, Appointment appointment, int index) {
+  Widget _buildMobileAppointmentCard(
+      BuildContext context, Appointment appointment, int index) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-    
+
     return Container(
       margin: EdgeInsets.all(screenWidth * 0.02), // 2% of screen width
       padding: EdgeInsets.all(screenWidth * 0.04), // 4% of screen width
@@ -279,24 +281,48 @@ class AppointmentTable extends StatelessWidget {
   }
 
   Widget _buildEmptyState() {
-    return const Center(
+    return Center(
       child: Padding(
-        padding: EdgeInsets.all(32.0),
+        padding: const EdgeInsets.all(32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               Icons.event_note_outlined,
               size: 64,
-              color: Colors.grey,
+              color: Colors.grey[400],
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
-              'Không có dữ liệu',
+              'Chưa có lịch hẹn nào',
               style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-                fontWeight: FontWeight.w500,
+                fontSize: 18,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Hãy đặt lịch với luật sư để bắt đầu',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: onBookAppointment,
+              icon: const Icon(Icons.add),
+              label: const Text('Đặt lịch ngay'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E3A8A),
+                foregroundColor: Colors.white,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
               ),
             ),
           ],

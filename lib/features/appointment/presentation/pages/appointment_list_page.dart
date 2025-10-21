@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 // import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/appointment.dart';
@@ -102,16 +103,36 @@ class _BookingPageState extends State<BookingPage> {
 
         final response =
             await AppointmentApiService.createAppointment(appointmentData);
-        if (response.statusCode == 200 && response.data['success'] == true) {
-          setState(() => _loading = false);
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đặt lịch thành công')),
-          );
-          if (mounted) {
-            Navigator.of(context).pushReplacementNamed('/appointments');
+
+        // Debug logging
+        print('Appointment creation response status: ${response.statusCode}');
+        print('Appointment creation response data: ${response.data}');
+
+        if (response.statusCode == 200) {
+          // Handle different response formats
+          final responseData = response.data;
+          bool isSuccess = false;
+
+          if (responseData is Map<String, dynamic>) {
+            isSuccess = responseData['success'] == true ||
+                responseData['isSuccess'] == true ||
+                responseData['Success'] == true;
+          } else {
+            // If response is not a map, consider it successful if status is 200
+            isSuccess = true;
           }
-          return;
+
+          if (isSuccess) {
+            setState(() => _loading = false);
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Đặt lịch thành công')),
+            );
+            if (mounted) {
+              Navigator.of(context).pushReplacementNamed('/appointments');
+            }
+            return;
+          }
         }
       } catch (e) {
         print('API booking failed, falling back to local: $e');
@@ -438,8 +459,22 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
       try {
         final response = await AppointmentApiService.getAllAppointments();
         if (response.statusCode == 200) {
-          // Swagger API response format - filter by current user
-          final appointmentsData = response.data as List<dynamic>;
+          // Handle different API response formats
+          final responseData = response.data;
+          List<dynamic> appointmentsData;
+
+          if (responseData is List) {
+            appointmentsData = responseData;
+          } else if (responseData is Map<String, dynamic>) {
+            // Check for common response wrapper keys
+            final dynamic data = responseData['data'] ??
+                responseData['result'] ??
+                responseData['appointments'];
+            appointmentsData = data is List ? data : <dynamic>[];
+          } else {
+            appointmentsData = [];
+          }
+
           final allAppointments = appointmentsData
               .map((json) => Appointment.fromJson(json))
               .toList();
@@ -550,6 +585,9 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
                         appointments: _selectedTabIndex == 0
                             ? _upcomingAppointments
                             : _historyAppointments,
+                        onBookAppointment: () {
+                          context.go('/lawyers');
+                        },
                       ),
               ),
             ],

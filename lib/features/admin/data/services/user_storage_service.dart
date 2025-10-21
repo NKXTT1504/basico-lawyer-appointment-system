@@ -85,13 +85,26 @@ class UserStorageService {
   static Future<bool> isProfileCompleteForCurrentUser() async {
     final role = await getCurrentUserRole();
     if (role != UserRole.customer) return true; // only enforce for customers
-    final profile = await getCurrentCustomerProfile();
-    if (profile == null) return false;
+
+    // Check user data first (from login response)
+    final user = await getCurrentUser();
+    if (user == null) return false;
+
+    // Basic requirements: name and email from user data
     final bool hasBasics =
-        profile.name.trim().isNotEmpty && profile.email.trim().isNotEmpty;
-    final bool hasContact = profile.phone.trim().isNotEmpty;
-    // Address is currently not editable in the profile form, so don't block on it
-    return hasBasics && hasContact && profile.isActive;
+        user.name.trim().isNotEmpty && user.email.trim().isNotEmpty;
+
+    // Try to get additional info from customer profile if available
+    final profile = await getCurrentCustomerProfile();
+    if (profile != null) {
+      // If customer profile exists, check if it has phone number
+      final bool hasContact = profile.phone.trim().isNotEmpty;
+      return hasBasics && hasContact && profile.isActive;
+    } else {
+      // If no customer profile, just check basic user info
+      // For now, allow access with just name and email
+      return hasBasics;
+    }
   }
 
   static Future<void> setCurrentUser(User? user) async {
