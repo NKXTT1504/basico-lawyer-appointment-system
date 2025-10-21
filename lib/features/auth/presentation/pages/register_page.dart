@@ -47,18 +47,51 @@ class _RegisterPageState extends State<RegisterPage> {
 
       final response = await AuthApiService.register(userData);
 
-      if (response.statusCode == 200 && response.data['isSuccess'] == true) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Đăng ký thành công! Vui lòng đăng nhập.'),
-              backgroundColor: Colors.green,
-            ),
-          );
-          context.go('/login');
+      // Debug logging
+      print('Registration response status: ${response.statusCode}');
+      print('Registration response data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        // Handle different response formats
+        final responseData = response.data;
+        bool isSuccess = false;
+        String message = 'Đăng ký thành công! Vui lòng đăng nhập.';
+
+        if (responseData is Map<String, dynamic>) {
+          // Check for different success indicators
+          isSuccess = responseData['isSuccess'] == true ||
+              responseData['success'] == true ||
+              responseData['IsSuccess'] == true ||
+              response.statusCode == 200;
+
+          // Get message if available
+          message = responseData['message'] ??
+              responseData['Message'] ??
+              'Đăng ký thành công! Vui lòng đăng nhập.';
+        } else {
+          // If response is not a map, consider it successful if status is 200
+          isSuccess = true;
+        }
+
+        if (isSuccess) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(message),
+                backgroundColor: Colors.green,
+              ),
+            );
+            // Add a small delay to ensure the snackbar is shown
+            await Future.delayed(const Duration(milliseconds: 500));
+            if (mounted) {
+              context.go('/login');
+            }
+          }
+        } else {
+          throw Exception(message);
         }
       } else {
-        throw Exception(response.data['message'] ?? 'Đăng ký thất bại');
+        throw Exception('Đăng ký thất bại với mã lỗi: ${response.statusCode}');
       }
     } catch (e) {
       if (mounted) {

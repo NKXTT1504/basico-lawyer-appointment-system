@@ -15,9 +15,10 @@ class AuthApiService {
     return await Api.users.post('/api/Auth/register', data: userData);
   }
 
-  // Get user profile
+  // Get user profile - từ Swagger Users API v1
   static Future<Response> getUserProfile(String userId) async {
-    return await Api.users.get('/$userId');
+    // Based on Swagger documentation, try the correct endpoint
+    return await Api.users.get('/api/Users/$userId');
   }
 
   // Update user profile
