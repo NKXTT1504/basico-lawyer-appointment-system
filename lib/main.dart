@@ -9,12 +9,16 @@ import 'core/di/injection_container.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/admin/data/services/user_storage_service.dart';
+import 'core/firebase/firebase_init.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize Hive for local storage
   await Hive.initFlutter();
+
+  // Initialize Firebase (for Storage images)
+  await FirebaseInitializer.ensureInitialized();
 
   // Initialize dependency injection
   await initializeDependencies();

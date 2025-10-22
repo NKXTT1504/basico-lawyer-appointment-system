@@ -19,6 +19,7 @@ import '../../features/admin/presentation/pages/admin_dashboard_page.dart'
 import '../../features/admin/presentation/pages/admin_appointments_page.dart';
 import '../../features/admin/presentation/pages/admin_customers_page.dart';
 import '../../features/admin/presentation/pages/admin_lawyers_page.dart';
+import '../../features/admin/presentation/pages/admin_forms_page.dart';
 import '../../features/admin/presentation/pages/lawyer_dashboard_page.dart'
     as lawyer_pages;
 import '../../features/admin/presentation/pages/lawyer_appointments_page.dart';
@@ -82,6 +83,13 @@ class AppRouter {
         builder: (context, state) => MainNavigation(
           currentPath: '/admin/lawyers',
           child: const AdminLawyersPage(),
+        ),
+      ),
+      GoRoute(
+        path: '/admin/forms',
+        builder: (context, state) => MainNavigation(
+          currentPath: '/admin/forms',
+          child: const AdminFormsPage(),
         ),
       ),
 

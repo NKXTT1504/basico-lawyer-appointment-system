@@ -4,8 +4,13 @@ class AppConstants {
   static const String appVersion = '1.0.0';
 
   // API Configuration
-  // Point directly to Users service (Swagger on 7071)
-  static const String baseUrl = 'https://localhost:7071';
+  // Base URLs per microservice (match BE.LaBooking/API.Gateway/appsettings.json)
+  static const String usersBaseUrl = 'https://localhost:7071';
+  static const String lawyersBaseUrl = 'https://localhost:7110';
+  static const String appointmentsBaseUrl = 'https://localhost:7073';
+  static const String chatBaseUrl = 'https://localhost:7120';
+  // Backward-compat alias (kept for existing code like login)
+  static const String baseUrl = usersBaseUrl;
   static const String apiVersion = 'v1';
   static const Duration apiTimeout = Duration(seconds: 30);
 

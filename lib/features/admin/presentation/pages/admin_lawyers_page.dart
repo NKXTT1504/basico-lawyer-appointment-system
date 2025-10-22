@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/services/user_storage_service.dart';
+import '../../data/services/admin_api_service.dart';
 import '../../data/models/lawyer.dart';
 import '../../data/models/admin_user.dart';
 import 'package:go_router/go_router.dart';
@@ -34,6 +35,26 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
               current?.role == UserRole.lawyer ? '/lawyer/dashboard' : '/home');
         return;
       }
+      // Prefer backend if available
+      try {
+        final api = AdminApiService();
+        final resp = await api.getAllLawyersProfile();
+        final data = resp.data is Map<String, dynamic>
+            ? resp.data as Map<String, dynamic>
+            : <String, dynamic>{};
+        final List list = (data['result'] ?? data['Result'] ?? []) as List;
+        final lawyers = list
+            .map((e) => Lawyer.fromJson(_mapLawyerProfileToLocal(e)))
+            .toList();
+        setState(() {
+          _lawyers = lawyers;
+          _applyFilters();
+          _isLoading = false;
+        });
+        return;
+      } catch (_) {
+        // Fallback to local storage if API fails
+      }
       final lawyers = await UserStorageService.getLawyers();
       setState(() {
         _lawyers = lawyers;
@@ -46,6 +67,44 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
       });
       _showErrorSnackBar('Có lỗi xảy ra: $e');
     }
+  }
+
+  Map<String, dynamic> _mapLawyerProfileToLocal(dynamic json) {
+    final Map<String, dynamic> m =
+        json is Map<String, dynamic> ? json : <String, dynamic>{};
+    return {
+      // ID
+      'id': (m['id'] ?? m['Id'] ?? '').toString(),
+      // Tên không có trong payload mẫu → fallback theo userId/ID
+      'name': (m['fullName'] ?? m['name'] ?? 'Luật sư #${m['id'] ?? ''}').toString(),
+      // Email/Phone không có → để trống
+      'email': (m['email'] ?? '').toString(),
+      'phone': (m['phone'] ?? '').toString(),
+      // Địa chỉ dùng field description trong payload
+      'address': (m['address'] ?? m['description'] ?? '').toString(),
+      // Chuyên môn lấy tên lĩnh vực đầu tiên trong practiceAreas
+      'specialization': ((m['spec'] ?? m['specialization']) ??
+              ((m['practiceAreas'] is List && (m['practiceAreas'] as List).isNotEmpty)
+                  ? (((m['practiceAreas'] as List).first as Map)['name'] ?? '')
+                      .toString()
+                  : ''))
+          .toString(),
+      'licenseNumber': (m['licenseNum'] ?? m['licenseNumber'] ?? '').toString(),
+      'experienceYears': m['expYears'] ?? m['experienceYears'] ?? 0,
+      'hourlyRate': (m['pricePerHour'] ?? m['hourlyRate'] ?? 0).toDouble(),
+      'baseSalary': 0,
+      'commissionRate': 0.1,
+      'successRate': ((m['rating'] ?? 0) is num)
+          ? (((m['rating'] as num).toDouble() / 5.0).clamp(0.0, 1.0))
+          : 0.7,
+      'bio': (m['bio'] ?? '').toString(),
+      'imageUrl': (m['img'] ?? m['imageUrl'] ?? '').toString(),
+      'languages': <String>[],
+      'certifications': <String>[],
+      'createdAt': (m['createdAt'] ?? DateTime.now().toIso8601String()).toString(),
+      'updatedAt': (m['updatedAt'] ?? DateTime.now().toIso8601String()).toString(),
+      'isActive': m['isActive'] == null ? true : (m['isActive'] as bool),
+    };
   }
 
   void _applyFilters() {
@@ -499,7 +558,7 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
                   TextStyle(fontSize: isTablet ? screenWidth * 0.03 : 13),
               prefixIcon: Icon(
                 Icons.search,
-                color: const Color(0xFF1E3A8A),
+                color: Colors.grey[600],
                 size: isTablet ? 22 : 20,
               ),
               suffixIcon: _searchQuery.isNotEmpty
@@ -527,11 +586,10 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide:
-                    const BorderSide(color: Color(0xFF1E3A8A), width: 2),
+                borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 2),
               ),
               filled: true,
-              fillColor: Colors.grey[50],
+              fillColor: Colors.white,
               contentPadding: EdgeInsets.symmetric(
                 horizontal: isTablet ? 16 : 12,
                 vertical: isTablet ? 16 : 12,
@@ -607,146 +665,177 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
   }
 
   Widget _buildLawyerCard(Lawyer lawyer, double screenWidth, bool isTablet) {
+    final chipTextStyle = TextStyle(
+      color: Colors.grey[800],
+      fontSize: isTablet ? 14 : 12,
+      fontWeight: FontWeight.w600,
+    );
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200, width: 1),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      padding: EdgeInsets.all(screenWidth * (isTablet ? 0.04 : 0.03)),
+      padding: EdgeInsets.all(isTablet ? 20 : 14),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: screenWidth * (isTablet ? 0.12 : 0.15),
-                height: screenWidth * (isTablet ? 0.12 : 0.15),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1E3A8A).withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Text(
-                    lawyer.name[0].toUpperCase(),
-                    style: TextStyle(
-                      color: const Color(0xFF1E3A8A),
-                      fontWeight: FontWeight.bold,
-                      fontSize: screenWidth * (isTablet ? 0.05 : 0.06),
-                    ),
-                  ),
+              // Avatar
+              ClipRRect(
+                borderRadius: BorderRadius.circular(40),
+                child: SizedBox(
+                  width: isTablet ? 64 : 56,
+                  height: isTablet ? 64 : 56,
+                  child: (lawyer.imageUrl.isNotEmpty)
+                      ? Image.network(
+                          lawyer.imageUrl,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _buildAvatarFallback(lawyer, screenWidth, isTablet),
+                        )
+                      : _buildAvatarFallback(lawyer, screenWidth, isTablet),
                 ),
               ),
-              SizedBox(width: screenWidth * 0.03),
+              const SizedBox(width: 12),
+              // Title and meta
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      lawyer.name,
-                      style: TextStyle(
-                        fontSize: screenWidth * (isTablet ? 0.04 : 0.045),
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF1E3A8A),
-                      ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            lawyer.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: isTablet ? 20 : 18,
+                              fontWeight: FontWeight.w700,
+                              color: const Color(0xFF1E3A8A),
+                            ),
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: (lawyer.isActive ? const Color(0xFFE7F6EC) : const Color(0xFFFCE8E8)),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Text(
+                            lawyer.isActive ? 'Hoạt động' : 'Không hoạt động',
+                            style: TextStyle(
+                              color: lawyer.isActive ? const Color(0xFF1B5E20) : const Color(0xFFB71C1C),
+                              fontSize: isTablet ? 12 : 11,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    SizedBox(height: screenWidth * 0.01),
+                    const SizedBox(height: 4),
                     Text(
                       lawyer.specialization,
                       style: TextStyle(
-                        fontSize: screenWidth * (isTablet ? 0.035 : 0.04),
-                        color: Colors.grey[600],
+                        fontSize: isTablet ? 14 : 13,
+                        color: Colors.grey[700],
                       ),
                     ),
                   ],
                 ),
               ),
-              Container(
-                padding: EdgeInsets.symmetric(
-                  horizontal: screenWidth * 0.02,
-                  vertical: screenWidth * 0.01,
-                ),
-                decoration: BoxDecoration(
-                  color: lawyer.isActive ? Colors.green : Colors.red,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  lawyer.isActive ? 'Hoạt động' : 'Không hoạt động',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: screenWidth * (isTablet ? 0.03 : 0.035),
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
             ],
           ),
 
-          SizedBox(height: screenWidth * 0.03),
+          const SizedBox(height: 12),
 
-          // Key details
-          _buildDetailRow(
-              Icons.email, 'Email', lawyer.email, screenWidth, isTablet),
-          _buildDetailRow(Icons.phone, 'Số điện thoại', lawyer.phone,
-              screenWidth, isTablet),
-          _buildDetailRow(Icons.timeline, 'Kinh nghiệm',
-              '${lawyer.experienceYears} năm', screenWidth, isTablet),
-          _buildDetailRow(
-              Icons.attach_money,
-              'Phí tư vấn',
-              '${lawyer.hourlyRate.toStringAsFixed(0)} VNĐ/giờ',
-              screenWidth,
-              isTablet),
+          // Info chips
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _infoChip(icon: Icons.email, label: lawyer.email.isEmpty ? 'Chưa cập nhật' : lawyer.email, style: chipTextStyle),
+              _infoChip(icon: Icons.phone, label: lawyer.phone.isEmpty ? 'Chưa cập nhật' : lawyer.phone, style: chipTextStyle),
+              _infoChip(icon: Icons.timeline, label: '${lawyer.experienceYears} năm', style: chipTextStyle),
+              _infoChip(icon: Icons.attach_money, label: '${lawyer.hourlyRate.toStringAsFixed(0)} VNĐ/giờ', style: chipTextStyle),
+              if (lawyer.address.isNotEmpty)
+                _infoChip(icon: Icons.place, label: lawyer.address, style: chipTextStyle),
+            ],
+          ),
 
-          SizedBox(height: screenWidth * 0.03),
+          const SizedBox(height: 12),
 
-          // Actions
           Row(
             children: [
               Expanded(
                 child: ElevatedButton.icon(
                   onPressed: () => _showEditLawyerDialog(lawyer),
-                  icon: Icon(Icons.edit, size: screenWidth * 0.04),
-                  label: Text(
-                    'Chỉnh sửa',
-                    style: TextStyle(fontSize: screenWidth * 0.035),
-                  ),
+                  icon: Icon(Icons.edit, size: isTablet ? 18 : 16),
+                  label: Text('Chỉnh sửa', style: TextStyle(fontSize: isTablet ? 14 : 13)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1E3A8A),
                     foregroundColor: Colors.white,
-                    padding: EdgeInsets.symmetric(vertical: screenWidth * 0.02),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                 ),
               ),
-              SizedBox(width: screenWidth * 0.02),
+              const SizedBox(width: 10),
               IconButton(
                 onPressed: () => _showDeleteDialog(lawyer),
-                icon: Icon(
-                  Icons.delete,
-                  color: Colors.red,
-                  size: screenWidth * 0.05,
-                ),
+                icon: const Icon(Icons.delete, color: Colors.red),
                 style: IconButton.styleFrom(
-                  backgroundColor: Colors.red.withOpacity(0.1),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  backgroundColor: Colors.red.withOpacity(0.08),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _infoChip({required IconData icon, required String label, required TextStyle style}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: Colors.grey[700]),
+          const SizedBox(width: 6),
+          Text(label, style: style),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAvatarFallback(Lawyer lawyer, double screenWidth, bool isTablet) {
+    return Container(
+      color: const Color(0xFF1E3A8A).withOpacity(0.08),
+      child: Center(
+        child: Text(
+          (lawyer.name.isNotEmpty ? lawyer.name[0] : 'L').toUpperCase(),
+          style: TextStyle(
+            color: const Color(0xFF1E3A8A),
+            fontWeight: FontWeight.bold,
+            fontSize: screenWidth * (isTablet ? 0.05 : 0.06),
+          ),
+        ),
       ),
     );
   }

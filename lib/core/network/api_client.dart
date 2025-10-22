@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:io';
+import 'package:dio/io.dart';
 
 import '../constants/app_constants.dart';
 import 'network_info.dart';
@@ -60,6 +62,20 @@ class ApiClient {
         },
       ),
     );
+
+    // Accept self-signed cert for localhost during development
+    try {
+      final adapter = _dio.httpClientAdapter;
+      if (adapter is IOHttpClientAdapter) {
+        adapter.createHttpClient = () {
+          final client = HttpClient();
+          client.badCertificateCallback = (cert, host, port) {
+            return host == 'localhost' || host == '10.0.2.2';
+          };
+          return client;
+        };
+      }
+    } catch (_) {}
   }
 
   Future<Response> get(
