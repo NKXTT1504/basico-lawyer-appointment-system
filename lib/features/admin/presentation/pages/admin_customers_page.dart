@@ -192,7 +192,7 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                 ),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
-                  initialValue: selectedGender,
+                  value: selectedGender,
                   decoration: const InputDecoration(
                     labelText: 'Giới tính',
                     border: OutlineInputBorder(),

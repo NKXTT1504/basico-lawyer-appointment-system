@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/theme/app_colors.dart';
 
 // AppBar is managed globally in MainNavigation for mobile
 import '../../data/services/user_storage_service.dart';
 import '../../data/models/appointment.dart';
 import '../../data/models/admin_user.dart';
 import '../../../../core/services/appointment_sync_service.dart';
+import '../../data/services/admin_api_service.dart';
 
 class AdminAppointmentsPage extends StatefulWidget {
   const AdminAppointmentsPage({super.key});
@@ -22,6 +24,12 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
   String _searchQuery = '';
   DateTime? _selectedDate;
   String _selectedLawyer = 'all';
+  // Extra display data mapped from joined payload
+  final Map<String, String> _avatarByAppointmentId = {};
+  final Map<String, String> _emailByAppointmentId = {};
+  final Map<String, String> _phoneByAppointmentId = {};
+  final Map<String, String> _specByAppointmentId = {};
+  final Map<String, String> _servicesByAppointmentId = {};
 
   @override
   void initState() {
@@ -38,7 +46,56 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
               current?.role == UserRole.lawyer ? '/lawyer/dashboard' : '/home');
         return;
       }
-      final appointments = await AppointmentSyncService.getAdminAppointments();
+      // Prefer backend join endpoint
+      List<Appointment> appointments;
+      try {
+        final api = AdminApiService();
+        final resp = await api.getAppointmentsJoined();
+        final Map<String, dynamic> body = resp.data is Map<String, dynamic>
+            ? resp.data as Map<String, dynamic>
+            : <String, dynamic>{};
+        final List list = (body['result'] ?? body['Result'] ?? []) as List;
+        appointments = list.map<Appointment>((raw) {
+          final Map<String, dynamic> e = Map<String, dynamic>.from(raw as Map);
+          final String id = (e['id'] ?? e['appointmentId'] ?? '').toString();
+          final Map<String, dynamic> user =
+              Map<String, dynamic>.from((e['user'] ?? {}) as Map);
+          final Map<String, dynamic> profile =
+              Map<String, dynamic>.from((e['lawyerProfile'] ?? {}) as Map);
+
+          // Collect extra fields for display
+          _avatarByAppointmentId[id] = (profile['img'] ?? '').toString();
+          _emailByAppointmentId[id] = (user['email'] ?? '').toString();
+          _phoneByAppointmentId[id] = (user['phoneNumber'] ?? '').toString();
+          _specByAppointmentId[id] = (e['spec'] ?? '').toString();
+          if (e['services'] is List && (e['services'] as List).isNotEmpty) {
+            _servicesByAppointmentId[id] =
+                (e['services'] as List).map((s) => s.toString()).join(', ');
+          }
+
+          return Appointment(
+            id: id,
+            customerId: (e['userId'] ?? '0').toString(),
+            customerName: (user['fullName'] ?? '').toString(),
+            lawyerId: (e['lawyerId'] ?? profile['id'] ?? '0').toString(),
+            lawyerName: 'Luật sư #${(e['lawyerId'] ?? profile['id'] ?? '').toString()}',
+            appointmentDate: DateTime.tryParse((e['scheduledAt'] ?? '').toString()) ??
+                DateTime.now(),
+            timeSlot: (e['slot'] ?? '').toString(),
+            duration: '60m',
+            type: (e['spec'] ?? '').toString(),
+            description: _servicesByAppointmentId[id] ?? '',
+            status: _parseStatusFromInt(e['status']),
+            notes: (e['note'] ?? '').toString(),
+            fee: (profile['pricePerHour'] ?? 0).toDouble(),
+            createdAt: DateTime.tryParse((e['createAt'] ?? '').toString()) ??
+                DateTime.now(),
+            updatedAt: DateTime.now(),
+          );
+        }).toList();
+      } catch (_) {
+        appointments = await AppointmentSyncService.getAdminAppointments();
+      }
       setState(() {
         _appointments = appointments;
         _applyFilters();
@@ -49,6 +106,22 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
         _isLoading = false;
       });
       _showErrorSnackBar('Có lỗi xảy ra: $e');
+    }
+  }
+
+  AppointmentStatus _parseStatus(String value) {
+    switch (value.toLowerCase()) {
+      case 'pending':
+        return AppointmentStatus.pending;
+      case 'confirmed':
+        return AppointmentStatus.confirmed;
+      case 'completed':
+        return AppointmentStatus.completed;
+      case 'cancelled':
+      case 'canceled':
+        return AppointmentStatus.cancelled;
+      default:
+        return AppointmentStatus.pending;
     }
   }
 
@@ -237,13 +310,13 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
   Color _getStatusColor(AppointmentStatus status) {
     switch (status) {
       case AppointmentStatus.pending:
-        return Colors.amber;
+        return AppColors.warning;
       case AppointmentStatus.confirmed:
-        return Colors.blue;
+        return AppColors.info;
       case AppointmentStatus.completed:
-        return Colors.green;
+        return AppColors.success;
       case AppointmentStatus.cancelled:
-        return Colors.red;
+        return AppColors.error;
     }
   }
 
@@ -257,6 +330,22 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
         return 'Hoàn thành';
       case AppointmentStatus.cancelled:
         return 'Đã hủy';
+    }
+  }
+
+  AppointmentStatus _parseStatusFromInt(dynamic v) {
+    final intVal = (v is int) ? v : int.tryParse(v?.toString() ?? '') ?? -1;
+    switch (intVal) {
+      case 0:
+        return AppointmentStatus.pending;
+      case 1:
+        return AppointmentStatus.confirmed;
+      case 2:
+        return AppointmentStatus.completed;
+      case 3:
+        return AppointmentStatus.cancelled;
+      default:
+        return AppointmentStatus.pending;
     }
   }
 
@@ -274,12 +363,13 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
     final isMobile = screenWidth < 600;
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
           // Search and filters
           Container(
             padding: EdgeInsets.all(isMobile ? 12 : 16),
-            color: Colors.grey[50],
+            color: AppColors.surface,
             child: Column(
               children: [
                 // Search bar
@@ -308,7 +398,7 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     filled: true,
-                    fillColor: Colors.white,
+                    fillColor: AppColors.surface,
                   ),
                 ),
 
@@ -360,14 +450,14 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                         Icon(
                           Icons.calendar_today,
                           size: isMobile ? 48 : 64,
-                          color: Colors.grey[400],
+                          color: AppColors.onSurfaceVariant.withOpacity(0.4),
                         ),
                         const SizedBox(height: 16),
                         Text(
                           'Không có đặt lịch nào',
                           style: TextStyle(
                             fontSize: isMobile ? 16 : 18,
-                            color: Colors.grey[600],
+                            color: AppColors.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -398,8 +488,12 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
           _applyFilters();
         });
       },
-      selectedColor: Theme.of(context).primaryColor.withOpacity(0.2),
-      checkmarkColor: Theme.of(context).primaryColor,
+      backgroundColor: AppColors.surfaceVariant,
+      selectedColor: AppColors.primaryContainer,
+      checkmarkColor: AppColors.onPrimaryContainer,
+      labelStyle: TextStyle(
+        color: isSelected ? AppColors.onPrimaryContainer : AppColors.onSurfaceVariant,
+      ),
     );
   }
 
@@ -422,14 +516,14 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: AppColors.outline),
           borderRadius: BorderRadius.circular(8),
-          color: Colors.white,
+          color: AppColors.surface,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+            const Icon(Icons.calendar_today, size: 16, color: AppColors.onSurfaceVariant),
             const SizedBox(width: 8),
             Text(
               _selectedDate != null
@@ -437,8 +531,7 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                   : 'Chọn ngày',
               style: TextStyle(
                 fontSize: 12,
-                color:
-                    _selectedDate != null ? Colors.black87 : Colors.grey[600],
+                color: _selectedDate != null ? AppColors.onSurface : AppColors.onSurfaceVariant,
               ),
             ),
             if (_selectedDate != null) ...[
@@ -450,7 +543,7 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                     _applyFilters();
                   });
                 },
-                child: Icon(Icons.clear, size: 16, color: Colors.grey[600]),
+                child: const Icon(Icons.clear, size: 16, color: AppColors.onSurfaceVariant),
               ),
             ],
           ],
@@ -491,6 +584,7 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
     final isMobile = screenWidth < 600;
 
     return Card(
+      color: AppColors.surface,
       margin: EdgeInsets.only(bottom: isMobile ? 12 : 16),
       elevation: 2,
       shape: RoundedRectangleBorder(
@@ -504,6 +598,18 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
             // Header
             Row(
               children: [
+                // Avatar
+                CircleAvatar(
+                  radius: isMobile ? 18 : 20,
+                  backgroundImage: (_avatarByAppointmentId[appointment.id] ?? '').isNotEmpty
+                      ? NetworkImage(_avatarByAppointmentId[appointment.id]!)
+                      : null,
+                  child: (_avatarByAppointmentId[appointment.id] ?? '').isEmpty
+                      ? const Icon(Icons.person, color: AppColors.onSurfaceVariant)
+                      : null,
+                  backgroundColor: AppColors.surfaceVariant,
+                ),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -520,8 +626,21 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                         appointment.lawyerName,
                         style: TextStyle(
                           fontSize: isMobile ? 13 : 14,
-                          color: Colors.grey[600],
+                          color: AppColors.onSurfaceVariant,
                         ),
+                      ),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 6,
+                        children: [
+                          if ((_emailByAppointmentId[appointment.id] ?? '').isNotEmpty)
+                            _infoPill(icon: Icons.email, text: _emailByAppointmentId[appointment.id]!),
+                          if ((_phoneByAppointmentId[appointment.id] ?? '').isNotEmpty)
+                            _infoPill(icon: Icons.phone, text: _phoneByAppointmentId[appointment.id]!),
+                          if ((_specByAppointmentId[appointment.id] ?? '').isNotEmpty)
+                            _tagChip(label: _specByAppointmentId[appointment.id]!),
+                        ],
                       ),
                     ],
                   ),
@@ -557,22 +676,33 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
               // Mobile layout - stacked
               Row(
                 children: [
-                  Icon(Icons.calendar_today, size: 14, color: Colors.grey[600]),
+                  const Icon(Icons.calendar_today, size: 14, color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 6),
                   Text(
                     '${appointment.appointmentDate.day}/${appointment.appointmentDate.month}/${appointment.appointmentDate.year}',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
                   ),
                 ],
               ),
               const SizedBox(height: 6),
               Row(
                 children: [
-                  Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
+                  const Icon(Icons.access_time, size: 14, color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 6),
                   Text(
                     appointment.timeSlot,
-                    style: TextStyle(color: Colors.grey[600], fontSize: 13),
+                    style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(Icons.event_available, size: 14, color: AppColors.onSurfaceVariant),
+                  const SizedBox(width: 6),
+                  Text(
+                    'Tạo: ${appointment.createdAt.day}/${appointment.createdAt.month}/${appointment.createdAt.year}',
+                    style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
                   ),
                 ],
               ),
@@ -580,18 +710,25 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
               // Desktop layout - inline
               Row(
                 children: [
-                  Icon(Icons.calendar_today, size: 16, color: Colors.grey[600]),
+                  const Icon(Icons.calendar_today, size: 16, color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 8),
                   Text(
                     '${appointment.appointmentDate.day}/${appointment.appointmentDate.month}/${appointment.appointmentDate.year}',
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: const TextStyle(color: AppColors.onSurfaceVariant),
                   ),
                   const SizedBox(width: 16),
-                  Icon(Icons.access_time, size: 16, color: Colors.grey[600]),
+                  const Icon(Icons.access_time, size: 16, color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 8),
                   Text(
                     appointment.timeSlot,
-                    style: TextStyle(color: Colors.grey[600]),
+                    style: const TextStyle(color: AppColors.onSurfaceVariant),
+                  ),
+                  const SizedBox(width: 16),
+                  const Icon(Icons.event_available, size: 16, color: AppColors.onSurfaceVariant),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Tạo: ${appointment.createdAt.day}/${appointment.createdAt.month}/${appointment.createdAt.year}',
+                    style: const TextStyle(color: AppColors.onSurfaceVariant),
                   ),
                 ],
               ),
@@ -602,13 +739,13 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
             Row(
               children: [
                 Icon(Icons.description,
-                    size: isMobile ? 14 : 16, color: Colors.grey[600]),
+                    size: isMobile ? 14 : 16, color: AppColors.onSurfaceVariant),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     appointment.description,
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: AppColors.onSurfaceVariant,
                       fontSize: isMobile ? 13 : 14,
                     ),
                     maxLines: 2,
@@ -620,15 +757,30 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
 
             const SizedBox(height: 8),
 
+            // Services chips
+            if ((_servicesByAppointmentId[appointment.id] ?? '').isNotEmpty) ...[
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: (_servicesByAppointmentId[appointment.id]!
+                        .split(',')
+                        .map((e) => e.trim())
+                        .where((e) => e.isNotEmpty))
+                    .map((s) => _tagChip(label: s))
+                    .toList(),
+              ),
+              const SizedBox(height: 8),
+            ],
+
             Row(
               children: [
                 Icon(Icons.attach_money,
-                    size: isMobile ? 14 : 16, color: Colors.grey[600]),
+                    size: isMobile ? 14 : 16, color: AppColors.onSurfaceVariant),
                 const SizedBox(width: 8),
                 Text(
                   '${appointment.fee.toStringAsFixed(0)} VNĐ',
                   style: TextStyle(
-                    color: Colors.grey[600],
+                    color: AppColors.onSurfaceVariant,
                     fontWeight: FontWeight.w600,
                     fontSize: isMobile ? 13 : 14,
                   ),
@@ -642,13 +794,13 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(Icons.note,
-                      size: isMobile ? 14 : 16, color: Colors.grey[600]),
+                      size: isMobile ? 14 : 16, color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       appointment.notes,
                       style: TextStyle(
-                        color: Colors.grey[600],
+                        color: AppColors.onSurfaceVariant,
                         fontSize: isMobile ? 13 : 14,
                       ),
                     ),
@@ -671,8 +823,8 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                     icon: const Icon(Icons.check, size: 16),
                     label: const Text('Xác nhận'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.info,
+                      foregroundColor: AppColors.onInfo,
                       padding: const EdgeInsets.symmetric(vertical: 8),
                     ),
                   ),
@@ -687,8 +839,8 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                     icon: const Icon(Icons.done, size: 16),
                     label: const Text('Hoàn thành'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.success,
+                      foregroundColor: AppColors.onSuccess,
                       padding: const EdgeInsets.symmetric(vertical: 8),
                     ),
                   ),
@@ -704,8 +856,8 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                     icon: const Icon(Icons.cancel, size: 16),
                     label: const Text('Hủy'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.error,
+                      foregroundColor: AppColors.onError,
                       padding: const EdgeInsets.symmetric(vertical: 8),
                     ),
                   ),
@@ -716,10 +868,10 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: () => _showDeleteDialog(appointment),
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  label: const Text('Xóa', style: TextStyle(color: Colors.red)),
+                  icon: const Icon(Icons.delete, color: AppColors.error),
+                  label: const Text('Xóa', style: TextStyle(color: AppColors.error)),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.red),
+                    side: const BorderSide(color: AppColors.error),
                     padding: const EdgeInsets.symmetric(vertical: 8),
                   ),
                 ),
@@ -736,8 +888,8 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                         icon: const Icon(Icons.check, size: 16),
                         label: const Text('Xác nhận'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          foregroundColor: Colors.white,
+                          backgroundColor: AppColors.info,
+                          foregroundColor: AppColors.onInfo,
                           padding: const EdgeInsets.symmetric(vertical: 8),
                         ),
                       ),
@@ -752,8 +904,8 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                         icon: const Icon(Icons.done, size: 16),
                         label: const Text('Hoàn thành'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          foregroundColor: Colors.white,
+                          backgroundColor: AppColors.success,
+                          foregroundColor: AppColors.onSuccess,
                           padding: const EdgeInsets.symmetric(vertical: 8),
                         ),
                       ),
@@ -769,8 +921,8 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                         icon: const Icon(Icons.cancel, size: 16),
                         label: const Text('Hủy'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          foregroundColor: Colors.white,
+                          backgroundColor: AppColors.error,
+                          foregroundColor: AppColors.onError,
                           padding: const EdgeInsets.symmetric(vertical: 8),
                         ),
                       ),
@@ -779,12 +931,52 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                   ],
                   IconButton(
                     onPressed: () => _showDeleteDialog(appointment),
-                    icon: const Icon(Icons.delete, color: Colors.red),
+                    icon: const Icon(Icons.delete, color: AppColors.error),
                   ),
                 ],
               ),
             ],
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _infoPill({required IconData icon, required String text}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceVariant,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.outline),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: AppColors.onSurfaceVariant),
+          const SizedBox(width: 6),
+          Text(
+            text,
+            style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _tagChip({required String label}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.primaryContainer,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontSize: 12,
+          color: AppColors.onPrimaryContainer,
+          fontWeight: FontWeight.w600,
         ),
       ),
     );

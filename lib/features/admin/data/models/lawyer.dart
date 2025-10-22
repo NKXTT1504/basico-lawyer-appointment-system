@@ -15,6 +15,7 @@ class Lawyer extends Equatable {
   final double successRate; // tỉ lệ thành công 0..1
   final int ongoingCases; // số vụ đang xử lý
   final String bio;
+  final String imageUrl;
   final List<String> languages;
   final List<String> certifications;
   final bool isActive;
@@ -36,6 +37,7 @@ class Lawyer extends Equatable {
     this.successRate = 0.7,
     this.ongoingCases = 0,
     this.bio = '',
+    this.imageUrl = '',
     this.languages = const [],
     this.certifications = const [],
     this.isActive = true,
@@ -120,6 +122,7 @@ class Lawyer extends Equatable {
       successRate: parseDouble(json['successRate'], fallback: 0.7),
       ongoingCases: parseInt(json['ongoingCases'], fallback: 0),
       bio: parseString(json['bio']),
+      imageUrl: parseString(json['imageUrl'] ?? json['img']),
       languages: List<String>.from(json['languages'] as List? ?? const []),
       certifications:
           List<String>.from(json['certifications'] as List? ?? const []),
@@ -148,6 +151,7 @@ class Lawyer extends Equatable {
       'successRate': successRate,
       'ongoingCases': ongoingCases,
       'bio': bio,
+      'imageUrl': imageUrl,
       'languages': languages,
       'certifications': certifications,
       'isActive': isActive,
@@ -171,6 +175,7 @@ class Lawyer extends Equatable {
     double? successRate,
     int? ongoingCases,
     String? bio,
+    String? imageUrl,
     List<String>? languages,
     List<String>? certifications,
     bool? isActive,
@@ -192,6 +197,7 @@ class Lawyer extends Equatable {
       successRate: successRate ?? this.successRate,
       ongoingCases: ongoingCases ?? this.ongoingCases,
       bio: bio ?? this.bio,
+      imageUrl: imageUrl ?? this.imageUrl,
       languages: languages ?? this.languages,
       certifications: certifications ?? this.certifications,
       isActive: isActive ?? this.isActive,
@@ -216,6 +222,7 @@ class Lawyer extends Equatable {
         successRate,
         ongoingCases,
         bio,
+        imageUrl,
         languages,
         certifications,
         isActive,
