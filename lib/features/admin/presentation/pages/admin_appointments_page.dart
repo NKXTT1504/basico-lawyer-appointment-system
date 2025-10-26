@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:get_it/get_it.dart';
 import '../../../../core/theme/app_colors.dart';
 
 // AppBar is managed globally in MainNavigation for mobile
@@ -17,6 +18,7 @@ class AdminAppointmentsPage extends StatefulWidget {
 }
 
 class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
+  late final AdminApiService _adminApiService;
   List<Appointment> _appointments = [];
   List<Appointment> _filteredAppointments = [];
   bool _isLoading = true;
@@ -34,6 +36,7 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
   @override
   void initState() {
     super.initState();
+    _adminApiService = GetIt.instance<AdminApiService>();
     _loadAppointments();
   }
 
@@ -49,12 +52,19 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
       // Prefer backend join endpoint
       List<Appointment> appointments;
       try {
-        final api = AdminApiService();
-        final resp = await api.getAppointmentsJoined();
+        print('🔄 Fetching appointments from API...');
+        print(
+            '🔗 API URL: https://localhost:5000/api/appointments/api/AppointmentWithUserLawyer/GetAllAppointment');
+        final resp = await _adminApiService.getAppointmentsJoined();
+        print('📊 Appointments API Response: ${resp.statusCode}');
+        print('📄 Response data: ${resp.data}');
+
         final Map<String, dynamic> body = resp.data is Map<String, dynamic>
             ? resp.data as Map<String, dynamic>
             : <String, dynamic>{};
         final List list = (body['result'] ?? body['Result'] ?? []) as List;
+        print('📋 Found ${list.length} appointments from API');
+
         appointments = list.map<Appointment>((raw) {
           final Map<String, dynamic> e = Map<String, dynamic>.from(raw as Map);
           final String id = (e['id'] ?? e['appointmentId'] ?? '').toString();
@@ -78,9 +88,11 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
             customerId: (e['userId'] ?? '0').toString(),
             customerName: (user['fullName'] ?? '').toString(),
             lawyerId: (e['lawyerId'] ?? profile['id'] ?? '0').toString(),
-            lawyerName: 'Luật sư #${(e['lawyerId'] ?? profile['id'] ?? '').toString()}',
-            appointmentDate: DateTime.tryParse((e['scheduledAt'] ?? '').toString()) ??
-                DateTime.now(),
+            lawyerName:
+                'Luật sư #${(e['lawyerId'] ?? profile['id'] ?? '').toString()}',
+            appointmentDate:
+                DateTime.tryParse((e['scheduledAt'] ?? '').toString()) ??
+                    DateTime.now(),
             timeSlot: (e['slot'] ?? '').toString(),
             duration: '60m',
             type: (e['spec'] ?? '').toString(),
@@ -93,7 +105,18 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
             updatedAt: DateTime.now(),
           );
         }).toList();
-      } catch (_) {
+      } catch (e, stackTrace) {
+        print('❌ Error fetching appointments from API: $e');
+        print('Stack trace: $stackTrace');
+
+        // Check if it's a network error
+        if (e.toString().contains('SocketException') ||
+            e.toString().contains('HandshakeException') ||
+            e.toString().contains('Connection refused')) {
+          print('🌐 Network error detected - server might be down');
+        }
+
+        print('📦 Falling back to local storage...');
         appointments = await AppointmentSyncService.getAdminAppointments();
       }
       setState(() {
@@ -106,22 +129,6 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
         _isLoading = false;
       });
       _showErrorSnackBar('Có lỗi xảy ra: $e');
-    }
-  }
-
-  AppointmentStatus _parseStatus(String value) {
-    switch (value.toLowerCase()) {
-      case 'pending':
-        return AppointmentStatus.pending;
-      case 'confirmed':
-        return AppointmentStatus.confirmed;
-      case 'completed':
-        return AppointmentStatus.completed;
-      case 'cancelled':
-      case 'canceled':
-        return AppointmentStatus.cancelled;
-      default:
-        return AppointmentStatus.pending;
     }
   }
 
@@ -210,6 +217,20 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
         if (!confirmed) return;
       }
 
+      // Update via API
+      print('🔄 Updating appointment status via API...');
+      if (newStatus == AppointmentStatus.completed) {
+        await _adminApiService.completeAppointment(int.parse(appointment.id));
+      } else {
+        // For other status updates, use the update endpoint
+        final updateData = {
+          'status': _getStatusInt(newStatus),
+        };
+        await _adminApiService.updateAppointment(
+            int.parse(appointment.id), updateData);
+      }
+
+      // Update local storage
       final updatedAppointment = appointment.copyWith(
         status: newStatus,
         updatedAt: DateTime.now(),
@@ -219,7 +240,9 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
 
       // Show success message with specific status
       _showSuccessSnackBar('${_getStatusText(newStatus)} lịch hẹn thành công');
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ Error updating appointment status: $e');
+      print('Stack trace: $stackTrace');
       _showErrorSnackBar('Có lỗi xảy ra khi cập nhật: $e');
     }
   }
@@ -270,10 +293,16 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
 
   Future<void> _deleteAppointment(String id) async {
     try {
+      print('🔄 Deleting appointment via API...');
+      await _adminApiService.deleteAppointment(int.parse(id));
+
+      // Update local storage
       await UserStorageService.deleteAppointment(id);
       await _loadAppointments();
       _showSuccessSnackBar('Xóa đặt lịch thành công');
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ Error deleting appointment: $e');
+      print('Stack trace: $stackTrace');
       _showErrorSnackBar('Có lỗi xảy ra: $e');
     }
   }
@@ -346,6 +375,19 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
         return AppointmentStatus.cancelled;
       default:
         return AppointmentStatus.pending;
+    }
+  }
+
+  int _getStatusInt(AppointmentStatus status) {
+    switch (status) {
+      case AppointmentStatus.pending:
+        return 0;
+      case AppointmentStatus.confirmed:
+        return 1;
+      case AppointmentStatus.completed:
+        return 2;
+      case AppointmentStatus.cancelled:
+        return 3;
     }
   }
 
@@ -492,7 +534,9 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
       selectedColor: AppColors.primaryContainer,
       checkmarkColor: AppColors.onPrimaryContainer,
       labelStyle: TextStyle(
-        color: isSelected ? AppColors.onPrimaryContainer : AppColors.onSurfaceVariant,
+        color: isSelected
+            ? AppColors.onPrimaryContainer
+            : AppColors.onSurfaceVariant,
       ),
     );
   }
@@ -523,7 +567,8 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.calendar_today, size: 16, color: AppColors.onSurfaceVariant),
+            const Icon(Icons.calendar_today,
+                size: 16, color: AppColors.onSurfaceVariant),
             const SizedBox(width: 8),
             Text(
               _selectedDate != null
@@ -531,7 +576,9 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                   : 'Chọn ngày',
               style: TextStyle(
                 fontSize: 12,
-                color: _selectedDate != null ? AppColors.onSurface : AppColors.onSurfaceVariant,
+                color: _selectedDate != null
+                    ? AppColors.onSurface
+                    : AppColors.onSurfaceVariant,
               ),
             ),
             if (_selectedDate != null) ...[
@@ -543,7 +590,8 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                     _applyFilters();
                   });
                 },
-                child: const Icon(Icons.clear, size: 16, color: AppColors.onSurfaceVariant),
+                child: const Icon(Icons.clear,
+                    size: 16, color: AppColors.onSurfaceVariant),
               ),
             ],
           ],
@@ -601,11 +649,14 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                 // Avatar
                 CircleAvatar(
                   radius: isMobile ? 18 : 20,
-                  backgroundImage: (_avatarByAppointmentId[appointment.id] ?? '').isNotEmpty
+                  backgroundImage: (_avatarByAppointmentId[appointment.id] ??
+                              '')
+                          .isNotEmpty
                       ? NetworkImage(_avatarByAppointmentId[appointment.id]!)
                       : null,
                   child: (_avatarByAppointmentId[appointment.id] ?? '').isEmpty
-                      ? const Icon(Icons.person, color: AppColors.onSurfaceVariant)
+                      ? const Icon(Icons.person,
+                          color: AppColors.onSurfaceVariant)
                       : null,
                   backgroundColor: AppColors.surfaceVariant,
                 ),
@@ -634,12 +685,20 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                         spacing: 8,
                         runSpacing: 6,
                         children: [
-                          if ((_emailByAppointmentId[appointment.id] ?? '').isNotEmpty)
-                            _infoPill(icon: Icons.email, text: _emailByAppointmentId[appointment.id]!),
-                          if ((_phoneByAppointmentId[appointment.id] ?? '').isNotEmpty)
-                            _infoPill(icon: Icons.phone, text: _phoneByAppointmentId[appointment.id]!),
-                          if ((_specByAppointmentId[appointment.id] ?? '').isNotEmpty)
-                            _tagChip(label: _specByAppointmentId[appointment.id]!),
+                          if ((_emailByAppointmentId[appointment.id] ?? '')
+                              .isNotEmpty)
+                            _infoPill(
+                                icon: Icons.email,
+                                text: _emailByAppointmentId[appointment.id]!),
+                          if ((_phoneByAppointmentId[appointment.id] ?? '')
+                              .isNotEmpty)
+                            _infoPill(
+                                icon: Icons.phone,
+                                text: _phoneByAppointmentId[appointment.id]!),
+                          if ((_specByAppointmentId[appointment.id] ?? '')
+                              .isNotEmpty)
+                            _tagChip(
+                                label: _specByAppointmentId[appointment.id]!),
                         ],
                       ),
                     ],
@@ -676,33 +735,39 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
               // Mobile layout - stacked
               Row(
                 children: [
-                  const Icon(Icons.calendar_today, size: 14, color: AppColors.onSurfaceVariant),
+                  const Icon(Icons.calendar_today,
+                      size: 14, color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 6),
                   Text(
                     '${appointment.appointmentDate.day}/${appointment.appointmentDate.month}/${appointment.appointmentDate.year}',
-                    style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
+                    style: const TextStyle(
+                        color: AppColors.onSurfaceVariant, fontSize: 13),
                   ),
                 ],
               ),
               const SizedBox(height: 6),
               Row(
                 children: [
-                  const Icon(Icons.access_time, size: 14, color: AppColors.onSurfaceVariant),
+                  const Icon(Icons.access_time,
+                      size: 14, color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 6),
                   Text(
                     appointment.timeSlot,
-                    style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
+                    style: const TextStyle(
+                        color: AppColors.onSurfaceVariant, fontSize: 13),
                   ),
                 ],
               ),
               const SizedBox(height: 6),
               Row(
                 children: [
-                  const Icon(Icons.event_available, size: 14, color: AppColors.onSurfaceVariant),
+                  const Icon(Icons.event_available,
+                      size: 14, color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 6),
                   Text(
                     'Tạo: ${appointment.createdAt.day}/${appointment.createdAt.month}/${appointment.createdAt.year}',
-                    style: const TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
+                    style: const TextStyle(
+                        color: AppColors.onSurfaceVariant, fontSize: 13),
                   ),
                 ],
               ),
@@ -710,21 +775,24 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
               // Desktop layout - inline
               Row(
                 children: [
-                  const Icon(Icons.calendar_today, size: 16, color: AppColors.onSurfaceVariant),
+                  const Icon(Icons.calendar_today,
+                      size: 16, color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 8),
                   Text(
                     '${appointment.appointmentDate.day}/${appointment.appointmentDate.month}/${appointment.appointmentDate.year}',
                     style: const TextStyle(color: AppColors.onSurfaceVariant),
                   ),
                   const SizedBox(width: 16),
-                  const Icon(Icons.access_time, size: 16, color: AppColors.onSurfaceVariant),
+                  const Icon(Icons.access_time,
+                      size: 16, color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 8),
                   Text(
                     appointment.timeSlot,
                     style: const TextStyle(color: AppColors.onSurfaceVariant),
                   ),
                   const SizedBox(width: 16),
-                  const Icon(Icons.event_available, size: 16, color: AppColors.onSurfaceVariant),
+                  const Icon(Icons.event_available,
+                      size: 16, color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 8),
                   Text(
                     'Tạo: ${appointment.createdAt.day}/${appointment.createdAt.month}/${appointment.createdAt.year}',
@@ -739,7 +807,8 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
             Row(
               children: [
                 Icon(Icons.description,
-                    size: isMobile ? 14 : 16, color: AppColors.onSurfaceVariant),
+                    size: isMobile ? 14 : 16,
+                    color: AppColors.onSurfaceVariant),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
@@ -758,7 +827,8 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
             const SizedBox(height: 8),
 
             // Services chips
-            if ((_servicesByAppointmentId[appointment.id] ?? '').isNotEmpty) ...[
+            if ((_servicesByAppointmentId[appointment.id] ?? '')
+                .isNotEmpty) ...[
               Wrap(
                 spacing: 6,
                 runSpacing: 6,
@@ -775,7 +845,8 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
             Row(
               children: [
                 Icon(Icons.attach_money,
-                    size: isMobile ? 14 : 16, color: AppColors.onSurfaceVariant),
+                    size: isMobile ? 14 : 16,
+                    color: AppColors.onSurfaceVariant),
                 const SizedBox(width: 8),
                 Text(
                   '${appointment.fee.toStringAsFixed(0)} VNĐ',
@@ -794,7 +865,8 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(Icons.note,
-                      size: isMobile ? 14 : 16, color: AppColors.onSurfaceVariant),
+                      size: isMobile ? 14 : 16,
+                      color: AppColors.onSurfaceVariant),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -869,7 +941,8 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
                 child: OutlinedButton.icon(
                   onPressed: () => _showDeleteDialog(appointment),
                   icon: const Icon(Icons.delete, color: AppColors.error),
-                  label: const Text('Xóa', style: TextStyle(color: AppColors.error)),
+                  label: const Text('Xóa',
+                      style: TextStyle(color: AppColors.error)),
                   style: OutlinedButton.styleFrom(
                     side: const BorderSide(color: AppColors.error),
                     padding: const EdgeInsets.symmetric(vertical: 8),
@@ -957,7 +1030,8 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
           const SizedBox(width: 6),
           Text(
             text,
-            style: const TextStyle(fontSize: 12, color: AppColors.onSurfaceVariant),
+            style: const TextStyle(
+                fontSize: 12, color: AppColors.onSurfaceVariant),
           ),
         ],
       ),

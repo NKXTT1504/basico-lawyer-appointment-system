@@ -11,6 +11,10 @@ class CustomerApiService {
   Future<List<Customer>> fetchCustomersFromApi(
       {bool includeInactive = true}) async {
     try {
+      print('🔄 Fetching customers from API...');
+      print(
+          '🔗 API URL: https://localhost:5000/api/users/api/User?includeInactive=$includeInactive&role=customer');
+
       final response =
           await _adminApiService.getCustomers(includeInactive: includeInactive);
 
@@ -19,29 +23,37 @@ class CustomerApiService {
       print('📄 Response data type: ${response.data.runtimeType}');
       print('📄 Response data: ${response.data}');
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
         // Try to handle different response structures
-        List<dynamic> apiCustomers;
+        List<dynamic> allUsers;
 
         if (response.data is List) {
-          apiCustomers = response.data as List;
+          allUsers = response.data as List;
         } else if (response.data is Map<String, dynamic>) {
           final Map<String, dynamic> data =
               response.data as Map<String, dynamic>;
           if (data.containsKey('result')) {
-            apiCustomers = data['result'] as List? ?? [];
+            allUsers = data['result'] as List? ?? [];
           } else if (data.containsKey('Result')) {
-            apiCustomers = data['Result'] as List? ?? [];
+            allUsers = data['Result'] as List? ?? [];
           } else if (data.containsKey('data')) {
-            apiCustomers = data['data'] as List? ?? [];
+            allUsers = data['data'] as List? ?? [];
           } else {
-            apiCustomers = [];
+            allUsers = [];
           }
         } else {
-          apiCustomers = [];
+          allUsers = [];
         }
 
-        print('📋 Extracted ${apiCustomers.length} customers from API');
+        print('📋 Extracted ${allUsers.length} total users from API');
+
+        // Filter for customers only (role: 'Customer' or 'CUSTOMER')
+        final apiCustomers = allUsers.where((user) {
+          final role = user['role']?.toString().toLowerCase() ?? '';
+          return role == 'customer';
+        }).toList();
+
+        print('📋 Filtered to ${apiCustomers.length} customers');
 
         final List<Customer> customers = [];
 
@@ -62,18 +74,34 @@ class CustomerApiService {
       } else {
         throw Exception('Failed to fetch customers: ${response.statusCode}');
       }
-    } catch (e) {
-      print('Error fetching customers from API: $e');
+    } catch (e, stackTrace) {
+      print('❌ Error fetching customers from API: $e');
+      print('Stack trace: $stackTrace');
+
+      // Check if it's a network error
+      if (e.toString().contains('SocketException') ||
+          e.toString().contains('HandshakeException') ||
+          e.toString().contains('Connection refused')) {
+        print('🌐 Network error detected - server might be down');
+      }
+
       // Fallback to local storage
-      return await UserStorageService.getCustomers();
+      final fallbackCustomers = await UserStorageService.getCustomers();
+      print(
+          '📦 Loaded ${fallbackCustomers.length} customers from local storage as fallback');
+      return fallbackCustomers;
     }
   }
 
   /// Create a new customer via API
   Future<Customer> createCustomerViaApi(Customer customer) async {
     try {
+      print('🔄 Creating customer via API: ${customer.name}');
       final customerData = _convertCustomerToApiUser(customer);
+      print('📤 Request data: $customerData');
       final response = await _adminApiService.createCustomer(customerData);
+      print('📥 Response status: ${response.statusCode}');
+      print('📄 Response data: ${response.data}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final apiCustomer = response.data;
@@ -85,8 +113,9 @@ class CustomerApiService {
       } else {
         throw Exception('Failed to create customer: ${response.statusCode}');
       }
-    } catch (e) {
-      print('Error creating customer via API: $e');
+    } catch (e, stackTrace) {
+      print('❌ Error creating customer via API: $e');
+      print('Stack trace: $stackTrace');
       // Fallback to local storage only
       await UserStorageService.addCustomer(customer);
       return customer;

@@ -14,7 +14,7 @@ class AdminApiService {
   Future<Response> getCustomers({bool includeInactive = true}) async {
     return Api.users.get('/api/User', queryParameters: {
       'includeInactive': includeInactive,
-      'role': 'customer',
+      'role': 'Customer', // API uses 'Customer' with capital C
     });
   }
 

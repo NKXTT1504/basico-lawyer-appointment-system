@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:get_it/get_it.dart';
 // AppBar is managed globally in MainNavigation for mobile
 import '../../data/services/user_storage_service.dart';
+import '../../data/services/customer_api_service.dart';
 import '../../data/models/customer.dart';
 import '../../data/models/admin_user.dart';
 
@@ -13,6 +15,7 @@ class AdminCustomersPage extends StatefulWidget {
 }
 
 class _AdminCustomersPageState extends State<AdminCustomersPage> {
+  late final CustomerApiService _customerApiService;
   List<Customer> _customers = [];
   List<Customer> _filteredCustomers = [];
   bool _isLoading = true;
@@ -23,6 +26,7 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
   @override
   void initState() {
     super.initState();
+    _customerApiService = GetIt.instance<CustomerApiService>();
     _loadCustomers();
   }
 
@@ -35,17 +39,24 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
               current?.role == UserRole.lawyer ? '/lawyer/dashboard' : '/home');
         return;
       }
-      final customers = await UserStorageService.getCustomers();
+
+      // Fetch customers from API (which will also sync to local storage)
+      print('🔄 Loading customers via API...');
+      final customers = await _customerApiService.fetchCustomersFromApi();
+      print('📦 Loaded ${customers.length} customers from API');
+
       setState(() {
         _customers = customers;
         _applyFilters();
         _isLoading = false;
       });
-    } catch (e) {
+    } catch (e, stackTrace) {
+      print('❌ Error loading customers: $e');
+      print('Stack trace: $stackTrace');
       setState(() {
         _isLoading = false;
       });
-      _showErrorSnackBar('Có lỗi xảy ra: $e');
+      _showErrorSnackBar('Có lỗi xảy ra khi tải dữ liệu: $e');
     }
   }
 
