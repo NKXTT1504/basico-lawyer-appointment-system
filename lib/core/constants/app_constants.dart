@@ -9,6 +9,13 @@ class AppConstants {
   static const String apiVersion = 'v1';
   static const Duration apiTimeout = Duration(seconds: 30);
 
+  // Individual API Base URLs for different services
+  // All APIs are hosted on localhost:5000 but may have different paths
+  static const String usersBaseUrl = 'https://localhost:5000';
+  static const String lawyersBaseUrl = 'https://localhost:5000';
+  static const String appointmentsBaseUrl = 'https://localhost:5000';
+  static const String chatBaseUrl = 'https://localhost:5000';
+
   // Storage Keys
   static const String tokenKey = 'auth_token';
   static const String userKey = 'user_data';

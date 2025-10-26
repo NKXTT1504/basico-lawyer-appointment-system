@@ -4,8 +4,6 @@ import 'package:dio/io.dart';
 import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../models/lawyer.dart';
-import '../models/appointment.dart';
 
 class AdminApiService {
   final Dio _usersDio;
@@ -63,65 +61,100 @@ class AdminApiService {
 
   // Users (admin): GET/POST/PUT basic CRUD
   Future<Response> getUsers({bool includeInactive = true}) async {
-    return _usersDio.get('/api/User', queryParameters: {
+    return _usersDio.get('/api/users/User', queryParameters: {
       'includeInactive': includeInactive,
     });
   }
 
+  // Customer Management (through Users API)
+  Future<Response> getCustomers({bool includeInactive = true}) async {
+    return _usersDio.get('/api/users/User', queryParameters: {
+      'includeInactive': includeInactive,
+      'role': 'customer',
+    });
+  }
+
+  Future<Response> getCustomerById(String id) async {
+    return _usersDio.get('/api/users/User/$id');
+  }
+
+  Future<Response> createCustomer(Map<String, dynamic> customerData) async {
+    return _usersDio.post('/api/users/User', data: json.encode(customerData));
+  }
+
+  Future<Response> updateCustomer(
+      String id, Map<String, dynamic> customerData) async {
+    return _usersDio.put('/api/users/User/$id',
+        data: json.encode(customerData));
+  }
+
+  Future<Response> deleteCustomer(String id) async {
+    return _usersDio.delete('/api/users/User/$id');
+  }
+
+  Future<Response> deactivateCustomer(String id) async {
+    return _usersDio.put('/api/users/User/$id/deactivate');
+  }
+
+  Future<Response> activateCustomer(String id) async {
+    return _usersDio.put('/api/users/User/$id/activate');
+  }
+
   // Forms CRUD
-  Future<Response> getForms() => _usersDio.get('/api/Form');
+  Future<Response> getForms() => _usersDio.get('/api/users/Form');
   Future<Response> createForm(Map<String, dynamic> dto) =>
-      _usersDio.post('/api/Form', data: json.encode(dto));
+      _usersDio.post('/api/users/Form', data: json.encode(dto));
   Future<Response> updateForm(int id, Map<String, dynamic> dto) =>
-      _usersDio.put('/api/Form/$id', data: json.encode(dto));
-  Future<Response> deleteForm(int id) => _usersDio.delete('/api/Form/$id');
+      _usersDio.put('/api/users/Form/$id', data: json.encode(dto));
+  Future<Response> deleteForm(int id) =>
+      _usersDio.delete('/api/users/Form/$id');
 
   // Lawyers
   Future<Response> getAllLawyersProfile() =>
-      _lawyersDio.get('/api/Lawyer/GetAllLawyerProfile');
+      _lawyersDio.get('/api/lawyers/Lawyer/GetAllLawyerProfile');
   Future<Response> getLawyerById(int id) =>
-      _lawyersDio.get('/api/Lawyer/GetProfileById/$id');
+      _lawyersDio.get('/api/lawyers/Lawyer/GetProfileById/$id');
   Future<Response> updateLawyerProfileSaga(int id, Map<String, dynamic> dto) =>
-      _lawyersDio.put('/api/Lawyer/UpdateLawyerProfile/$id',
+      _lawyersDio.put('/api/lawyers/Lawyer/UpdateLawyerProfile/$id',
           data: json.encode(dto));
   Future<Response> updateLawyerSimple(int id, Map<String, dynamic> dto) =>
-      _lawyersDio.put('/api/Lawyer/$id', data: json.encode(dto));
+      _lawyersDio.put('/api/lawyers/Lawyer/$id', data: json.encode(dto));
   Future<Response> getLawyerSagaState(int id) =>
-      _lawyersDio.get('/api/Lawyer/$id/saga-state');
+      _lawyersDio.get('/api/lawyers/Lawyer/$id/saga-state');
 
   // Lawyer diplomas
-  Future<Response> createLawyerDiploma(int lawyerId, Map<String, dynamic> dto) =>
-      _lawyersDio.post('/api/LawyerDiploma/lawyer/$lawyerId',
+  Future<Response> createLawyerDiploma(
+          int lawyerId, Map<String, dynamic> dto) =>
+      _lawyersDio.post('/api/lawyers/LawyerDiploma/lawyer/$lawyerId',
           data: json.encode(dto));
   Future<Response> updateLawyerDiploma(int id, Map<String, dynamic> dto) =>
-      _lawyersDio.put('/api/LawyerDiploma/$id', data: json.encode(dto));
+      _lawyersDio.put('/api/lawyers/LawyerDiploma/$id', data: json.encode(dto));
   Future<Response> deleteLawyerDiploma(int id) =>
-      _lawyersDio.delete('/api/LawyerDiploma/$id');
+      _lawyersDio.delete('/api/lawyers/LawyerDiploma/$id');
 
   // Practice areas & services (read-only for admin filters)
   Future<Response> getPracticeAreas() =>
-      _lawyersDio.get('/api/PracticeArea');
-  Future<Response> getServices() => _lawyersDio.get('/api/Service');
+      _lawyersDio.get('/api/lawyers/PracticeArea');
+  Future<Response> getServices() => _lawyersDio.get('/api/lawyers/Service');
 
   // Work slots
   Future<Response> getWorkSlots({required int lawyerId}) =>
-      _lawyersDio.get('/api/WorkSlotAPI/by-lawyer/$lawyerId');
+      _lawyersDio.get('/api/lawyers/WorkSlotAPI/by-lawyer/$lawyerId');
 
   // Appointments
   Future<Response> createAppointment(Map<String, dynamic> dto) =>
-      _appointmentsDio.post('/api/Appointment/CREATE',
+      _appointmentsDio.post('/api/appointments/Appointment/CREATE',
           data: json.encode(dto));
   Future<Response> completeAppointment(int id) =>
-      _appointmentsDio.put('/api/Appointment/$id/complete');
+      _appointmentsDio.put('/api/appointments/Appointment/$id/complete');
   Future<Response> deleteAppointment(int id) =>
-      _appointmentsDio.delete('/api/Appointment/$id');
+      _appointmentsDio.delete('/api/appointments/Appointment/$id');
   Future<Response> updateAppointment(int id, Map<String, dynamic> dto) =>
-      _appointmentsDio.put('/api/Appointment/UpdateAppointment/$id',
+      _appointmentsDio.put(
+          '/api/appointments/Appointment/UpdateAppointment/$id',
           data: json.encode(dto));
   Future<Response> getAppointmentSagaState(int id) =>
-      _appointmentsDio.get('/api/Appointment/$id/saga-state');
+      _appointmentsDio.get('/api/appointments/Appointment/$id/saga-state');
   Future<Response> getAppointmentsJoined() => _appointmentsDio
-      .get('/api/AppointmentWithUserLawyer/GetAllAppointment');
+      .get('/api/appointments/AppointmentWithUserLawyer/GetAllAppointment');
 }
-
-
