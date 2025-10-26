@@ -76,7 +76,8 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
       // ID
       'id': (m['id'] ?? m['Id'] ?? '').toString(),
       // Tên không có trong payload mẫu → fallback theo userId/ID
-      'name': (m['fullName'] ?? m['name'] ?? 'Luật sư #${m['id'] ?? ''}').toString(),
+      'name': (m['fullName'] ?? m['name'] ?? 'Luật sư #${m['id'] ?? ''}')
+          .toString(),
       // Email/Phone không có → để trống
       'email': (m['email'] ?? '').toString(),
       'phone': (m['phone'] ?? '').toString(),
@@ -84,7 +85,8 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
       'address': (m['address'] ?? m['description'] ?? '').toString(),
       // Chuyên môn lấy tên lĩnh vực đầu tiên trong practiceAreas
       'specialization': ((m['spec'] ?? m['specialization']) ??
-              ((m['practiceAreas'] is List && (m['practiceAreas'] as List).isNotEmpty)
+              ((m['practiceAreas'] is List &&
+                      (m['practiceAreas'] as List).isNotEmpty)
                   ? (((m['practiceAreas'] as List).first as Map)['name'] ?? '')
                       .toString()
                   : ''))
@@ -101,8 +103,10 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
       'imageUrl': (m['img'] ?? m['imageUrl'] ?? '').toString(),
       'languages': <String>[],
       'certifications': <String>[],
-      'createdAt': (m['createdAt'] ?? DateTime.now().toIso8601String()).toString(),
-      'updatedAt': (m['updatedAt'] ?? DateTime.now().toIso8601String()).toString(),
+      'createdAt':
+          (m['createdAt'] ?? DateTime.now().toIso8601String()).toString(),
+      'updatedAt':
+          (m['updatedAt'] ?? DateTime.now().toIso8601String()).toString(),
       'isActive': m['isActive'] == null ? true : (m['isActive'] as bool),
     };
   }
@@ -586,7 +590,8 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 2),
+                borderSide:
+                    const BorderSide(color: Color(0xFF1E3A8A), width: 2),
               ),
               filled: true,
               fillColor: Colors.white,
@@ -696,11 +701,32 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
                 child: SizedBox(
                   width: isTablet ? 64 : 56,
                   height: isTablet ? 64 : 56,
-                  child: (lawyer.imageUrl.isNotEmpty)
+                  child: (lawyer.imageUrl.isNotEmpty &&
+                          !lawyer.imageUrl
+                              .contains('firebasestorage.googleapis.com'))
                       ? Image.network(
                           lawyer.imageUrl,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _buildAvatarFallback(lawyer, screenWidth, isTablet),
+                          errorBuilder: (_, __, ___) => _buildAvatarFallback(
+                              lawyer, screenWidth, isTablet),
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return SizedBox(
+                              width: isTablet ? 64 : 56,
+                              height: isTablet ? 64 : 56,
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  value: loadingProgress.expectedTotalBytes !=
+                                          null
+                                      ? loadingProgress.cumulativeBytesLoaded /
+                                          loadingProgress.expectedTotalBytes!
+                                      : null,
+                                ),
+                              ),
+                            );
+                          },
+                          cacheHeight: 128, // Cache để tránh load lại nhiều lần
+                          cacheWidth: 128,
                         )
                       : _buildAvatarFallback(lawyer, screenWidth, isTablet),
                 ),
@@ -726,15 +752,20 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 10, vertical: 6),
                           decoration: BoxDecoration(
-                            color: (lawyer.isActive ? const Color(0xFFE7F6EC) : const Color(0xFFFCE8E8)),
+                            color: (lawyer.isActive
+                                ? const Color(0xFFE7F6EC)
+                                : const Color(0xFFFCE8E8)),
                             borderRadius: BorderRadius.circular(20),
                           ),
                           child: Text(
                             lawyer.isActive ? 'Hoạt động' : 'Không hoạt động',
                             style: TextStyle(
-                              color: lawyer.isActive ? const Color(0xFF1B5E20) : const Color(0xFFB71C1C),
+                              color: lawyer.isActive
+                                  ? const Color(0xFF1B5E20)
+                                  : const Color(0xFFB71C1C),
                               fontSize: isTablet ? 12 : 11,
                               fontWeight: FontWeight.w700,
                             ),
@@ -763,12 +794,27 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _infoChip(icon: Icons.email, label: lawyer.email.isEmpty ? 'Chưa cập nhật' : lawyer.email, style: chipTextStyle),
-              _infoChip(icon: Icons.phone, label: lawyer.phone.isEmpty ? 'Chưa cập nhật' : lawyer.phone, style: chipTextStyle),
-              _infoChip(icon: Icons.timeline, label: '${lawyer.experienceYears} năm', style: chipTextStyle),
-              _infoChip(icon: Icons.attach_money, label: '${lawyer.hourlyRate.toStringAsFixed(0)} VNĐ/giờ', style: chipTextStyle),
+              _infoChip(
+                  icon: Icons.email,
+                  label: lawyer.email.isEmpty ? 'Chưa cập nhật' : lawyer.email,
+                  style: chipTextStyle),
+              _infoChip(
+                  icon: Icons.phone,
+                  label: lawyer.phone.isEmpty ? 'Chưa cập nhật' : lawyer.phone,
+                  style: chipTextStyle),
+              _infoChip(
+                  icon: Icons.timeline,
+                  label: '${lawyer.experienceYears} năm',
+                  style: chipTextStyle),
+              _infoChip(
+                  icon: Icons.attach_money,
+                  label: '${lawyer.hourlyRate.toStringAsFixed(0)} VNĐ/giờ',
+                  style: chipTextStyle),
               if (lawyer.address.isNotEmpty)
-                _infoChip(icon: Icons.place, label: lawyer.address, style: chipTextStyle),
+                _infoChip(
+                    icon: Icons.place,
+                    label: lawyer.address,
+                    style: chipTextStyle),
             ],
           ),
 
@@ -780,12 +826,14 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
                 child: ElevatedButton.icon(
                   onPressed: () => _showEditLawyerDialog(lawyer),
                   icon: Icon(Icons.edit, size: isTablet ? 18 : 16),
-                  label: Text('Chỉnh sửa', style: TextStyle(fontSize: isTablet ? 14 : 13)),
+                  label: Text('Chỉnh sửa',
+                      style: TextStyle(fontSize: isTablet ? 14 : 13)),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF1E3A8A),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 10),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
                   ),
                 ),
               ),
@@ -795,7 +843,8 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
                 icon: const Icon(Icons.delete, color: Colors.red),
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.red.withOpacity(0.08),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
                 ),
               ),
             ],
@@ -805,7 +854,10 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
     );
   }
 
-  Widget _infoChip({required IconData icon, required String label, required TextStyle style}) {
+  Widget _infoChip(
+      {required IconData icon,
+      required String label,
+      required TextStyle style}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
@@ -824,7 +876,8 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
     );
   }
 
-  Widget _buildAvatarFallback(Lawyer lawyer, double screenWidth, bool isTablet) {
+  Widget _buildAvatarFallback(
+      Lawyer lawyer, double screenWidth, bool isTablet) {
     return Container(
       color: const Color(0xFF1E3A8A).withOpacity(0.08),
       child: Center(
