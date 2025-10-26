@@ -20,7 +20,6 @@ import '../../features/admin/presentation/pages/admin_appointments_page.dart';
 import '../../features/admin/presentation/pages/admin_customers_page.dart';
 import '../../features/admin/presentation/pages/admin_lawyers_page.dart';
 import '../../features/admin/presentation/pages/admin_forms_page.dart';
-import '../../features/admin/presentation/pages/debug_api_page.dart';
 import '../../features/admin/presentation/pages/lawyer_dashboard_page.dart'
     as lawyer_pages;
 import '../../features/admin/presentation/pages/lawyer_appointments_page.dart';
@@ -91,13 +90,6 @@ class AppRouter {
         builder: (context, state) => MainNavigation(
           currentPath: '/admin/forms',
           child: const AdminFormsPage(),
-        ),
-      ),
-      GoRoute(
-        path: '/admin/debug',
-        builder: (context, state) => MainNavigation(
-          currentPath: '/admin/debug',
-          child: const DebugApiPage(),
         ),
       ),
 

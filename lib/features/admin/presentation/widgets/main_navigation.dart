@@ -436,12 +436,6 @@ class _MainNavigationState extends State<MainNavigation> {
         path: '/admin/lawyers',
         isActive: widget.currentPath == '/admin/lawyers',
       ),
-      _buildNavItem(
-        icon: Icons.bug_report,
-        title: 'Debug API',
-        path: '/admin/debug',
-        isActive: widget.currentPath == '/admin/debug',
-      ),
     ];
   }
 
