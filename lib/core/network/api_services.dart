@@ -4,19 +4,14 @@ import 'api_client.dart';
 
 // API URLs - từ Swagger documentation
 const Map<String, String> API_URLS = {
-  'USERS': 'https://localhost:5000/api/users', // Users API v1
-  'LAWYERS': 'https://localhost:5000/api/lawyers', // Lawyers API v1
+  'USERS':
+      'https://localhost:5000', // Users API v1 - Gateway routes to Users service
+  'LAWYERS':
+      'https://localhost:5000', // Lawyers API v1 - Gateway routes to Lawyers service
   'APPOINTMENTS':
-      'https://localhost:5000/api/appointments', // Appointments API v1
-  'CHAT': 'https://localhost:5000/api/chat', // Chat API v1
-};
-
-// Mobile-specific endpoints từ MOBILE_API_GUIDE.md
-const Map<String, String> MOBILE_API_URLS = {
-  'AUTH': 'https://localhost:5000/api/mobile',
-  'APPOINTMENT': 'https://localhost:5000/api/mobile',
-  'LAWYER': 'https://localhost:5000/api/mobile',
-  'HEALTH': 'https://localhost:5000/api/mobile',
+      'https://localhost:5000', // Appointments API v1 - Gateway routes to Appointments service
+  'CHAT':
+      'https://localhost:5000', // Chat API v1 - Gateway routes to Chat service
 };
 
 // Create API instances giống web app
@@ -26,100 +21,103 @@ class ApiServices {
   // Users API - từ Swagger Users API v1
   static Future<Response> usersGet(String path,
       {Map<String, dynamic>? queryParameters, Options? options}) {
-    return _apiClient.get('${API_URLS['USERS']}$path',
+    return _apiClient.get('${API_URLS['USERS']}/api/users$path',
         queryParameters: queryParameters, options: options);
   }
 
   static Future<Response> usersPost(String path,
       {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) {
-    return _apiClient.post('${API_URLS['USERS']}$path',
+    return _apiClient.post('${API_URLS['USERS']}/api/users$path',
         data: data, queryParameters: queryParameters, options: options);
   }
 
   static Future<Response> usersPut(String path,
       {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) {
-    return _apiClient.put('${API_URLS['USERS']}$path',
+    return _apiClient.put('${API_URLS['USERS']}/api/users$path',
         data: data, queryParameters: queryParameters, options: options);
   }
 
   static Future<Response> usersDelete(String path,
       {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) {
-    return _apiClient.delete('${API_URLS['USERS']}$path',
+    return _apiClient.delete('${API_URLS['USERS']}/api/users$path',
         data: data, queryParameters: queryParameters, options: options);
   }
 
   // Appointments API - từ Swagger Appointments API v1
   static Future<Response> appointmentsGet(String path,
       {Map<String, dynamic>? queryParameters, Options? options}) {
-    return _apiClient.get('${API_URLS['APPOINTMENTS']}$path',
+    return _apiClient.get('${API_URLS['APPOINTMENTS']}/api/appointments$path',
         queryParameters: queryParameters, options: options);
   }
 
   static Future<Response> appointmentsPost(String path,
       {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) {
-    return _apiClient.post('${API_URLS['APPOINTMENTS']}$path',
+    return _apiClient.post('${API_URLS['APPOINTMENTS']}/api/appointments$path',
         data: data, queryParameters: queryParameters, options: options);
   }
 
   static Future<Response> appointmentsPut(String path,
       {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) {
-    return _apiClient.put('${API_URLS['APPOINTMENTS']}$path',
+    return _apiClient.put('${API_URLS['APPOINTMENTS']}/api/appointments$path',
         data: data, queryParameters: queryParameters, options: options);
   }
 
   static Future<Response> appointmentsDelete(String path,
       {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) {
-    return _apiClient.delete('${API_URLS['APPOINTMENTS']}$path',
-        data: data, queryParameters: queryParameters, options: options);
+    return _apiClient.delete(
+        '${API_URLS['APPOINTMENTS']}/api/appointments$path',
+        data: data,
+        queryParameters: queryParameters,
+        options: options);
   }
 
   // Lawyers API - từ Swagger Lawyers API v1
   static Future<Response> lawyersGet(String path,
       {Map<String, dynamic>? queryParameters, Options? options}) {
-    return _apiClient.get('${API_URLS['LAWYERS']}$path',
+    return _apiClient.get('${API_URLS['LAWYERS']}/api/lawyers$path',
         queryParameters: queryParameters, options: options);
   }
 
   static Future<Response> lawyersPost(String path,
       {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) {
-    return _apiClient.post('${API_URLS['LAWYERS']}$path',
+    return _apiClient.post('${API_URLS['LAWYERS']}/api/lawyers$path',
         data: data, queryParameters: queryParameters, options: options);
   }
 
   static Future<Response> lawyersPut(String path,
       {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) {
-    return _apiClient.put('${API_URLS['LAWYERS']}$path',
+    return _apiClient.put('${API_URLS['LAWYERS']}/api/lawyers$path',
         data: data, queryParameters: queryParameters, options: options);
   }
 
   static Future<Response> lawyersDelete(String path,
       {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) {
-    return _apiClient.delete('${API_URLS['LAWYERS']}$path',
+    return _apiClient.delete('${API_URLS['LAWYERS']}/api/lawyers$path',
         data: data, queryParameters: queryParameters, options: options);
   }
 
   // Chat API - từ Swagger Chat API v1
   static Future<Response> chatGet(String path,
       {Map<String, dynamic>? queryParameters, Options? options}) {
-    return _apiClient.get('${API_URLS['CHAT']}$path',
+    return _apiClient.get('${API_URLS['CHAT']}/api/chat$path',
         queryParameters: queryParameters, options: options);
   }
 
   static Future<Response> chatPost(String path,
       {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) {
-    return _apiClient.post('${API_URLS['CHAT']}$path',
+    return _apiClient.post('${API_URLS['CHAT']}/api/chat$path',
         data: data, queryParameters: queryParameters, options: options);
   }
 
   static Future<Response> chatPut(String path,
       {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) {
-    return _apiClient.put('${API_URLS['CHAT']}$path',
+    return _apiClient.put('${API_URLS['CHAT']}/api/chat$path',
         data: data, queryParameters: queryParameters, options: options);
   }
 
   static Future<Response> chatDelete(String path,
       {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) {
-    return _apiClient.delete('${API_URLS['CHAT']}$path',
+    return _apiClient.delete('${API_URLS['CHAT']}/api/chat$path',
         data: data, queryParameters: queryParameters, options: options);
   }
 }
