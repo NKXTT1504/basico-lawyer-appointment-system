@@ -20,18 +20,85 @@ class Appointment {
   });
 
   factory Appointment.fromJson(Map<String, dynamic> json) {
-    return Appointment(
-      id: json['id'] as String,
-      lawyerName: json['lawyerName'] as String,
-      date: json['date'] as String,
-      time: json['time'] as String,
-      dayOfWeek: json['dayOfWeek'] as String,
-      service: json['service'] as String,
-      status: AppointmentStatus.values.firstWhere(
-        (e) => e.name == json['status'],
+    // Support both old format and new API format
+    final String id = json['id']?.toString() ?? '';
+    final String lawyerName = json['lawyerName']?.toString() ??
+        (json['lawyerProfile'] != null
+            ? 'Luật sư #${json['lawyerId']?.toString() ?? ''}'
+            : '');
+
+    // Parse date from scheduledAt
+    DateTime? scheduledDate;
+    if (json['scheduledAt'] != null) {
+      try {
+        scheduledDate = DateTime.parse(json['scheduledAt'].toString());
+      } catch (e) {
+        scheduledDate = DateTime.now();
+      }
+    } else {
+      scheduledDate = DateTime.parse(
+          json['date']?.toString() ?? DateTime.now().toIso8601String());
+    }
+
+    final String date =
+        '${scheduledDate.day}/${scheduledDate.month}/${scheduledDate.year}';
+
+    final String time =
+        json['time']?.toString() ?? json['slot']?.toString() ?? '';
+
+    // Get day of week
+    final days = [
+      'Chủ nhật',
+      'Thứ Hai',
+      'Thứ Ba',
+      'Thứ Tư',
+      'Thứ Năm',
+      'Thứ Sáu',
+      'Thứ Bảy'
+    ];
+    final String dayOfWeek = days[scheduledDate.weekday % 7];
+
+    // Get service
+    String service = json['service']?.toString() ??
+        (json['services'] != null && (json['services'] as List).isNotEmpty
+            ? (json['services'] as List).first.toString()
+            : json['spec']?.toString() ?? '');
+
+    // Parse status
+    AppointmentStatus status;
+    if (json['status'] is int) {
+      switch (json['status'] as int) {
+        case 0:
+          status = AppointmentStatus.pending;
+          break;
+        case 1:
+          status = AppointmentStatus.confirmed;
+          break;
+        case 2:
+          status = AppointmentStatus.completed;
+          break;
+        case 3:
+          status = AppointmentStatus.cancelled;
+          break;
+        default:
+          status = AppointmentStatus.pending;
+      }
+    } else {
+      status = AppointmentStatus.values.firstWhere(
+        (e) => e.name == json['status']?.toString(),
         orElse: () => AppointmentStatus.pending,
-      ),
-      action: json['action'] as String?,
+      );
+    }
+
+    return Appointment(
+      id: id,
+      lawyerName: lawyerName,
+      date: date,
+      time: time,
+      dayOfWeek: dayOfWeek,
+      service: service,
+      status: status,
+      action: json['action']?.toString(),
     );
   }
 

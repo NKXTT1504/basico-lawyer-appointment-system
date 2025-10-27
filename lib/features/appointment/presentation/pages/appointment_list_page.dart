@@ -461,8 +461,8 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
         if (response.statusCode == 200) {
           // Handle different API response formats
           final responseData = response.data;
-          List<dynamic> appointmentsData;
 
+          List<dynamic> appointmentsData;
           if (responseData is List) {
             appointmentsData = responseData;
           } else if (responseData is Map<String, dynamic>) {
@@ -475,18 +475,47 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
             appointmentsData = [];
           }
 
-          final allAppointments = appointmentsData
-              .map((json) => Appointment.fromJson(json))
+          // Debug: Log current user info
+          print('🔍 Current User Info:');
+          print('  ID: ${currentUser.id}');
+          print('  Email: ${currentUser.email}');
+          print('📊 Total appointments from API: ${appointmentsData.length}');
+
+          // Parse the JSON to check userId before creating Appointment objects
+          // Match by email since backend userId might be different from local ID
+          final List<Map<String, dynamic>> filteredJson = [];
+
+          for (var json in appointmentsData) {
+            final customerEmail = json['user']?['email']?.toString();
+            print(
+                '🔍 Checking appointment - Email: $customerEmail, Current: ${currentUser.email}');
+
+            final matches =
+                customerEmail?.toLowerCase() == currentUser.email.toLowerCase();
+            print('  Match: $matches');
+
+            if (matches) {
+              filteredJson.add(json);
+            }
+          }
+
+          print('✅ Found ${filteredJson.length} appointments for current user');
+
+          final appointments = filteredJson
+              .map((json) {
+                try {
+                  return Appointment.fromJson(json);
+                } catch (e) {
+                  print('❌ Error parsing appointment: $e');
+                  print('   JSON: $json');
+                  return null;
+                }
+              })
+              .where((apt) => apt != null)
+              .cast<Appointment>()
               .toList();
-          // Filter appointments for current user
-          // Note: Assuming API returns userId field, adjust based on actual API response
-          final appointments = allAppointments.where((apt) {
-            // Check if appointment has userId field matching current user
-            final aptJson = apt.toJson();
-            return aptJson['userId'] == currentUser.id ||
-                aptJson['customerId'] == currentUser.id ||
-                aptJson['customerEmail'] == currentUser.email;
-          }).toList();
+
+          print('✅ Successfully parsed ${appointments.length} appointments');
 
           final upcoming = appointments
               .where((a) =>
