@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/services/user_storage_service.dart';
 import '../../data/models/admin_user.dart';
 import '../../data/models/appointment.dart';
+import '../../data/services/admin_api_service.dart';
 
 class LawyerAppointmentsPage extends StatefulWidget {
   const LawyerAppointmentsPage({super.key});
@@ -26,18 +27,127 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
     try {
       final user = await UserStorageService.getCurrentUser();
       if (user != null && user.role == UserRole.lawyer) {
-        // Lawyer profile IDs in sample data are 'law_*'. We stored user ids as 'user_lawyer_*'.
-        // Match by email to get lawyer profile id, then fetch appointments by lawyerId.
-        final lawyers = await UserStorageService.getLawyers();
-        final lawyerProfile = lawyers.firstWhere(
-            (l) => l.email.toLowerCase() == user.email.toLowerCase(),
-            orElse: () => throw 'Không tìm thấy hồ sơ luật sư');
-        final appointments =
-            await UserStorageService.getLawyerAppointments(lawyerProfile.id);
-        setState(() {
-          _myAppointments = appointments;
-          _isLoading = false;
-        });
+        // Try backend first
+        try {
+          print('🔍 Loading lawyer appointments from API...');
+          print('👤 Current user email: ${user.email}');
+
+          // 1) Resolve lawyerId from Users API (UserWithLawyerProfile only-lawyers)
+          final api = AdminApiService();
+          print('📡 Fetching lawyer profiles...');
+          final resp = await api.getUsersWithLawyerProfileOnly();
+
+          print('📊 API Response Status: ${resp.statusCode}');
+          print('📊 API Response Data: ${resp.data}');
+
+          final Map<String, dynamic> body = resp.data is Map<String, dynamic>
+              ? resp.data as Map<String, dynamic>
+              : <String, dynamic>{};
+          final List list = (body['result'] ?? body['Result'] ?? []) as List;
+
+          print('📋 Found ${list.length} lawyer profiles');
+
+          final Map<String, dynamic>? me = list
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .firstWhere((e) {
+            final userData = e['user'] as Map<String, dynamic>? ?? {};
+            final email = (userData['email'] ?? '').toString().toLowerCase();
+            print(
+                '🔍 Checking email: $email vs current: ${user.email.toLowerCase()}');
+            return email == user.email.toLowerCase();
+          }, orElse: () => <String, dynamic>{});
+
+          if (me == null || me.isEmpty) {
+            print('❌ Không tìm thấy hồ sơ luật sư cho email: ${user.email}');
+            throw 'Không tìm thấy hồ sơ luật sư';
+          }
+
+          print('✅ Found lawyer profile: $me');
+
+          final int lawyerId =
+              int.tryParse((me['lawyerProfile']?['id'] ?? '').toString()) ?? -1;
+          if (lawyerId <= 0) {
+            print('❌ Không tìm thấy mã luật sư từ profile');
+            throw 'Không tìm thấy mã luật sư';
+          }
+
+          print('✅ Lawyer ID: $lawyerId');
+
+          // 2) Fetch all appointments and filter by lawyerId
+          print('📡 Fetching all appointments...');
+          final aptsResp = await api.getAppointmentsJoined();
+
+          print('📊 Appointments Response Status: ${aptsResp.statusCode}');
+          print('📊 Appointments Response Data: ${aptsResp.data}');
+          final List<dynamic> apts = aptsResp.data is List
+              ? aptsResp.data as List
+              : ((aptsResp.data is Map &&
+                      ((aptsResp.data as Map)['result'] is List))
+                  ? ((aptsResp.data as Map)['result'] as List)
+                  : <dynamic>[]);
+
+          // Filter appointments by lawyerId
+          final filteredApts = apts.where((apt) {
+            final aptLawyerId =
+                int.tryParse((apt['lawyerId'] ?? '').toString()) ?? -1;
+            return aptLawyerId == lawyerId;
+          }).toList();
+
+          print(
+              '📋 Found ${filteredApts.length} appointments for lawyer $lawyerId');
+
+          final appointments = filteredApts.map<Appointment>((raw) {
+            final Map<String, dynamic> e = Map<String, dynamic>.from(raw);
+            final Map<String, dynamic> userJson =
+                Map<String, dynamic>.from((e['user'] ?? {}) as Map);
+            return Appointment(
+              id: (e['id'] ?? e['appointmentId'] ?? '').toString(),
+              customerId: (e['userId'] ?? '').toString(),
+              customerName: (userJson['fullName'] ?? '').toString(),
+              lawyerId: (e['lawyerId'] ?? '').toString(),
+              lawyerName: 'Luật sư #${(e['lawyerId'] ?? '').toString()}',
+              appointmentDate:
+                  DateTime.tryParse((e['scheduledAt'] ?? '').toString()) ??
+                      DateTime.now(),
+              timeSlot: (e['slot'] ?? '').toString(),
+              duration: '60m',
+              type: (e['spec'] ?? '').toString(),
+              description:
+                  ((e['services'] is List && (e['services'] as List).isNotEmpty)
+                          ? (e['services'] as List).first.toString()
+                          : '')
+                      .toString(),
+              status: _parseStatusFromInt(e['status']),
+              notes: (e['note'] ?? '').toString(),
+              fee: ((e['lawyerProfile']?['pricePerHour'] ?? 0) as num)
+                  .toDouble(),
+              createdAt: DateTime.tryParse((e['createAt'] ?? '').toString()) ??
+                  DateTime.now(),
+              updatedAt: DateTime.now(),
+            );
+          }).toList();
+
+          print('✅ Successfully parsed ${appointments.length} appointments');
+
+          setState(() {
+            _myAppointments = appointments;
+            _isLoading = false;
+          });
+        } catch (e) {
+          print('❌ Error loading from API: $e');
+          print('📦 Falling back to local storage...');
+          // Fallback to local storage
+          final lawyers = await UserStorageService.getLawyers();
+          final lawyerProfile = lawyers.firstWhere(
+              (l) => l.email.toLowerCase() == user.email.toLowerCase(),
+              orElse: () => throw 'Không tìm thấy hồ sơ luật sư');
+          final appointments =
+              await UserStorageService.getLawyerAppointments(lawyerProfile.id);
+          setState(() {
+            _myAppointments = appointments;
+            _isLoading = false;
+          });
+        }
       } else {
         if (mounted) {
           // Redirect non-lawyer to home/dashboard
@@ -50,6 +160,22 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
         _isLoading = false;
       });
       _showErrorSnackBar('Có lỗi xảy ra: $e');
+    }
+  }
+
+  AppointmentStatus _parseStatusFromInt(dynamic v) {
+    final intVal = (v is int) ? v : int.tryParse(v?.toString() ?? '') ?? -1;
+    switch (intVal) {
+      case 0:
+        return AppointmentStatus.pending;
+      case 1:
+        return AppointmentStatus.confirmed;
+      case 2:
+        return AppointmentStatus.completed;
+      case 3:
+        return AppointmentStatus.cancelled;
+      default:
+        return AppointmentStatus.pending;
     }
   }
 

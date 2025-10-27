@@ -96,4 +96,12 @@ class AdminApiService {
       Api.appointments.get('/api/Appointment/$id/saga-state');
   Future<Response> getAppointmentsJoined() =>
       Api.appointments.get('/api/AppointmentWithUserLawyer/GetAllAppointment');
+
+  // Lawyer-specific helpers
+  Future<Response> getUsersWithLawyerProfileOnly() =>
+      Api.users.get('/api/UserWithLawyerProfile/only-lawyers');
+
+  Future<Response> getAppointmentsByLawyer({required int lawyerId}) =>
+      Api.appointments
+          .get('/api/AppointmentWithUserLawyer/by-lawyer/$lawyerId');
 }
