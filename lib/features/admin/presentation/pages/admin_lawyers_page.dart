@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/services/user_storage_service.dart';
+import '../widgets/admin_ui.dart';
 import '../../data/services/admin_api_service.dart';
 import '../../data/models/lawyer.dart';
 import '../../data/models/admin_user.dart';
@@ -733,26 +734,7 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
                               ),
                             ),
                           ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: (lawyer.isActive
-                                  ? const Color(0xFFE7F6EC)
-                                  : const Color(0xFFFCE8E8)),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              lawyer.isActive ? 'Hoạt động' : 'Không hoạt động',
-                              style: TextStyle(
-                                color: lawyer.isActive
-                                    ? const Color(0xFF1B5E20)
-                                    : const Color(0xFFB71C1C),
-                                fontSize: isTablet ? 12 : 11,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
+                          AdminStatusBadge(active: lawyer.isActive),
                         ],
                       ),
                       const SizedBox(height: 4),
@@ -776,29 +758,22 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
               spacing: 8,
               runSpacing: 8,
               children: [
-                _infoChip(
+                AdminInfoChip(
                     icon: Icons.email,
                     label:
-                        lawyer.email.isEmpty ? 'Chưa cập nhật' : lawyer.email,
-                    style: chipTextStyle),
-                _infoChip(
+                        lawyer.email.isEmpty ? 'Chưa cập nhật' : lawyer.email),
+                AdminInfoChip(
                     icon: Icons.phone,
                     label:
-                        lawyer.phone.isEmpty ? 'Chưa cập nhật' : lawyer.phone,
-                    style: chipTextStyle),
-                _infoChip(
+                        lawyer.phone.isEmpty ? 'Chưa cập nhật' : lawyer.phone),
+                AdminInfoChip(
                     icon: Icons.timeline,
-                    label: '${lawyer.experienceYears} năm',
-                    style: chipTextStyle),
-                _infoChip(
+                    label: '${lawyer.experienceYears} năm'),
+                AdminInfoChip(
                     icon: Icons.attach_money,
-                    label: '${lawyer.hourlyRate.toStringAsFixed(0)} VNĐ/giờ',
-                    style: chipTextStyle),
+                    label: '${lawyer.hourlyRate.toStringAsFixed(0)} VNĐ/giờ'),
                 if (lawyer.address.isNotEmpty)
-                  _infoChip(
-                      icon: Icons.place,
-                      label: lawyer.address,
-                      style: chipTextStyle),
+                  AdminInfoChip(icon: Icons.place, label: lawyer.address),
               ],
             ),
 
@@ -807,18 +782,10 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton.icon(
+                  child: AdminPrimaryButton(
                     onPressed: () => _showEditLawyerDialog(lawyer),
-                    icon: Icon(Icons.edit, size: isTablet ? 18 : 16),
-                    label: Text('Chỉnh sửa',
-                        style: TextStyle(fontSize: isTablet ? 14 : 13)),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF1E3A8A),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10)),
-                    ),
+                    label: 'Chỉnh sửa',
+                    icon: Icons.edit,
                   ),
                 ),
                 const SizedBox(width: 10),
