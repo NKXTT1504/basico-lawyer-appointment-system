@@ -405,7 +405,7 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
     final isMobile = screenWidth < 600;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.background,
       body: Column(
         children: [
           // Search and filters

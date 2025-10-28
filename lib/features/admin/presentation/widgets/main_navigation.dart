@@ -148,33 +148,19 @@ class _MainNavigationState extends State<MainNavigation> {
           actions: role == UserRole.customer
               ? const []
               : [
-                  // Notification icon replaces refresh/menu
-                  Stack(
-                    alignment: Alignment.topRight,
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.notifications),
-                        tooltip: 'Thông báo',
-                        onPressed: () => context.go('/admin/appointments'),
-                      ),
-                      // Simple badge placeholder; replace count via state when wired to backend
-                      Positioned(
-                        right: 8,
-                        top: 8,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: Colors.red,
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: const Text('!',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold)),
-                        ),
-                      )
+                  IconButton(
+                    icon: const Icon(Icons.refresh),
+                    onPressed: () => context.go(widget.currentPath),
+                    tooltip: 'Làm mới',
+                  ),
+                  PopupMenuButton<String>(
+                    onSelected: (value) {
+                      if (value == 'logout') {
+                        _logout();
+                      }
+                    },
+                    itemBuilder: (context) => const [
+                      PopupMenuItem(value: 'logout', child: Text('Đăng xuất')),
                     ],
                   ),
                 ],
