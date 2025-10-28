@@ -30,21 +30,36 @@ class Customer extends Equatable {
   });
 
   factory Customer.fromJson(Map<String, dynamic> json) {
+    // Safe parsing for API response
+    String parseId(dynamic value) => (value ?? '').toString();
+    String parseString(dynamic value, {String fallback = ''}) =>
+        (value ?? fallback).toString();
+    DateTime parseDate(dynamic value) {
+      if (value == null) return DateTime.now();
+      if (value is DateTime) return value;
+      try {
+        return DateTime.parse(value.toString());
+      } catch (_) {
+        return DateTime.now();
+      }
+    }
+
     return Customer(
-      id: json['id'] as String,
-      name: json['name'] as String,
-      email: json['email'] as String,
-      phone: json['phone'] as String,
-      address: json['address'] as String,
-      dateOfBirth: DateTime.parse(json['dateOfBirth'] as String),
-      gender: json['gender'] as String,
-      occupation: json['occupation'] as String,
-      notes: json['notes'] as String? ?? '',
-      isActive: json['isActive'] as bool? ?? true,
-      createdAt: DateTime.parse(json['createdAt'] as String),
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.parse(json['updatedAt'] as String)
-          : null,
+      id: parseId(json['id']),
+      name: parseString(json['fullName'] ?? json['name'], fallback: 'Unknown'),
+      email: parseString(json['email']),
+      phone: parseString(json['phoneNumber'] ?? json['phone']),
+      address: parseString(json['address']),
+      dateOfBirth: parseDate(json['dateOfBirth']),
+      gender: parseString(json['gender'], fallback: 'Không xác định'),
+      occupation: parseString(json['occupation'], fallback: 'Không xác định'),
+      notes: parseString(json['notes']),
+      isActive: (json['isActive'] is bool)
+          ? (json['isActive'] as bool)
+          : (json['isActive']?.toString().toLowerCase() == 'true'),
+      createdAt: parseDate(json['createdAt']),
+      updatedAt:
+          json['updatedAt'] != null ? parseDate(json['updatedAt']) : null,
     );
   }
 
@@ -111,4 +126,3 @@ class Customer extends Equatable {
         updatedAt
       ];
 }
-

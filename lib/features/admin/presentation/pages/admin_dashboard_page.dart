@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/services/user_storage_service.dart';
+import '../../data/services/admin_api_service.dart';
 import '../../data/models/admin_user.dart';
 import '../../data/models/appointment.dart';
 import '../../data/models/customer.dart';
+import '../../data/models/lawyer.dart';
 import '../../../../core/services/admin_report_service.dart';
 
 class AdminDashboardPage extends StatefulWidget {
@@ -28,6 +30,12 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   List<Customer> _recentCustomers = [];
   // List<Lawyer> _activeLawyers = [];
   bool _isLoading = true;
+  // Range/filtering
+  List<Appointment> _allAppointments = [];
+  bool _monthlyMode = true; // true: current month, false: all-time
+  late DateTime _monthStart;
+  late DateTime _nextMonthStart;
+  DateTime? _selectedMonth; // month anchor for monthlyMode
 
   @override
   void initState() {
@@ -37,42 +45,138 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   Future<void> _loadData() async {
     try {
-      // Initialize sample data if needed
-      await UserStorageService.initializeSampleData();
-
       final user = await UserStorageService.getCurrentUser();
       if (user != null && user.role == UserRole.admin) {
-        final customers = await UserStorageService.getCustomers();
-        final lawyers = await UserStorageService.getLawyers();
-        final appointments = await UserStorageService.getAppointments();
+        // Load data from API
+        final adminApi = AdminApiService();
+
+        print('📡 Fetching dashboard data from API...');
+
+        // Fetch data from API
+        final customersResp = await adminApi.getCustomers();
+        final lawyersResp = await adminApi.getUsersWithLawyerProfileOnly();
+        final appointmentsResp = await adminApi.getAppointmentsJoined();
+
+        print(
+            '📊 API Status - Customers: ${customersResp.statusCode}, Lawyers: ${lawyersResp.statusCode}, Appointments: ${appointmentsResp.statusCode}');
+
+        // Parse API responses
+        final customersData = customersResp.data['result'] as List? ?? [];
+        final lawyersData = lawyersResp.data['result'] as List? ?? [];
+        final appointmentsData = appointmentsResp.data['result'] as List? ?? [];
+
+        print(
+            '📋 API Data - ${customersData.length} customers, ${lawyersData.length} lawyers, ${appointmentsData.length} appointments');
+
+        // Convert to models with safe parsing
+        final customers = customersData.map((json) {
+          try {
+            return Customer.fromJson(json);
+          } catch (e) {
+            print('❌ Customer parse error: $e');
+            // Return a default customer to avoid breaking the UI
+            return Customer(
+              id: (json['id'] ?? '').toString(),
+              name: (json['fullName'] ?? json['name'] ?? 'Unknown').toString(),
+              email: (json['email'] ?? '').toString(),
+              phone: (json['phoneNumber'] ?? json['phone'] ?? '').toString(),
+              address: (json['address'] ?? '').toString(),
+              dateOfBirth: DateTime.now(),
+              gender: 'Không xác định',
+              occupation: 'Không xác định',
+              notes: '',
+              isActive: true,
+              createdAt: DateTime.now(),
+            );
+          }
+        }).toList();
+
+        final lawyers = lawyersData.map((json) {
+          try {
+            final userData = json['user'] as Map<String, dynamic>;
+            return Lawyer.fromJson(userData);
+          } catch (e) {
+            print('❌ Lawyer parse error: $e');
+            // Return a default lawyer
+            return Lawyer(
+              id: (json['user']?['id'] ?? '').toString(),
+              name: (json['user']?['fullName'] ?? 'Unknown').toString(),
+              email: (json['user']?['email'] ?? '').toString(),
+              phone: (json['user']?['phoneNumber'] ?? '').toString(),
+              address: '',
+              specialization: '',
+              licenseNumber: '',
+              experienceYears: 0,
+              hourlyRate: 0,
+              createdAt: DateTime.now(),
+            );
+          }
+        }).toList();
+
+        final appointments = appointmentsData.map((json) {
+          try {
+            return Appointment.fromJson(json);
+          } catch (e) {
+            print('❌ Appointment parse error: $e');
+            // Return a default appointment
+            return Appointment(
+              id: (json['id'] ?? '').toString(),
+              customerId: (json['userId'] ?? '').toString(),
+              customerName: (json['user']?['fullName'] ?? 'Unknown').toString(),
+              lawyerId: (json['lawyerId'] ?? '').toString(),
+              lawyerName: 'Luật sư #${json['lawyerId'] ?? ''}',
+              appointmentDate: DateTime.now(),
+              timeSlot: (json['slot'] ?? '').toString(),
+              duration: '60m',
+              type: (json['spec'] ?? '').toString(),
+              description: '',
+              status: AppointmentStatus.pending,
+              notes: '',
+              fee: 0,
+              createdAt: DateTime.now(),
+              updatedAt: DateTime.now(),
+            );
+          }
+        }).toList();
+
+        print(
+            '✅ Successfully parsed: ${customers.length} customers, ${lawyers.length} lawyers, ${appointments.length} appointments');
 
         // Calculate statistics
         final now = DateTime.now();
-        final thisMonth = DateTime(now.year, now.month);
-        final nextMonth = DateTime(now.year, now.month + 1);
+        _selectedMonth ??= DateTime(now.year, now.month);
+        _monthStart = DateTime(_selectedMonth!.year, _selectedMonth!.month);
+        _nextMonthStart =
+            DateTime(_selectedMonth!.year, _selectedMonth!.month + 1);
 
         final completedAppointments = appointments
             .where((apt) => apt.status == AppointmentStatus.completed)
             .toList();
 
+        // Appointments completed within current month (inclusive start, exclusive end)
         final monthlyAppointments = completedAppointments
             .where((apt) =>
-                apt.appointmentDate.isAfter(thisMonth) &&
-                apt.appointmentDate.isBefore(nextMonth))
+                !apt.appointmentDate.isBefore(_monthStart) &&
+                apt.appointmentDate.isBefore(_nextMonthStart))
             .toList();
 
-        final totalRevenue =
-            completedAppointments.fold(0.0, (sum, apt) => sum + apt.fee);
+        final totalRevenue = completedAppointments.fold(
+          0.0,
+          (sum, apt) => sum + (apt.fee.isFinite && apt.fee > 0 ? apt.fee : 0),
+        );
 
-        final monthlyRevenue =
-            monthlyAppointments.fold(0.0, (sum, apt) => sum + apt.fee);
+        final monthlyRevenue = monthlyAppointments.fold(
+          0.0,
+          (sum, apt) => sum + (apt.fee.isFinite && apt.fee > 0 ? apt.fee : 0),
+        );
 
         // Get recent data
         final recentAppointments = appointments
-            .where((apt) =>
-                apt.createdAt.isAfter(now.subtract(const Duration(days: 7))))
-            .take(5)
-            .toList();
+            .where((apt) => apt.appointmentDate
+                .isAfter(now.subtract(const Duration(days: 7))))
+            .toList()
+          ..sort((a, b) => b.appointmentDate.compareTo(a.appointmentDate));
+        final recentAppointmentsTop5 = recentAppointments.take(5).toList();
 
         final recentCustomers = customers
             .where((cust) =>
@@ -87,24 +191,16 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             _currentUser = user;
             _totalCustomers = customers.length;
             _totalLawyers = lawyers.length;
-            _totalAppointments = appointments.length;
-            _pendingAppointments = appointments
-                .where((apt) => apt.status == AppointmentStatus.pending)
-                .length;
-            _confirmedAppointments = appointments
-                .where((apt) => apt.status == AppointmentStatus.confirmed)
-                .length;
-            _completedAppointments = appointments
-                .where((apt) => apt.status == AppointmentStatus.completed)
-                .length;
+            _allAppointments = appointments;
             // cancelled derived at render time
             _totalRevenue = totalRevenue;
             _monthlyRevenue = monthlyRevenue;
-            _recentAppointments = recentAppointments;
+            _recentAppointments = recentAppointmentsTop5;
             _recentCustomers = recentCustomers;
             // _activeLawyers = activeLawyers;
             _isLoading = false;
           });
+          _applyRange();
         }
       } else {
         if (mounted) {
@@ -128,6 +224,50 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         backgroundColor: Colors.red,
       ),
     );
+  }
+
+  void _applyRange() {
+    // Toggle between monthly and all-time for top stats: appointments and revenue
+    final source = _allAppointments;
+    Iterable<Appointment> rangeApts;
+    if (_monthlyMode) {
+      final now = DateTime.now();
+      final bool isCurrentMonth =
+          _monthStart.year == now.year && _monthStart.month == now.month;
+      final DateTime endBound = isCurrentMonth
+          ? DateTime(now.year, now.month, now.day + 1)
+          : _nextMonthStart;
+      rangeApts = source.where((a) =>
+          !a.appointmentDate.isBefore(_monthStart) &&
+          a.appointmentDate.isBefore(endBound));
+    } else {
+      rangeApts = source;
+    }
+
+    final totalApts = rangeApts.length;
+    final pending =
+        rangeApts.where((a) => a.status == AppointmentStatus.pending).length;
+    final confirmed =
+        rangeApts.where((a) => a.status == AppointmentStatus.confirmed).length;
+    final completed =
+        rangeApts.where((a) => a.status == AppointmentStatus.completed).length;
+
+    final revenue = rangeApts
+        .where((a) => a.status == AppointmentStatus.completed)
+        .fold<double>(
+            0.0, (sum, a) => sum + (a.fee.isFinite && a.fee > 0 ? a.fee : 0));
+
+    setState(() {
+      _totalAppointments = totalApts;
+      _pendingAppointments = pending;
+      _confirmedAppointments = confirmed;
+      _completedAppointments = completed;
+      if (_monthlyMode) {
+        _monthlyRevenue = revenue;
+      } else {
+        _totalRevenue = revenue;
+      }
+    });
   }
 
   // removed unused logout (handled elsewhere)
@@ -192,13 +332,69 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             SizedBox(height: isMobile ? 20 : 24),
 
             // Statistics cards (re-computed via report service)
-            Text(
-              'Thống kê tổng quan',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[800],
-                    fontSize: isMobile ? 18 : 20,
+            Row(
+              children: [
+                Text(
+                  'Thống kê tổng quan',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue[800],
+                        fontSize: isMobile ? 18 : 20,
+                      ),
+                ),
+                const Spacer(),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      )
+                    ],
                   ),
+                  child: InkWell(
+                    onTap: () async {
+                      final today = DateTime.now();
+                      final initial =
+                          _selectedMonth ?? DateTime(today.year, today.month);
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: initial,
+                        firstDate: DateTime(today.year - 3, 1),
+                        lastDate: DateTime(today.year + 3, 12),
+                      );
+                      if (picked != null) {
+                        _selectedMonth = DateTime(picked.year, picked.month);
+                        _monthStart = DateTime(
+                            _selectedMonth!.year, _selectedMonth!.month);
+                        _nextMonthStart = DateTime(
+                            _selectedMonth!.year, _selectedMonth!.month + 1);
+                        _monthlyMode = true;
+                        _applyRange();
+                      }
+                    },
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_month,
+                            size: 16, color: Colors.blue),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${_monthStart.month}/${_monthStart.year}',
+                          style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
 
@@ -213,46 +409,39 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   crossAxisCount = 3;
                 }
 
-                return FutureBuilder<AdminKpi>(
-                  future: AdminReportService.getKpis(),
-                  builder: (context, snap) {
-                    final kpi = snap.data;
-                    return GridView.count(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      crossAxisCount: crossAxisCount,
-                      crossAxisSpacing: isMobile ? 12 : 16,
-                      mainAxisSpacing: isMobile ? 12 : 16,
-                      childAspectRatio: isMobile ? 1.3 : 1.5,
-                      children: [
-                        _buildStatCard(
-                          'Khách hàng',
-                          _totalCustomers.toString(),
-                          Icons.person,
-                          Colors.green,
-                        ),
-                        _buildStatCard(
-                          'Luật sư',
-                          _totalLawyers.toString(),
-                          Icons.gavel,
-                          Colors.orange,
-                        ),
-                        _buildStatCard(
-                          'Đặt lịch',
-                          (kpi?.totalAppointments ?? _totalAppointments)
-                              .toString(),
-                          Icons.calendar_today,
-                          Colors.purple,
-                        ),
-                        _buildStatCard(
-                          'Doanh thu',
-                          '₫${(kpi?.revenue ?? _monthlyRevenue).toStringAsFixed(0)}',
-                          Icons.attach_money,
-                          Colors.blue,
-                        ),
-                      ],
-                    );
-                  },
+                return GridView.count(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  crossAxisCount: crossAxisCount,
+                  crossAxisSpacing: isMobile ? 12 : 16,
+                  mainAxisSpacing: isMobile ? 12 : 16,
+                  childAspectRatio: isMobile ? 1.3 : 1.5,
+                  children: [
+                    _buildStatCard(
+                      'Khách hàng',
+                      _totalCustomers.toString(),
+                      Icons.person,
+                      Colors.green,
+                    ),
+                    _buildStatCard(
+                      'Luật sư',
+                      _totalLawyers.toString(),
+                      Icons.gavel,
+                      Colors.orange,
+                    ),
+                    _buildStatCard(
+                      'Tổng doanh thu',
+                      '₫${_totalRevenue.toStringAsFixed(0)}',
+                      Icons.trending_up,
+                      Colors.purple,
+                    ),
+                    _buildStatCard(
+                      'Doanh thu tháng này',
+                      '₫${_monthlyRevenue.toStringAsFixed(0)}',
+                      Icons.calendar_month,
+                      Colors.blue,
+                    ),
+                  ],
                 );
               },
             ),
@@ -366,8 +555,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
             SizedBox(height: isMobile ? 20 : 24),
 
-            // Revenue overview
-            _buildRevenueSection(isMobile),
+            // Revenue overview (moved to top KPIs)
+            const SizedBox.shrink(),
 
             SizedBox(height: isMobile ? 20 : 24),
 
