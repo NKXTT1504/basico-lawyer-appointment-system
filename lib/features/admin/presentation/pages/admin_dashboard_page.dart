@@ -613,13 +613,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       Colors.purple,
                       () => context.go('/admin/lawyers'),
                     ),
-                    _buildActionCard(
-                      'Báo cáo thống kê',
-                      Icons.analytics,
-                      Colors.green,
-                      () => _showErrorSnackBar(
-                          'Chức năng báo cáo đang được phát triển'),
-                    ),
+                    // Báo cáo thống kê: ẩn theo yêu cầu
                   ],
                 );
               },
