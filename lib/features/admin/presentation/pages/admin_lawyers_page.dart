@@ -481,21 +481,16 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
     final isTablet = screenWidth > 600;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: Padding(
-          padding: EdgeInsets.symmetric(
-            horizontal: screenWidth *
-                (isTablet ? 0.08 : 0.04), // 8% for tablet, 4% for mobile
-            vertical: screenHeight * 0.02, // 2% of screen height
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 12,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Page Title
-              _buildPageTitle(screenWidth, isTablet),
-              SizedBox(height: screenHeight * 0.03), // 3% of screen height
-
               // Search and filters
               _buildSearchAndFilters(screenWidth, isTablet),
               SizedBox(height: screenHeight * 0.03), // 3% of screen height
@@ -531,19 +526,10 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
   }
 
   Widget _buildSearchAndFilters(double screenWidth, bool isTablet) {
+    // Match Customers/Appointments filter area: flat, full-width, light bg
     return Container(
-      padding: EdgeInsets.all(screenWidth * (isTablet ? 0.04 : 0.03)),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+      padding: EdgeInsets.all(isTablet ? 16 : 12),
+      color: Colors.grey[50],
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -653,7 +639,8 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
 
   Widget _buildLawyersGrid(double screenWidth, bool isTablet) {
     return GridView.builder(
-      padding: EdgeInsets.all(isTablet ? screenWidth * 0.02 : 12),
+      padding:
+          EdgeInsets.symmetric(horizontal: 12, vertical: isTablet ? 16 : 12),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: isTablet ? 2 : 1,
         crossAxisSpacing: isTablet ? screenWidth * 0.03 : 12,
@@ -676,180 +663,178 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
       fontWeight: FontWeight.w600,
     );
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.all(isTablet ? 20 : 14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Avatar
-              ClipRRect(
-                borderRadius: BorderRadius.circular(40),
-                child: SizedBox(
-                  width: isTablet ? 64 : 56,
-                  height: isTablet ? 64 : 56,
-                  child: (lawyer.imageUrl.isNotEmpty &&
-                          !lawyer.imageUrl
-                              .contains('firebasestorage.googleapis.com'))
-                      ? Image.network(
-                          lawyer.imageUrl,
-                          fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _buildAvatarFallback(
-                              lawyer, screenWidth, isTablet),
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return SizedBox(
-                              width: isTablet ? 64 : 56,
-                              height: isTablet ? 64 : 56,
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes !=
-                                          null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
-                                      : null,
+    return Card(
+      margin: EdgeInsets.zero,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: EdgeInsets.all(isTablet ? 16 : 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Avatar
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(40),
+                  child: SizedBox(
+                    width: isTablet ? 64 : 56,
+                    height: isTablet ? 64 : 56,
+                    child: (lawyer.imageUrl.isNotEmpty &&
+                            !lawyer.imageUrl
+                                .contains('firebasestorage.googleapis.com'))
+                        ? Image.network(
+                            lawyer.imageUrl,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, __, ___) => _buildAvatarFallback(
+                                lawyer, screenWidth, isTablet),
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return SizedBox(
+                                width: isTablet ? 64 : 56,
+                                height: isTablet ? 64 : 56,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes !=
+                                            null
+                                        ? loadingProgress
+                                                .cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                  ),
                                 ),
+                              );
+                            },
+                            cacheHeight:
+                                128, // Cache để tránh load lại nhiều lần
+                            cacheWidth: 128,
+                          )
+                        : _buildAvatarFallback(lawyer, screenWidth, isTablet),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Title and meta
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              lawyer.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                fontSize: isTablet ? 20 : 18,
+                                fontWeight: FontWeight.w700,
+                                color: const Color(0xFF1E3A8A),
                               ),
-                            );
-                          },
-                          cacheHeight: 128, // Cache để tránh load lại nhiều lần
-                          cacheWidth: 128,
-                        )
-                      : _buildAvatarFallback(lawyer, screenWidth, isTablet),
-                ),
-              ),
-              const SizedBox(width: 12),
-              // Title and meta
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            lawyer.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              fontSize: isTablet ? 20 : 18,
-                              fontWeight: FontWeight.w700,
-                              color: const Color(0xFF1E3A8A),
                             ),
                           ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 10, vertical: 6),
-                          decoration: BoxDecoration(
-                            color: (lawyer.isActive
-                                ? const Color(0xFFE7F6EC)
-                                : const Color(0xFFFCE8E8)),
-                            borderRadius: BorderRadius.circular(20),
-                          ),
-                          child: Text(
-                            lawyer.isActive ? 'Hoạt động' : 'Không hoạt động',
-                            style: TextStyle(
-                              color: lawyer.isActive
-                                  ? const Color(0xFF1B5E20)
-                                  : const Color(0xFFB71C1C),
-                              fontSize: isTablet ? 12 : 11,
-                              fontWeight: FontWeight.w700,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: (lawyer.isActive
+                                  ? const Color(0xFFE7F6EC)
+                                  : const Color(0xFFFCE8E8)),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              lawyer.isActive ? 'Hoạt động' : 'Không hoạt động',
+                              style: TextStyle(
+                                color: lawyer.isActive
+                                    ? const Color(0xFF1B5E20)
+                                    : const Color(0xFFB71C1C),
+                                fontSize: isTablet ? 12 : 11,
+                                fontWeight: FontWeight.w700,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      lawyer.specialization,
-                      style: TextStyle(
-                        fontSize: isTablet ? 14 : 13,
-                        color: Colors.grey[700],
+                        ],
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 4),
+                      Text(
+                        lawyer.specialization,
+                        style: TextStyle(
+                          fontSize: isTablet ? 14 : 13,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
 
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
 
-          // Info chips
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _infoChip(
-                  icon: Icons.email,
-                  label: lawyer.email.isEmpty ? 'Chưa cập nhật' : lawyer.email,
-                  style: chipTextStyle),
-              _infoChip(
-                  icon: Icons.phone,
-                  label: lawyer.phone.isEmpty ? 'Chưa cập nhật' : lawyer.phone,
-                  style: chipTextStyle),
-              _infoChip(
-                  icon: Icons.timeline,
-                  label: '${lawyer.experienceYears} năm',
-                  style: chipTextStyle),
-              _infoChip(
-                  icon: Icons.attach_money,
-                  label: '${lawyer.hourlyRate.toStringAsFixed(0)} VNĐ/giờ',
-                  style: chipTextStyle),
-              if (lawyer.address.isNotEmpty)
+            // Info chips
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
                 _infoChip(
-                    icon: Icons.place,
-                    label: lawyer.address,
+                    icon: Icons.email,
+                    label:
+                        lawyer.email.isEmpty ? 'Chưa cập nhật' : lawyer.email,
                     style: chipTextStyle),
-            ],
-          ),
+                _infoChip(
+                    icon: Icons.phone,
+                    label:
+                        lawyer.phone.isEmpty ? 'Chưa cập nhật' : lawyer.phone,
+                    style: chipTextStyle),
+                _infoChip(
+                    icon: Icons.timeline,
+                    label: '${lawyer.experienceYears} năm',
+                    style: chipTextStyle),
+                _infoChip(
+                    icon: Icons.attach_money,
+                    label: '${lawyer.hourlyRate.toStringAsFixed(0)} VNĐ/giờ',
+                    style: chipTextStyle),
+                if (lawyer.address.isNotEmpty)
+                  _infoChip(
+                      icon: Icons.place,
+                      label: lawyer.address,
+                      style: chipTextStyle),
+              ],
+            ),
 
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
 
-          Row(
-            children: [
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () => _showEditLawyerDialog(lawyer),
-                  icon: Icon(Icons.edit, size: isTablet ? 18 : 16),
-                  label: Text('Chỉnh sửa',
-                      style: TextStyle(fontSize: isTablet ? 14 : 13)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF1E3A8A),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () => _showEditLawyerDialog(lawyer),
+                    icon: Icon(Icons.edit, size: isTablet ? 18 : 16),
+                    label: Text('Chỉnh sửa',
+                        style: TextStyle(fontSize: isTablet ? 14 : 13)),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF1E3A8A),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 10),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                IconButton(
+                  onPressed: () => _showDeleteDialog(lawyer),
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.red.withOpacity(0.08),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10)),
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              IconButton(
-                onPressed: () => _showDeleteDialog(lawyer),
-                icon: const Icon(Icons.delete, color: Colors.red),
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.red.withOpacity(0.08),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
