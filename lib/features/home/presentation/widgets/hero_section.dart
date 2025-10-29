@@ -10,7 +10,6 @@ class HeroSection extends StatelessWidget {
     final screenWidth = ResponsiveHelper.getScreenWidth(context);
     final screenHeight = ResponsiveHelper.getScreenHeight(context);
     final isTablet = ResponsiveHelper.isTablet(context);
-    final isMobile = ResponsiveHelper.isMobile(context);
 
     return Container(
       height: ResponsiveHelper.getResponsiveHeight(context,
@@ -143,7 +142,7 @@ class HeroSection extends StatelessWidget {
                             Expanded(
                               child: OutlinedButton(
                                 onPressed: () {
-                                  context.go('/services');
+                                  context.go('/service-selection');
                                 },
                                 style: OutlinedButton.styleFrom(
                                   foregroundColor: Colors.white,
@@ -217,7 +216,7 @@ class HeroSection extends StatelessWidget {
                                     0.015), // 1.5% of screen height
                             OutlinedButton(
                               onPressed: () {
-                                context.go('/services');
+                                context.go('/service-selection');
                               },
                               style: OutlinedButton.styleFrom(
                                 foregroundColor: Colors.white,

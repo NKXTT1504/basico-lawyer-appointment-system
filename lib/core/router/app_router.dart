@@ -13,6 +13,10 @@ import '../../features/profile/presentation/pages/profile_demo_page.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
 import '../../responsive_test_page.dart';
 import '../../features/services/presentation/pages/services_page.dart';
+import '../../features/services/presentation/pages/service_selection_page.dart';
+import '../../features/services/presentation/pages/lawyer_selection_page.dart';
+import '../../features/services/presentation/pages/service_detail_page.dart';
+import '../../features/services/presentation/pages/service_field_selection_page.dart';
 import '../../features/admin/data/services/user_storage_service.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart'
     as admin_pages;
@@ -216,6 +220,74 @@ class AppRouter {
           currentPath: '/services',
           child: const ServicesPage(),
         ),
+      ),
+      GoRoute(
+        path: '/service-selection',
+        redirect: (context, state) async {
+          final loggedIn = await UserStorageService.isLoggedIn();
+          if (!loggedIn) return '/login';
+          return null;
+        },
+        builder: (context, state) => MainNavigation(
+          currentPath: '/service-selection',
+          child: const ServiceSelectionPage(),
+        ),
+      ),
+      GoRoute(
+        path: '/service-detail',
+        redirect: (context, state) async {
+          final loggedIn = await UserStorageService.isLoggedIn();
+          if (!loggedIn) return '/login';
+          return null;
+        },
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>?;
+          if (data == null || data['service'] == null) {
+            return MainNavigation(
+              currentPath: '/services',
+              child: const ServicesPage(),
+            );
+          }
+          return ServiceDetailPage(service: data['service']);
+        },
+      ),
+      GoRoute(
+        path: '/service-field-selection',
+        redirect: (context, state) async {
+          final loggedIn = await UserStorageService.isLoggedIn();
+          if (!loggedIn) return '/login';
+          return null;
+        },
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>?;
+          return MainNavigation(
+            currentPath: '/service-field-selection',
+            child: ServiceFieldSelectionPage(
+              preselectedService: data?['service'],
+            ),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/lawyer-selection',
+        redirect: (context, state) async {
+          final loggedIn = await UserStorageService.isLoggedIn();
+          if (!loggedIn) return '/login';
+          return null;
+        },
+        builder: (context, state) {
+          final service = state.extra as Map<String, dynamic>?;
+          if (service == null || service['service'] == null) {
+            return MainNavigation(
+              currentPath: '/service-selection',
+              child: const ServiceSelectionPage(),
+            );
+          }
+          return MainNavigation(
+            currentPath: '/lawyer-selection',
+            child: LawyerSelectionPage(service: service['service']),
+          );
+        },
       ),
       GoRoute(
         path: '/profile',

@@ -30,4 +30,9 @@ class LawyerApiService {
     return await Api.lawyers
         .put('/api/Lawyer/UpdateLawyerByLaywerId/$lawyerId', data: lawyerData);
   }
+
+  // Get all services - từ Swagger Lawyers API v1
+  static Future<Response> getServices() async {
+    return await Api.lawyers.get('/api/Service');
+  }
 }
