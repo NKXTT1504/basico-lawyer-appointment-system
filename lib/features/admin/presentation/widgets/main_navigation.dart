@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/services/user_storage_service.dart';
 import '../../data/models/admin_user.dart';
+import '../../../chat/presentation/widgets/floating_chat_button.dart';
 
 class MainNavigation extends StatefulWidget {
   final Widget child;
@@ -63,7 +64,8 @@ class _MainNavigationState extends State<MainNavigation> {
     final bool isCustomerRoute = widget.currentPath == '/home' ||
         widget.currentPath == '/appointments' ||
         widget.currentPath == '/lawyers' ||
-        widget.currentPath == '/profile';
+        widget.currentPath == '/profile' ||
+        widget.currentPath == '/chat';
 
     if (_currentUser == null && !isCustomerRoute) {
       return Scaffold(
@@ -169,7 +171,13 @@ class _MainNavigationState extends State<MainNavigation> {
           backgroundColor: Colors.white,
           child: _buildDrawerContent(role, userName),
         ),
-        body: widget.child,
+        body: Stack(
+          children: [
+            widget.child,
+            // Hiển thị floating chat button cho customer
+            if (role == UserRole.customer) const FloatingChatButton(),
+          ],
+        ),
       );
     }
 
@@ -299,7 +307,15 @@ class _MainNavigationState extends State<MainNavigation> {
               ],
             ),
           ),
-          Expanded(child: widget.child),
+          Expanded(
+            child: Stack(
+              children: [
+                widget.child,
+                // Hiển thị floating chat button cho customer trên desktop
+                if (role == UserRole.customer) const FloatingChatButton(),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -487,6 +503,12 @@ class _MainNavigationState extends State<MainNavigation> {
         title: 'Thông tin cá nhân',
         path: '/profile',
         isActive: widget.currentPath == '/profile',
+      ),
+      _buildNavItem(
+        icon: Icons.chat,
+        title: 'AI Tư vấn',
+        path: '/chat',
+        isActive: widget.currentPath == '/chat',
       ),
     ];
   }

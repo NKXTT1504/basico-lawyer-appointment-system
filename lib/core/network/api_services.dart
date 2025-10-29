@@ -97,6 +97,8 @@ class ApiServices {
   }
 
   // Chat API - từ Swagger Chat API v1
+  // Swagger URL: https://localhost:5000/api/chat/api/Chat
+  // Base URL: /api/chat, endpoint: /api/Chat/...
   static Future<Response> chatGet(String path,
       {Map<String, dynamic>? queryParameters, Options? options}) {
     return _apiClient.get('${API_URLS['CHAT']}/api/chat$path',
