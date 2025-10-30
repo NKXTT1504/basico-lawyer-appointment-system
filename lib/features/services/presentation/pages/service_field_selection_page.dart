@@ -20,9 +20,12 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
   List<ServiceModel> _services = [];
   List<String> _fields = [];
   String? _selectedField;
-  final Set<String> _selectedServiceNames = <String>{};
+  // Map tên dịch vụ -> tên lĩnh vực
+  final Map<String, String> _selectedServices = {};
   bool _isLoading = true;
   String? _error;
+
+  static const String ALL_FIELDS = 'Tất cả lĩnh vực';
 
   @override
   void initState() {
@@ -36,39 +39,39 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
         _isLoading = true;
         _error = null;
       });
-
-      // Load services
       final servicesResponse = await LawyerApiService.getServices();
       if (servicesResponse.statusCode == 200) {
         final List<dynamic> data = _extractList(servicesResponse.data);
         final services =
             data.map((e) => ServiceModel.fromJson(_asMap(e))).toList();
-
-        // Extract unique fields from services
         final fields = <String>{};
         for (final service in services) {
           if (service.specialization != null) {
             fields.add(service.specialization!);
           }
         }
-
+        final sortedFields = fields.toList()..sort();
+        sortedFields.insert(
+            0, ALL_FIELDS); // Thêm mục "Tất cả lĩnh vực" đầu tiên
         setState(() {
           _services = services;
-          _fields = fields.toList()..sort();
+          _fields = sortedFields;
           _isLoading = false;
         });
-
-        // Set preselected service if provided
+        // Preselect nếu có
         if (widget.preselectedService != null) {
           _selectedField = widget.preselectedService!.specialization;
           final name = widget.preselectedService!.name;
-          if (name != null && name.isNotEmpty) {
-            _selectedServiceNames.add(name);
+          if (name != null &&
+              name.isNotEmpty &&
+              widget.preselectedService!.specialization != null) {
+            _selectedServices[name] =
+                widget.preselectedService!.specialization!;
           }
         }
       } else {
         setState(() {
-          _error = 'Lỗi tải dịch vụ: ${servicesResponse.statusCode}';
+          _error = 'Lỗi tải dịch vụ:  ${servicesResponse.statusCode}';
           _isLoading = false;
         });
       }
@@ -126,75 +129,46 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
-
     if (_error != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red[300],
-            ),
+            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
             const SizedBox(height: 16),
-            Text(
-              _error!,
-              style: const TextStyle(fontSize: 16),
-              textAlign: TextAlign.center,
-            ),
+            Text(_error!,
+                style: const TextStyle(fontSize: 16),
+                textAlign: TextAlign.center),
             const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _loadData,
-              child: const Text('Thử lại'),
-            ),
+            ElevatedButton(onPressed: _loadData, child: const Text('Thử lại')),
           ],
         ),
       );
     }
-
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Progress indicator
           _buildProgressIndicator(),
-
           const SizedBox(height: 32),
-
-          // Main form
           Card(
             elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             child: Padding(
               padding: const EdgeInsets.all(24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Chọn dịch vụ & lĩnh vực',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue[800],
-                    ),
-                  ),
+                  Text('Chọn dịch vụ & lĩnh vực',
+                      style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue[800])),
                   const SizedBox(height: 24),
-
-                  // Service dropdown
-                  // Multi-select services using chips
-                  _buildServiceMultiSelect(),
-
-                  const SizedBox(height: 20),
-
-                  // Field dropdown
                   _buildDropdown(
                     label: 'Chọn lĩnh vực',
                     hint: '-- Chọn lĩnh vực --',
@@ -206,39 +180,33 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
                       });
                     },
                   ),
-
+                  const SizedBox(height: 20),
+                  _buildServiceMultiSelect(),
+                  const SizedBox(height: 16),
+                  _buildSelectedServicesList(),
                   const SizedBox(height: 32),
-
-                  // Continue button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: _canContinue() ? _continue : null,
+                      onPressed:
+                          _selectedServices.isNotEmpty ? _continue : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue[600],
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
+                            borderRadius: BorderRadius.circular(8)),
                       ),
-                      child: const Text(
-                        'Tiếp tục',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      child: const Text('Tiếp tục',
+                          style: TextStyle(
+                              fontSize: 16, fontWeight: FontWeight.w600)),
                     ),
                   ),
                 ],
               ),
             ),
           ),
-
           const SizedBox(height: 24),
-
-          // Benefits section
           _buildBenefitsSection(),
         ],
       ),
@@ -433,14 +401,10 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
     );
   }
 
-  bool _canContinue() {
-    return _selectedServiceNames.isNotEmpty;
-  }
-
   void _continue() {
     // Chuyển đến trang chọn luật sư với danh sách dịch vụ đã chọn
     context.push('/lawyer-selection', extra: {
-      'services': _selectedServiceNames.toList(),
+      'services': _selectedServices.entries.map((e) => e.key).toList(),
       'field': _selectedField,
     });
   }
@@ -457,39 +421,71 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
           runSpacing: 8,
           children: items.map((s) {
             final name = s.name ?? '';
-            final selected = _selectedServiceNames.contains(name);
+            final selected = _selectedServices.containsKey(name);
             return FilterChip(
               label: Text(name.isEmpty ? 'Dịch vụ' : name),
               selected: selected,
               onSelected: (val) {
                 setState(() {
                   if (val) {
-                    _selectedServiceNames.add(name);
+                    // Nếu chọn, lưu kèm specialization để biết thuộc lĩnh vực nào
+                    _selectedServices[name] = s.specialization ?? '';
                   } else {
-                    _selectedServiceNames.remove(name);
+                    _selectedServices.remove(name);
                   }
                 });
               },
             );
           }).toList(),
         ),
-        const SizedBox(height: 8),
-        Text(
-          _selectedServiceNames.isEmpty
-              ? 'Chưa chọn dịch vụ'
-              : 'Đã chọn: ${_selectedServiceNames.join(', ')}',
-          style: TextStyle(color: Colors.grey[700]),
-        ),
       ],
     );
   }
 
   List<ServiceModel> _filteredServicesByField() {
-    if (_selectedField == null || _selectedField!.isEmpty) return _services;
+    if (_selectedField == null || _selectedField == ALL_FIELDS)
+      return _services;
     final f = _selectedField!.toLowerCase();
     return _services
-        .where((s) => (s.specialization ?? '').toLowerCase().contains(f))
+        .where((s) => (s.specialization ?? '').toLowerCase() == f)
         .toList();
+  }
+
+  Widget _buildSelectedServicesList() {
+    if (_selectedServices.isEmpty) {
+      return Text('Chưa chọn dịch vụ',
+          style: TextStyle(color: Colors.grey[700]));
+    }
+    // Gom nhóm dịch vụ đã chọn theo lĩnh vực
+    final Map<String, List<String>> grouped = {};
+    for (final entry in _selectedServices.entries) {
+      grouped.putIfAbsent(entry.value, () => []).add(entry.key);
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Dịch vụ đã chọn:',
+            style: TextStyle(fontWeight: FontWeight.bold)),
+        ...grouped.entries.map((e) => Padding(
+              padding: const EdgeInsets.only(top: 4, left: 8),
+              child: Text('${e.value.join(", ")} (${e.key})',
+                  style: const TextStyle(color: Colors.black87)),
+            )),
+        Wrap(
+          spacing: 6,
+          children: _selectedServices.entries
+              .map((entry) => Chip(
+                    label: Text('${entry.key} (${entry.value})'),
+                    onDeleted: () {
+                      setState(() {
+                        _selectedServices.remove(entry.key);
+                      });
+                    },
+                  ))
+              .toList(),
+        ),
+      ],
+    );
   }
 
   Widget _buildLabel(String text) {

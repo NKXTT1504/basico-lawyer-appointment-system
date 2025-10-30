@@ -55,8 +55,28 @@ class _LawyerSelectionPageState extends State<LawyerSelectionPage> {
           return matchField || matchAnyService;
         }).toList();
 
+        // Sắp xếp lại filteredLawyers dựa trên số dịch vụ phù hợp nhất
+        filteredLawyers.sort((a, b) {
+          int aScore = 0;
+          int bScore = 0;
+
+          final aSpec = (a.specialization ?? '').toLowerCase();
+          final bSpec = (b.specialization ?? '').toLowerCase();
+
+          for (final s in selectedServiceNames) {
+            if (s.isNotEmpty && aSpec.contains(s)) aScore++;
+            if (s.isNotEmpty && bSpec.contains(s)) bScore++;
+          }
+          if (selectedField != null && selectedField.isNotEmpty) {
+            if (aSpec.contains(selectedField)) aScore++;
+            if (bSpec.contains(selectedField)) bScore++;
+          }
+          return bScore.compareTo(aScore);
+        });
+        final topLawyers = filteredLawyers.take(3).toList();
+
         setState(() {
-          _lawyers = filteredLawyers;
+          _lawyers = topLawyers;
           _isLoading = false;
         });
       } else {

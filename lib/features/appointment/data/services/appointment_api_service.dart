@@ -45,3 +45,13 @@ class AppointmentApiService {
     return await Api.appointments.delete('/api/Appointment/$appointmentId');
   }
 }
+
+class PaymentApiService {
+  // Gọi API tạo link thanh toán VNPay cho appointment
+  static Future<Response> createVnpayPaymentUrl(
+      Map<String, dynamic> paymentData) async {
+    // Sử dụng URL đúng như swagger: /api/Payments/create-url-for-appointment
+    return await Api.appointments
+        .post('/api/Payments/create-url-for-appointment', data: paymentData);
+  }
+}

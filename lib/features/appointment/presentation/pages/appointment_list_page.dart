@@ -9,6 +9,7 @@ import '../widgets/appointment_table.dart';
 import '../widgets/appointment_tabs.dart';
 import '../../data/services/appointment_api_service.dart';
 import '../../../admin/data/services/user_storage_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AppointmentListPage extends StatefulWidget {
   const AppointmentListPage({super.key});
@@ -79,7 +80,6 @@ class _BookingPageState extends State<BookingPage> {
     setState(() => _loading = true);
 
     try {
-      // Get current user
       final currentUser = await UserStorageService.getCurrentUser();
       if (currentUser == null) {
         setState(() => _loading = false);
@@ -89,6 +89,47 @@ class _BookingPageState extends State<BookingPage> {
         return;
       }
 
+      // Check số dịch vụ chọn
+      if (widget.services.length >= 2) {
+        // Tạo dữ liệu payment request theo swagger
+        final paymentData = {
+          'vnpAmount':
+              0, // TODO: Tính/tổng giá dịch vụ * 50% (cần lấy giá hoặc hỏi user)
+          'orderId': DateTime.now().millisecondsSinceEpoch.toString(),
+          'lawyerId': widget.lawyerId,
+          'userId': currentUser.id,
+          'orderInformation': 'Đặt cọc dịch vụ cho booking',
+          'returnUrl': 'app://vnpay-return',
+          // ... bổ sung field cần thiết theo swagger nếu thiếu ...
+        };
+        try {
+          final paymentResp =
+              await PaymentApiService.createVnpayPaymentUrl(paymentData);
+          if (paymentResp.statusCode == 200 && paymentResp.data is String) {
+            final vnpayUrl = paymentResp.data as String;
+            if (await canLaunchUrl(Uri.parse(vnpayUrl))) {
+              await launchUrl(Uri.parse(vnpayUrl),
+                  mode: LaunchMode.externalApplication);
+            } else {
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text('Không mở được trang VNPay: $vnpayUrl')));
+            }
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                  content: Text(
+                      'Không lấy được link thanh toán: ${paymentResp.statusCode}')),
+            );
+          }
+        } catch (e) {
+          ScaffoldMessenger.of(context)
+              .showSnackBar(SnackBar(content: Text('Lỗi tạo thanh toán: $e')));
+        } finally {
+          setState(() => _loading = false);
+        }
+        return;
+      }
+      // --- Booking truyền thống khi chỉ 1 dịch vụ ---
       // Try API first
       try {
         final appointmentData = {
@@ -237,193 +278,7 @@ class _BookingPageState extends State<BookingPage> {
   }
 }
 
-class BookingSheet extends StatefulWidget {
-  final String lawyerId;
-  final String lawyerName;
-  final String service;
-  const BookingSheet(
-      {super.key,
-      required this.lawyerId,
-      required this.lawyerName,
-      required this.service});
-
-  @override
-  State<BookingSheet> createState() => _BookingSheetState();
-}
-
-class _BookingSheetState extends State<BookingSheet> {
-  DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
-  String? _selectedSlot;
-  bool _loading = false;
-  Set<String> _occupied = <String>{};
-
-  static const List<String> _slots = <String>[
-    '09:00 - 10:00',
-    '10:00 - 11:00',
-    '14:00 - 15:00',
-    '15:00 - 16:00',
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadOccupied();
-  }
-
-  Future<void> _loadOccupied() async {
-    final set = await AppointmentSyncService.getOccupiedTimeSlots(
-      lawyerId: widget.lawyerId,
-      date: _selectedDate,
-    );
-    if (!mounted) return;
-    setState(() => _occupied = set);
-  }
-
-  Future<void> _pickDate() async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _selectedDate,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 60)),
-    );
-    if (date != null) {
-      setState(() {
-        _selectedDate = date;
-        _selectedSlot = null;
-      });
-      await _loadOccupied();
-    }
-  }
-
-  Future<void> _confirm() async {
-    if (_selectedSlot == null) return;
-    setState(() => _loading = true);
-    final ok = await AppointmentSyncService.createBookingForLawyer(
-      lawyerId: widget.lawyerId,
-      lawyerName: widget.lawyerName,
-      service: widget.service,
-      date: _selectedDate,
-      timeSlot: _selectedSlot!,
-    );
-    if (!mounted) return;
-    setState(() => _loading = false);
-    if (ok) {
-      Navigator.of(context).pop(true);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Khung giờ đã có người đặt')),
-      );
-      await _loadOccupied();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isTablet = MediaQuery.of(context).size.width > 600;
-    return SafeArea(
-      child: Padding(
-        padding: EdgeInsets.fromLTRB(16, 12, 16, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Đặt lịch: ${widget.lawyerName}',
-                    style: TextStyle(
-                        fontSize: isTablet ? 18 : 16,
-                        fontWeight: FontWeight.w700),
-                  ),
-                ),
-                IconButton(
-                  onPressed: () => Navigator.of(context).pop(false),
-                  icon: const Icon(Icons.close),
-                )
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text('Dịch vụ: ${widget.service}',
-                style: TextStyle(color: Colors.grey[700])),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: _pickDate,
-              icon: const Icon(Icons.calendar_today),
-              label: Text(
-                  '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}'),
-            ),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: _slots.map((s) {
-                final disabled = _occupied.contains(s);
-                final selected = _selectedSlot == s;
-                return ChoiceChip(
-                  label: Text(s),
-                  selected: selected,
-                  onSelected: disabled
-                      ? null
-                      : (_) => setState(() => _selectedSlot = s),
-                  selectedColor: const Color(0xFF1E3A8A),
-                  labelStyle: TextStyle(
-                      color: selected ? Colors.white : Colors.black87),
-                  disabledColor: Colors.grey.shade300,
-                );
-              }).toList(),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _loading ? null : _confirm,
-                child: _loading
-                    ? const SizedBox(
-                        height: 16,
-                        width: 16,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
-                    : const Text('Xác nhận đặt lịch'),
-              ),
-            )
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-Future<void> openBookingSheet(BuildContext context,
-    {required String lawyerId,
-    required String lawyerName,
-    required String service}) async {
-  final result = await showModalBottomSheet<bool>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.white,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-    ),
-    builder: (ctx) => DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.6,
-      minChildSize: 0.45,
-      maxChildSize: 0.9,
-      builder: (context, scrollController) {
-        return SingleChildScrollView(
-          controller: scrollController,
-          child: BookingSheet(
-              lawyerId: lawyerId, lawyerName: lawyerName, service: service),
-        );
-      },
-    ),
-  );
-  if (result == true && context.mounted) {
-    // Go to appointments page after success
-    Navigator.of(context).pushReplacementNamed('/appointments');
-  }
-}
+// === Đã loại bỏ BookingSheet, _BookingSheetState, và openBookingSheet (booking dạng cũ 1-1 lawyer/service) ===
 
 class _AppointmentListPageState extends State<AppointmentListPage> {
   // Data now loaded via sync service; keep fields for UI state only
@@ -614,8 +469,17 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
                         appointments: _selectedTabIndex == 0
                             ? _upcomingAppointments
                             : _historyAppointments,
-                        onBookAppointment: () {
-                          context.go('/service-selection');
+                        onBookAppointment: () async {
+                          // Điều hướng tới ServiceFieldSelectionPage (chọn lĩnh vực & dịch vụ) dùng GoRouter
+                          final result =
+                              await context.push('/service-field-selection');
+                          if (result != null && result is Map) {
+                            if (!mounted) return;
+                            context.push('/lawyer-selection', extra: {
+                              'fields': result['fields'],
+                              'services': result['services'],
+                            });
+                          }
                         },
                       ),
               ),
@@ -637,6 +501,41 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
             (isTablet ? 0.07 : 0.06), // 7% for tablet, 6% for mobile
         fontWeight: FontWeight.bold,
         color: AppColors.onBackground,
+      ),
+    );
+  }
+}
+
+// ======================= PaymentSuccessPage =========================
+class PaymentSuccessPage extends StatefulWidget {
+  const PaymentSuccessPage({super.key});
+  @override
+  State<PaymentSuccessPage> createState() => _PaymentSuccessPageState();
+}
+
+class _PaymentSuccessPageState extends State<PaymentSuccessPage> {
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) context.go('/home');
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Thanh toán thành công')),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.check_circle, color: Colors.green, size: 88),
+            SizedBox(height: 20),
+            Text('Thanh toán cọc thành công!\nBạn sẽ được chuyển về trang chủ.',
+                style: TextStyle(fontSize: 18), textAlign: TextAlign.center),
+          ],
+        ),
       ),
     );
   }
