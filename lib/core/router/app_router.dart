@@ -288,6 +288,13 @@ class AppRouter {
         },
       ),
       GoRoute(
+        path: '/lawyer/:id/detail',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return LawyerDetailPage(lawyerId: id);
+        },
+      ),
+      GoRoute(
         path: '/services',
         builder: (context, state) => MainNavigation(
           currentPath: '/services',
