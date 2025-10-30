@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/services/user_storage_service.dart';
+import '../../../lawyer/data/services/lawyer_api_service.dart';
+import '../../../appointment/data/services/appointment_api_service.dart';
 import '../../data/models/admin_user.dart';
 import '../../data/models/appointment.dart';
-import '../../data/models/lawyer.dart';
 
 class LawyerDashboardPage extends StatefulWidget {
   const LawyerDashboardPage({super.key});
@@ -18,11 +19,15 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
   int _pendingAppointments = 0;
   int _confirmedAppointments = 0;
   int _completedAppointments = 0;
-  int _cancelledAppointments = 0;
   double _totalRevenue = 0;
   double _monthlyRevenue = 0;
   List<Appointment> _recentAppointments = [];
   bool _isLoading = true;
+  // Range/filtering for month selection (like admin)
+  List<Appointment> _allAppointments = [];
+  late DateTime _monthStart;
+  late DateTime _nextMonthStart;
+  DateTime? _selectedMonth;
 
   @override
   void initState() {
@@ -32,17 +37,41 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
 
   Future<void> _loadData() async {
     try {
-      // Initialize sample data if needed
-      await UserStorageService.initializeSampleData();
-
       final user = await UserStorageService.getCurrentUser();
       if (user != null && user.role == UserRole.lawyer) {
-        final lawyers = await UserStorageService.getLawyers();
-        final me = lawyers.firstWhere(
-            (l) => l.email.toLowerCase() == user.email.toLowerCase(),
-            orElse: () => throw 'Không tìm thấy hồ sơ luật sư');
-        final appointments =
-            await UserStorageService.getLawyerAppointments(me.id);
+        // Fetch lawyer profile by current userId
+        final lawyerResp = await LawyerApiService.getLawyerByUserId(user.id);
+        final Map<String, dynamic> lawyerData =
+            lawyerResp.data is Map<String, dynamic>
+                ? Map<String, dynamic>.from(lawyerResp.data)
+                : <String, dynamic>{};
+        // Some services wrap payload in { result: {...} }
+        final Map<String, dynamic> lawyerProfile =
+            (lawyerData['result'] is Map<String, dynamic>
+                    ? Map<String, dynamic>.from(
+                        lawyerData['result'] as Map<String, dynamic>)
+                    : lawyerData)
+                .cast<String, dynamic>();
+
+        final String lawyerId =
+            (lawyerProfile['id'] ?? lawyerProfile['Id'] ?? '').toString();
+        if (lawyerId.isEmpty) {
+          throw 'Không tìm thấy hồ sơ luật sư';
+        }
+
+        // Fetch all appointments with joined info then filter by lawyerId
+        final appointmentsResp =
+            await AppointmentApiService.getAllAppointments();
+        final List<dynamic> appointmentsData =
+            (appointmentsResp.data is Map<String, dynamic>
+                    ? (appointmentsResp.data['result'] as List? ?? [])
+                    : (appointmentsResp.data as List? ?? []))
+                .toList();
+
+        final appointments = appointmentsData
+            .map((json) => Appointment.fromJson(json as Map<String, dynamic>))
+            .where((apt) => apt.lawyerId.toString() == lawyerId)
+            .toList();
 
         // Calculate statistics
         final now = DateTime.now();
@@ -75,6 +104,8 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
         if (mounted) {
           setState(() {
             _currentUser = user;
+            // keep raw appointments, range is applied via _applyRange
+            _allAppointments = appointments;
             _totalAppointments = appointments.length;
             _pendingAppointments = appointments
                 .where((apt) => apt.status == AppointmentStatus.pending)
@@ -85,14 +116,18 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
             _completedAppointments = appointments
                 .where((apt) => apt.status == AppointmentStatus.completed)
                 .length;
-            _cancelledAppointments = appointments
-                .where((apt) => apt.status == AppointmentStatus.cancelled)
-                .length;
             _totalRevenue = totalRevenue;
             _monthlyRevenue = monthlyRevenue;
             _recentAppointments = recentAppointments;
             _isLoading = false;
           });
+          // initialize month anchors and apply month range to top KPIs
+          final now = DateTime.now();
+          _selectedMonth ??= DateTime(now.year, now.month);
+          _monthStart = DateTime(_selectedMonth!.year, _selectedMonth!.month);
+          _nextMonthStart =
+              DateTime(_selectedMonth!.year, _selectedMonth!.month + 1);
+          _applyRange();
         }
       } else {
         if (mounted) {
@@ -118,12 +153,32 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
     );
   }
 
-  Future<void> _logout() async {
-    await UserStorageService.setCurrentUser(null);
-    if (mounted) {
-      context.go('/login');
-    }
+  void _applyRange() {
+    // Apply selected month to Lawyer KPIs: appointments count and monthly revenue
+    final now = DateTime.now();
+    final bool isCurrentMonth =
+        _monthStart.year == now.year && _monthStart.month == now.month;
+    final DateTime endBound = isCurrentMonth
+        ? DateTime(now.year, now.month, now.day + 1)
+        : _nextMonthStart;
+
+    final rangeApts = _allAppointments.where((a) =>
+        !a.appointmentDate.isBefore(_monthStart) &&
+        a.appointmentDate.isBefore(endBound));
+
+    final int monthlyAppointmentsCount = rangeApts.length;
+    final double monthlyRevenue = rangeApts
+        .where((a) => a.status == AppointmentStatus.completed)
+        .fold<double>(
+            0.0, (sum, a) => sum + (a.fee.isFinite && a.fee > 0 ? a.fee : 0));
+
+    setState(() {
+      _totalAppointments = monthlyAppointmentsCount;
+      _monthlyRevenue = monthlyRevenue;
+    });
   }
+
+  // logout unused in lawyer dashboard
 
   @override
   Widget build(BuildContext context) {
@@ -136,7 +191,6 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
     }
 
     final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth > 768;
     final isMobile = screenWidth < 600;
 
     return Scaffold(
@@ -184,13 +238,70 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
 
             SizedBox(height: isMobile ? 20 : 24),
 // Statistics cards (simplified for lawyer)
-            Text(
-              'Thống kê tổng quan',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[800],
-                    fontSize: isMobile ? 18 : 20,
+            Row(
+              children: [
+                Text(
+                  'Thống kê tổng quan',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue[800],
+                        fontSize: isMobile ? 18 : 20,
+                      ),
+                ),
+                const Spacer(),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      )
+                    ],
                   ),
+                  child: InkWell(
+                    onTap: () async {
+                      final today = DateTime.now();
+                      final initial =
+                          _selectedMonth ?? DateTime(today.year, today.month);
+                      final picked = await showDatePicker(
+                        context: context,
+                        initialDate: initial,
+                        firstDate: DateTime(today.year - 3, 1),
+                        lastDate: DateTime(today.year + 3, 12),
+                      );
+                      if (picked != null) {
+                        _selectedMonth = DateTime(picked.year, picked.month);
+                        _monthStart = DateTime(
+                            _selectedMonth!.year, _selectedMonth!.month);
+                        _nextMonthStart = DateTime(
+                            _selectedMonth!.year, _selectedMonth!.month + 1);
+                        _applyRange();
+                      }
+                    },
+                    child: Row(
+                      children: [
+                        const Icon(Icons.calendar_month,
+                            size: 16, color: Colors.blue),
+                        const SizedBox(width: 6),
+                        Text(
+                          _selectedMonth == null
+                              ? '--/----'
+                              : '${_monthStart.month}/${_monthStart.year}',
+                          style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.blue),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
 
@@ -453,55 +564,7 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
     );
   }
 
-  Widget _buildActionCard(
-      String title, IconData icon, Color color, VoidCallback onTap) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 600;
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(isMobile ? 12 : 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 4,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              color: color,
-              size: isMobile ? 20 : 24,
-            ),
-            SizedBox(width: isMobile ? 8 : 12),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: isMobile ? 13 : 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey[800],
-                ),
-              ),
-            ),
-            Icon(
-              Icons.arrow_forward_ios,
-              color: Colors.grey[400],
-              size: isMobile ? 14 : 16,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // quick action card removed for lawyer role
 
   Widget _buildRevenueSection(bool isMobile) {
     return Column(
