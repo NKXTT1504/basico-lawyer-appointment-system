@@ -8,6 +8,7 @@ import '../../features/appointment/presentation/pages/appointment_list_page.dart
 import '../../features/appointment/presentation/pages/appointment_detail_page.dart';
 import '../../features/lawyer/presentation/pages/lawyer_list_page.dart';
 import '../../features/lawyer/presentation/pages/lawyer_detail_page.dart';
+import '../../features/lawyer/presentation/pages/lawyer_service_selection_page.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/profile/presentation/pages/profile_demo_page.dart';
 import '../../features/splash/presentation/pages/splash_page.dart';
@@ -161,10 +162,20 @@ class AppRouter {
           }
           return null;
         },
-        builder: (context, state) => MainNavigation(
-          currentPath: '/appointments',
-          child: const AppointmentListPage(),
-        ),
+        builder: (context, state) {
+          final lawyerId = state.pathParameters['lawyerId']!;
+          final extra = (state.extra as Map<String, dynamic>?) ?? {};
+          final lawyerName = (extra['lawyerName'] as String?) ?? 'Luật sư';
+          final services = (extra['services'] as List<String>?) ?? <String>[];
+          return MainNavigation(
+            currentPath: '/appointments',
+            child: BookingPage(
+              lawyerId: lawyerId,
+              lawyerName: lawyerName,
+              services: services,
+            ),
+          );
+        },
       ),
       GoRoute(
         path: '/appointments/:id',
@@ -187,6 +198,33 @@ class AppRouter {
         ),
       ),
       GoRoute(
+        path: '/lawyer/:lawyerId/service-selection',
+        redirect: (context, state) async {
+          final loggedIn = await UserStorageService.isLoggedIn();
+          if (!loggedIn) return '/login';
+          final role = await UserStorageService.getCurrentUserRole();
+          if (role == UserRole.customer) {
+            final complete =
+                await UserStorageService.isProfileCompleteForCurrentUser();
+            if (!complete) return '/profile';
+          }
+          return null;
+        },
+        builder: (context, state) {
+          final lawyerId = state.pathParameters['lawyerId']!;
+          final lawyerName = (state.extra
+                  as Map<String, dynamic>?)?['lawyerName'] as String? ??
+              'Luật sư';
+          return MainNavigation(
+            currentPath: '/lawyers',
+            child: LawyerServiceSelectionPage(
+              lawyerId: lawyerId,
+              lawyerName: lawyerName,
+            ),
+          );
+        },
+      ),
+      GoRoute(
         path: '/book-appointment/:lawyerId/:lawyerName/:service',
         redirect: (context, state) async {
           final loggedIn = await UserStorageService.isLoggedIn();
@@ -204,9 +242,43 @@ class AppRouter {
           child: BookingPage(
             lawyerId: state.pathParameters['lawyerId']!,
             lawyerName: state.pathParameters['lawyerName']!,
-            service: state.pathParameters['service']!,
+            services: [state.pathParameters['service']!],
           ),
         ),
+      ),
+      // Backward-compat catch-all: any legacy deep-link like /book-appointment/:lawyerId/anything...
+      GoRoute(
+        path: '/book-appointment/:lawyerId/:rest(.*)',
+        redirect: (context, state) async {
+          final loggedIn = await UserStorageService.isLoggedIn();
+          if (!loggedIn) return '/login';
+          final role = await UserStorageService.getCurrentUserRole();
+          if (role == UserRole.customer) {
+            final complete =
+                await UserStorageService.isProfileCompleteForCurrentUser();
+            if (!complete) return '/profile';
+          }
+          return null;
+        },
+        builder: (context, state) {
+          final lawyerId = state.pathParameters['lawyerId']!;
+          final rest = state.pathParameters['rest'] ?? '';
+          // try to recover [lawyerName, service] from rest
+          final parts = rest.split('/').where((e) => e.isNotEmpty).toList();
+          final decodedParts = parts.map(Uri.decodeComponent).toList();
+          final lawyerName =
+              decodedParts.isNotEmpty ? decodedParts[0] : 'Luật sư';
+          final services =
+              decodedParts.length >= 2 ? <String>[decodedParts[1]] : <String>[];
+          return MainNavigation(
+            currentPath: '/appointments',
+            child: BookingPage(
+              lawyerId: lawyerId,
+              lawyerName: lawyerName,
+              services: services,
+            ),
+          );
+        },
       ),
       GoRoute(
         path: '/lawyers/:id',
@@ -277,16 +349,23 @@ class AppRouter {
           return null;
         },
         builder: (context, state) {
-          final service = state.extra as Map<String, dynamic>?;
-          if (service == null || service['service'] == null) {
+          final data = state.extra as Map<String, dynamic>?;
+          if (data == null ||
+              (data['services'] == null && data['service'] == null)) {
             return MainNavigation(
               currentPath: '/service-selection',
               child: const ServiceSelectionPage(),
             );
           }
+          // Backward compatibility: allow single 'service' or new 'services'
+          final services = (data['services'] as List<String>?) ??
+              (data['service'] != null
+                  ? <String>[data['service'].name ?? data['service'].toString()]
+                  : <String>[]);
+          final field = data['field'] as String?;
           return MainNavigation(
             currentPath: '/lawyer-selection',
-            child: LawyerSelectionPage(service: service['service']),
+            child: LawyerSelectionPage(services: services, field: field),
           );
         },
       ),

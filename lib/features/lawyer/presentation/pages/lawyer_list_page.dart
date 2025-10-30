@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../admin/data/services/user_storage_service.dart';
 import '../../../admin/data/models/lawyer.dart' as model;
-import '../../../appointment/presentation/pages/appointment_list_page.dart'
-    show openBookingSheet;
 import '../../data/services/lawyer_api_service.dart';
 
 // Removed mock class; now reading real lawyers from storage
@@ -336,12 +335,9 @@ class _LawyerCard extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton(
               onPressed: () {
-                openBookingSheet(
-                  context,
-                  lawyerId: lawyer.id,
-                  lawyerName: lawyer.name,
-                  service: lawyer.specialization,
-                );
+                context.push('/lawyer/${lawyer.id}/service-selection', extra: {
+                  'lawyerName': lawyer.name,
+                });
               },
               style: OutlinedButton.styleFrom(
                 side: BorderSide(color: Colors.grey.shade300),

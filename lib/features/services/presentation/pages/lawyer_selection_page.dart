@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../lawyer/data/services/lawyer_api_service.dart';
-import '../../../appointment/presentation/pages/appointment_list_page.dart';
-import '../../data/models/service.dart';
+// removed unused import
 
 class LawyerSelectionPage extends StatefulWidget {
-  final ServiceModel service;
+  final List<String> services;
+  final String? field;
 
   const LawyerSelectionPage({
     super.key,
-    required this.service,
+    required this.services,
+    this.field,
   });
 
   @override
@@ -40,17 +41,18 @@ class _LawyerSelectionPageState extends State<LawyerSelectionPage> {
         final allLawyers =
             data.map((json) => Lawyer.fromJson(_asMap(json))).toList();
 
-        // Lọc luật sư theo chuyên môn phù hợp với dịch vụ
+        // Lọc luật sư theo lĩnh vực hoặc các dịch vụ đã chọn
+        final selectedServiceNames =
+            widget.services.map((e) => e.toLowerCase()).toList();
+        final selectedField = widget.field?.toLowerCase();
         final filteredLawyers = allLawyers.where((lawyer) {
-          final lawyerSpecialization =
-              lawyer.specialization?.toLowerCase() ?? '';
-          final serviceSpecialization =
-              widget.service.specialization?.toLowerCase() ?? '';
-          final serviceName = widget.service.name?.toLowerCase() ?? '';
-
-          return lawyerSpecialization.contains(serviceSpecialization) ||
-              lawyerSpecialization.contains(serviceName) ||
-              serviceSpecialization.contains(lawyerSpecialization);
+          final spec = (lawyer.specialization ?? '').toLowerCase();
+          final matchField = selectedField == null || selectedField.isEmpty
+              ? false
+              : spec.contains(selectedField) || selectedField.contains(spec);
+          final matchAnyService = selectedServiceNames.any(
+              (s) => s.isNotEmpty && (spec.contains(s) || s.contains(spec)));
+          return matchField || matchAnyService;
         }).toList();
 
         setState(() {
@@ -75,7 +77,8 @@ class _LawyerSelectionPageState extends State<LawyerSelectionPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Luật sư - ${widget.service.name}'),
+        title: Text(
+            'Luật sư - ${widget.field ?? (widget.services.isNotEmpty ? widget.services.first : 'Dịch vụ')}'),
         backgroundColor: Colors.blue[50],
         elevation: 0,
       ),
@@ -343,47 +346,14 @@ class _LawyerSelectionPageState extends State<LawyerSelectionPage> {
   }
 
   void _bookAppointment(Lawyer lawyer) {
-    // Mở luồng booking với luật sư đã chọn
-    openBookingSheet(
-      context,
-      lawyerId: lawyer.id ?? '',
-      lawyerName: lawyer.name ?? 'Luật sư',
-      service: widget.service.name ?? 'Dịch vụ pháp lý',
-    );
+    // Điều hướng tới chọn ngày/giờ, truyền danh sách dịch vụ đã chọn
+    context.push('/book-appointment/${lawyer.id}', extra: {
+      'lawyerName': lawyer.name ?? 'Luật sư',
+      'services': widget.services,
+    });
   }
 
-  Future<void> openBookingSheet(
-    BuildContext context, {
-    required String lawyerId,
-    required String lawyerName,
-    required String service,
-  }) async {
-    final result = await showModalBottomSheet<bool>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) => DraggableScrollableSheet(
-        expand: false,
-        initialChildSize: 0.7,
-        minChildSize: 0.5,
-        maxChildSize: 0.9,
-        builder: (context, scrollController) {
-          return BookingSheet(
-            lawyerId: lawyerId,
-            lawyerName: lawyerName,
-            service: service,
-          );
-        },
-      ),
-    );
-
-    if (result == true && context.mounted) {
-      Navigator.of(context).pushReplacementNamed('/appointments');
-    }
-  }
+  // legacy booking bottom sheet removed in favor of direct navigation to booking page
 }
 
 // Service model centralized in features/services/data/models/service.dart

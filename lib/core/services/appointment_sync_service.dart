@@ -193,6 +193,24 @@ class AppointmentSyncService {
     return true;
   }
 
+  /// Create a new booking allowing multiple services
+  static Future<bool> createBookingForLawyerMulti({
+    required String lawyerId,
+    required String lawyerName,
+    required List<String> services,
+    DateTime? date,
+    String timeSlot = '14:00 - 15:00',
+  }) async {
+    final mergedService = services.isEmpty ? 'Dịch vụ' : services.join(', ');
+    return createBookingForLawyer(
+      lawyerId: lawyerId,
+      lawyerName: lawyerName,
+      service: mergedService,
+      date: date,
+      timeSlot: timeSlot,
+    );
+  }
+
   /// Return occupied time slots for a lawyer on a specific day (not cancelled)
   static Future<Set<String>> getOccupiedTimeSlots({
     required String lawyerId,

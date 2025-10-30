@@ -20,12 +20,12 @@ class AppointmentListPage extends StatefulWidget {
 class BookingPage extends StatefulWidget {
   final String lawyerId;
   final String lawyerName;
-  final String service;
+  final List<String> services;
   const BookingPage(
       {super.key,
       required this.lawyerId,
       required this.lawyerName,
-      required this.service});
+      required this.services});
 
   @override
   State<BookingPage> createState() => _BookingPageState();
@@ -96,8 +96,8 @@ class _BookingPageState extends State<BookingPage> {
           'lawyerId': widget.lawyerId,
           'scheduledAt': _selectedDate.toIso8601String(),
           'slot': _selectedSlot!,
-          'spec': widget.service,
-          'services': [widget.service],
+          'spec': widget.services.isEmpty ? '' : widget.services.join(', '),
+          'services': widget.services,
           'note': 'Đặt lịch từ mobile app',
         };
 
@@ -139,10 +139,10 @@ class _BookingPageState extends State<BookingPage> {
       }
 
       // Fallback to local storage
-      final ok = await AppointmentSyncService.createBookingForLawyer(
+      final ok = await AppointmentSyncService.createBookingForLawyerMulti(
         lawyerId: widget.lawyerId,
         lawyerName: widget.lawyerName,
-        service: widget.service,
+        services: widget.services,
         date: _selectedDate,
         timeSlot: _selectedSlot!,
       );
@@ -187,7 +187,7 @@ class _BookingPageState extends State<BookingPage> {
                 style: TextStyle(
                     fontSize: isTablet ? 18 : 16, fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
-            Text('Dịch vụ: ${widget.service}',
+            Text('Dịch vụ: ${widget.services.join(', ')}',
                 style: TextStyle(color: Colors.grey[700])),
             const SizedBox(height: 16),
             OutlinedButton.icon(

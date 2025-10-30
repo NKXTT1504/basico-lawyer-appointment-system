@@ -19,8 +19,8 @@ class ServiceFieldSelectionPage extends StatefulWidget {
 class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
   List<ServiceModel> _services = [];
   List<String> _fields = [];
-  ServiceModel? _selectedService;
   String? _selectedField;
+  final Set<String> _selectedServiceNames = <String>{};
   bool _isLoading = true;
   String? _error;
 
@@ -60,8 +60,11 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
 
         // Set preselected service if provided
         if (widget.preselectedService != null) {
-          _selectedService = widget.preselectedService;
           _selectedField = widget.preselectedService!.specialization;
+          final name = widget.preselectedService!.name;
+          if (name != null && name.isNotEmpty) {
+            _selectedServiceNames.add(name);
+          }
         }
       } else {
         setState(() {
@@ -186,21 +189,8 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
                   const SizedBox(height: 24),
 
                   // Service dropdown
-                  _buildDropdown(
-                    label: 'Chọn dịch vụ',
-                    hint: '-- Chọn dịch vụ pháp lý --',
-                    value: _selectedService?.name,
-                    items: _services.map((s) => s.name ?? '').toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedService = _services.firstWhere(
-                          (s) => s.name == value,
-                          orElse: () => _services.first,
-                        );
-                        _selectedField = _selectedService?.specialization;
-                      });
-                    },
-                  ),
+                  // Multi-select services using chips
+                  _buildServiceMultiSelect(),
 
                   const SizedBox(height: 20),
 
@@ -444,17 +434,73 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
   }
 
   bool _canContinue() {
-    return _selectedService != null && _selectedField != null;
+    return _selectedServiceNames.isNotEmpty;
   }
 
   void _continue() {
-    if (_selectedService != null) {
-      // Chuyển đến trang chọn luật sư
-      context.push('/lawyer-selection', extra: {
-        'service': _selectedService,
-        'field': _selectedField,
-      });
-    }
+    // Chuyển đến trang chọn luật sư với danh sách dịch vụ đã chọn
+    context.push('/lawyer-selection', extra: {
+      'services': _selectedServiceNames.toList(),
+      'field': _selectedField,
+    });
+  }
+
+  Widget _buildServiceMultiSelect() {
+    final items = _filteredServicesByField();
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildLabel('Chọn dịch vụ (có thể chọn nhiều)'),
+        const SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: items.map((s) {
+            final name = s.name ?? '';
+            final selected = _selectedServiceNames.contains(name);
+            return FilterChip(
+              label: Text(name.isEmpty ? 'Dịch vụ' : name),
+              selected: selected,
+              onSelected: (val) {
+                setState(() {
+                  if (val) {
+                    _selectedServiceNames.add(name);
+                  } else {
+                    _selectedServiceNames.remove(name);
+                  }
+                });
+              },
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _selectedServiceNames.isEmpty
+              ? 'Chưa chọn dịch vụ'
+              : 'Đã chọn: ${_selectedServiceNames.join(', ')}',
+          style: TextStyle(color: Colors.grey[700]),
+        ),
+      ],
+    );
+  }
+
+  List<ServiceModel> _filteredServicesByField() {
+    if (_selectedField == null || _selectedField!.isEmpty) return _services;
+    final f = _selectedField!.toLowerCase();
+    return _services
+        .where((s) => (s.specialization ?? '').toLowerCase().contains(f))
+        .toList();
+  }
+
+  Widget _buildLabel(String text) {
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: Colors.black87,
+      ),
+    );
   }
 }
 
