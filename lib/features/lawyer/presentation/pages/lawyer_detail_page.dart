@@ -21,46 +21,36 @@ class _LawyerDetailPageState extends State<LawyerDetailPage> {
     _ratingFuture = fetchLawyerRating(widget.lawyerId);
   }
 
+  // API: /api/Lawyer/GetProfileById/{id} (swagger Lawyers API v1)
   Future<Map<String, dynamic>> fetchLawyerProfile(String lawyerId) async {
     final uri = Uri.parse(
-        'https://localhost:5000/api/lawyers/api/Lawyer/GetAllLawyerProfile');
+        'https://localhost:5000/api/lawyers/api/Lawyer/GetProfileById/$lawyerId');
     final res = await http.get(uri, headers: {'Accept': 'application/json'});
     if (res.statusCode == 200) {
       final data = json.decode(res.body);
-      final List list = data['result'] ?? [];
-      final lawyer = list.firstWhere(
-        (it) => '${it['id']}' == lawyerId || '${it['userId']}' == lawyerId,
-        orElse: () => null,
-      );
-      if (lawyer != null) return Map<String, dynamic>.from(lawyer);
-      throw Exception('Không tìm thấy luật sư với ID này');
+      final result = data['result'];
+      if (result != null) return Map<String, dynamic>.from(result);
+      throw Exception('Không tìm thấy hồ sơ luật sư với ID này');
     }
     throw Exception('Không lấy được thông tin luật sư');
   }
 
+  // API: /api/users/api/Review/lawyer/{lawyerId} (Users API v1)
   Future<Map<String, dynamic>> fetchLawyerRating(String lawyerId) async {
     try {
       final uri = Uri.parse(
-          'https://localhost:5000/api/Review/lawyer/$lawyerId/average-rating');
+          'https://localhost:5000/api/users/api/Review/lawyer/$lawyerId');
       final res = await http.get(uri, headers: {'Accept': 'application/json'});
-      if (res.statusCode == 200) {
-        final data = json.decode(res.body);
-        if (data is Map<String, dynamic>) return data;
-        if (data is num || data is double) return {'average': data};
-      }
-    } catch (_) {}
-    try {
-      final res = await http.get(
-          Uri.parse('https://localhost:5000/api/Review/lawyer/$lawyerId'),
-          headers: {'Accept': 'application/json'});
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         if (data is List && data.isNotEmpty) {
           final list = data.where((e) => e['rating'] != null).toList();
-          final avg = list.fold(
-                  0.0, (double a, b) => a + (b['rating'] as num).toDouble()) /
-              list.length;
-          return {'average': avg, 'count': list.length};
+          if (list.isNotEmpty) {
+            final avg = list.fold(
+                    0.0, (double a, b) => a + (b['rating'] as num).toDouble()) /
+                list.length;
+            return {'average': avg, 'count': list.length};
+          }
         }
       }
     } catch (_) {}
@@ -83,18 +73,15 @@ class _LawyerDetailPageState extends State<LawyerDetailPage> {
           } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return const Center(child: Text('Không có dữ liệu'));
           }
-          final p = snapshot.data!;
-          final name = p['name'] ?? '';
-          final city = p['description'] ?? (p['address'] ?? '');
-          final years = (p['expYears'] ?? p['experienceYears'] ?? 0).toString();
-          final avatar = (p['img'] ?? p['imageUrl'] ?? '').isNotEmpty
-              ? (p['img'] ?? p['imageUrl'])
+          final l = snapshot.data!;
+          final name = l['name'] ?? l['fullName'] ?? '';
+          final city = l['description'] ?? (l['address'] ?? '');
+          final years = (l['expYears'] ?? l['experienceYears'] ?? 0).toString();
+          final avatar = (l['img'] ?? l['imageUrl'] ?? '').isNotEmpty
+              ? (l['img'] ?? l['imageUrl'])
               : null;
-          final spec =
-              (p['practiceAreas'] is List && p['practiceAreas'].isNotEmpty)
-                  ? (p['practiceAreas'][0]['name'] ?? '')
-                  : (p['specialization'] ?? '');
-          final bio = p['bio'] ?? '';
+          final spec = l['specialization'] ?? l['spect'] ?? '';
+          final bio = l['bio'] ?? '';
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
