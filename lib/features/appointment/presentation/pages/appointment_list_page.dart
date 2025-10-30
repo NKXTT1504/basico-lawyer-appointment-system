@@ -615,7 +615,7 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
                             ? _upcomingAppointments
                             : _historyAppointments,
                         onBookAppointment: () {
-                          context.go('/lawyers');
+                          context.go('/service-selection');
                         },
                       ),
               ),

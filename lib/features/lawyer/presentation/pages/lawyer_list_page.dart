@@ -335,7 +335,7 @@ class _LawyerCard extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton(
               onPressed: () {
-                context.push('/lawyer/${lawyer.id}/service-selection', extra: {
+                context.push('/lawyer/${lawyer.id}/detail', extra: {
                   'lawyerName': lawyer.name,
                 });
               },
@@ -346,11 +346,12 @@ class _LawyerCard extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 8),
               ),
               child: Text(
-                'Đặt lịch',
+                'Xem chi tiết',
                 style: TextStyle(
-                    color: primaryColor,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13),
+                  color: primaryColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13,
+                ),
               ),
             ),
           ),
