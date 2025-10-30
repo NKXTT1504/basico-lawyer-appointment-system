@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:go_router/go_router.dart';
 import '../../../admin/data/services/user_storage_service.dart';
 import '../../../admin/data/models/lawyer.dart' as model;
@@ -248,6 +250,26 @@ class _LawyerCard extends StatelessWidget {
     required this.primaryColor,
   });
 
+  // <--- Thêm hàm này vào ngay đây!
+  Future<Map<String, dynamic>> _fetchRating(String lawyerId) async {
+    final uri = Uri.parse(
+        'https://localhost:5000/api/users/api/Review/lawyer/$lawyerId');
+    final res = await http.get(uri, headers: {'Accept': 'application/json'});
+    if (res.statusCode == 200) {
+      final data = json.decode(res.body);
+      if (data is List && data.isNotEmpty) {
+        final list = data.where((e) => e['rating'] != null).toList();
+        if (list.isNotEmpty) {
+          final avg = list.fold(
+                  0.0, (double a, b) => a + (b['rating'] as num).toDouble()) /
+              list.length;
+          return {'average': avg, 'count': list.length};
+        }
+      }
+    }
+    return {'average': 0.0, 'count': 0};
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -321,14 +343,35 @@ class _LawyerCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Row(
-            children: <Widget>[
-              const Icon(Icons.star_rounded,
-                  size: 16, color: Color(0xFFFFB300)),
-              const SizedBox(width: 6),
-              Text('4.6',
-                  style: TextStyle(color: Colors.grey.shade700, fontSize: 12)),
-            ],
+          FutureBuilder<Map<String, dynamic>>(
+            future: _fetchRating(lawyer.id),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Row(
+                  children: [
+                    const Icon(Icons.star_rounded,
+                        size: 16, color: Color(0xFFFFB300)),
+                    const SizedBox(width: 6),
+                    Container(
+                        width: 24, height: 10, color: Colors.grey.shade300),
+                  ],
+                );
+              }
+              final rating = snapshot.data?['average'] ?? 0.0;
+              return Row(
+                children: [
+                  const Icon(Icons.star_rounded,
+                      size: 16, color: Color(0xFFFFB300)),
+                  const SizedBox(width: 6),
+                  Text(
+                    rating is num
+                        ? rating.toStringAsFixed(1)
+                        : rating.toString(),
+                    style: TextStyle(color: Colors.grey.shade700, fontSize: 12),
+                  )
+                ],
+              );
+            },
           ),
           const Spacer(),
           SizedBox(
