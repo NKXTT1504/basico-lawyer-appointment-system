@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../widgets/hero_section.dart';
 import '../widgets/feature_cards.dart';
+import '../widgets/testimonials_section.dart';
 import '../../../appointment/domain/entities/appointment.dart';
 import '../../../appointment/data/datasources/appointment_local_data_source.dart';
 
@@ -32,6 +33,7 @@ class _HomeTab extends StatelessWidget {
               const FeatureCards(),
               _WhyChooseSection(),
               _HowItWorksSection(),
+              const TestimonialsSection(),
               _CTASection(),
               // Footer section
               Container(
