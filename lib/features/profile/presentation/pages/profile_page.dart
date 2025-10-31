@@ -7,7 +7,6 @@ import '../bloc/profile_bloc.dart';
 import '../../../admin/data/models/customer.dart' as admin_customer;
 import '../../../admin/data/services/user_storage_service.dart' as storage;
 import '../widgets/profile_form.dart';
-import '../../../auth/data/services/auth_api_service.dart';
 
 class ProfilePage extends StatefulWidget {
   final bool readOnly;
@@ -178,7 +177,6 @@ class _ProfileView extends StatelessWidget {
     return FutureBuilder<admin_customer.Customer?>(
       future: storage.UserStorageService.getCurrentCustomerProfile(),
       builder: (context, snap) {
-        final customer = snap.data;
         return Scaffold(
           backgroundColor: const Color(0xFFF6F7FB),
           appBar: AppBar(
@@ -257,38 +255,14 @@ class _ProfileView extends StatelessWidget {
                     ],
                   ),
                   padding: EdgeInsets.all(isTablet ? 20 : 16),
-                  child: Column(
-                    children: [
-                      _tile(
-                          icon: Icons.phone,
-                          label: 'Số điện thoại',
-                          value: profile.phoneNumber.isNotEmpty
-                              ? profile.phoneNumber
-                              : 'Chưa cập nhật'),
-                      _divider(),
-                      _tile(
-                          icon: Icons.location_on,
-                          label: 'Địa chỉ',
-                          value: customer?.address ?? 'Chưa cập nhật'),
-                      _divider(),
-                      _tile(
-                          icon: Icons.transgender,
-                          label: 'Giới tính',
-                          value: customer?.gender ?? 'Chưa cập nhật'),
-                      _divider(),
-                      _tile(
-                          icon: Icons.cake,
-                          label: 'Ngày sinh',
-                          value: customer == null
-                              ? 'Chưa cập nhật'
-                              : '${customer.dateOfBirth.day}/${customer.dateOfBirth.month}/${customer.dateOfBirth.year}'),
-                      _divider(),
-                      _tile(
-                          icon: Icons.work,
-                          label: 'Nghề nghiệp',
-                          value: customer?.occupation ?? 'Chưa cập nhật'),
-                    ],
-                  ),
+                  child: Column(children: [
+                    _tile(
+                        icon: Icons.phone,
+                        label: 'Số điện thoại',
+                        value: profile.phoneNumber.isNotEmpty
+                            ? profile.phoneNumber
+                            : 'Chưa cập nhật'),
+                  ]),
                 ),
               ],
             ),
@@ -321,9 +295,4 @@ class _ProfileView extends StatelessWidget {
       ],
     );
   }
-
-  Widget _divider() => Padding(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        child: Divider(color: Colors.grey.shade200, height: 1),
-      );
 }

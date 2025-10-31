@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import '../../../../core/network/api_services.dart';
+import '../../../admin/data/services/user_storage_service.dart' as storage;
 
 class AuthApiService {
   // Login - từ Swagger Users API v1
@@ -30,7 +31,13 @@ class AuthApiService {
   // Change password
   static Future<Response> changePassword(
       String userId, String currentPassword, String newPassword) async {
-    return await Api.users.put('/api/Auth/update/$userId', data: {
+    // Per Swagger: expects { email, currentPassword, newPassword }
+    final current = await storage.UserStorageService.getCurrentUser();
+    final email = current?.email ?? '';
+    return await Api.users.post('/api/Auth/change-password', data: {
+      // Include both casings to satisfy backend validators
+      'Email': email,
+      'email': email,
       'currentPassword': currentPassword,
       'newPassword': newPassword,
     });

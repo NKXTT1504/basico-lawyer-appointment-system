@@ -207,7 +207,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
         final user = await UserStorageService.getCurrentUser();
         if (user == null) throw Exception('Chưa đăng nhập');
 
-        // Try to change password via API first
+        // Try to change password via API first; if it fails, show error instead
         try {
           final response = await AuthApiService.changePassword(
               user.id, event.oldPassword, event.newPassword);
@@ -215,21 +215,14 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
             emit(PasswordChangeSuccess(
                 currentProfile, 'Mật khẩu đã được thay đổi thành công!'));
             return;
+          } else {
+            emit(ProfileFailure('Đổi mật khẩu thất bại. Vui lòng thử lại.'));
+            return;
           }
         } catch (e) {
-          print(
-              'API password change failed, falling back to local storage: $e');
-        }
-
-        // Fallback to local storage
-        if (user.password != event.oldPassword) {
-          emit(ProfileFailure('Mật khẩu cũ không đúng!'));
+          emit(ProfileFailure('Đổi mật khẩu thất bại: ${e.toString()}'));
           return;
         }
-        await UserStorageService.updateUserPasswordByEmail(
-            user.email, event.newPassword);
-        emit(PasswordChangeSuccess(
-            currentProfile, 'Mật khẩu đã được thay đổi thành công!'));
       } catch (e) {
         emit(ProfileFailure('Không thể thay đổi mật khẩu: ${e.toString()}'));
       }

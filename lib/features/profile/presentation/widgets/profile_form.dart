@@ -186,59 +186,7 @@ class _ProfileFormState extends State<ProfileForm> {
                     enabled: true,
                     keyboardType: TextInputType.phone,
                   ),
-                  const SizedBox(height: 24),
-                  _buildTextField(
-                    label: 'Địa chỉ',
-                    controller: _addressController,
-                    icon: Icons.location_on,
-                    enabled: true,
-                  ),
-                  const SizedBox(height: 24),
-                  DropdownButtonFormField<String>(
-                    value: _gender,
-                    decoration: InputDecoration(
-                      prefixIcon:
-                          Icon(Icons.transgender, color: Colors.grey.shade600),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide(color: Colors.grey.shade300),
-                      ),
-                    ),
-                    items: const [
-                      DropdownMenuItem(value: 'Nam', child: Text('Nam')),
-                      DropdownMenuItem(value: 'Nữ', child: Text('Nữ')),
-                      DropdownMenuItem(value: 'Khác', child: Text('Khác')),
-                    ],
-                    onChanged: (v) => setState(() => _gender = v ?? 'Nam'),
-                  ),
-                  const SizedBox(height: 24),
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      final now = DateTime.now();
-                      final picked = await showDatePicker(
-                        context: context,
-                        initialDate:
-                            _dob ?? DateTime(now.year - 25, now.month, now.day),
-                        firstDate: DateTime(1900),
-                        lastDate: now,
-                      );
-                      if (picked != null) setState(() => _dob = picked);
-                    },
-                    icon: const Icon(Icons.cake),
-                    label: Text(_dob == null
-                        ? 'Chọn ngày sinh'
-                        : '${_dob!.day}/${_dob!.month}/${_dob!.year}'),
-                  ),
-                  const SizedBox(height: 24),
-                  _buildTextField(
-                    label: 'Nghề nghiệp',
-                    controller: _occupationController,
-                    icon: Icons.work,
-                    enabled: true,
-                  ),
-                  // Removed Notes field per request
-
-                  const SizedBox(height: 40),
+                  const SizedBox(height: 32),
 
                   // Action Buttons
                   Row(
@@ -256,13 +204,11 @@ class _ProfileFormState extends State<ProfileForm> {
                             borderRadius: BorderRadius.circular(8),
                           ),
                         ),
-                        child: Text(
-                          'Đổi mật khẩu',
-                          style: TextStyle(
-                            fontSize: isTablet ? 16 : 14,
-                            color: Colors.grey.shade700,
-                          ),
-                        ),
+                        child: Text('Đổi mật khẩu',
+                            style: TextStyle(
+                              fontSize: isTablet ? 16 : 14,
+                              color: Colors.grey.shade700,
+                            )),
                       ),
                       const SizedBox(width: 16),
                       ElevatedButton(
