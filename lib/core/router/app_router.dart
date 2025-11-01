@@ -19,6 +19,7 @@ import '../../features/services/presentation/pages/lawyer_selection_page.dart';
 import '../../features/services/presentation/pages/service_detail_page.dart';
 import '../../features/services/presentation/pages/service_field_selection_page.dart';
 import '../../features/chat/presentation/pages/chat_page.dart';
+import '../../features/appointment/presentation/pages/payment_return_page.dart';
 import '../../features/admin/data/services/user_storage_service.dart';
 import '../../features/admin/presentation/pages/admin_dashboard_page.dart'
     as admin_pages;
@@ -415,6 +416,20 @@ class AppRouter {
       GoRoute(
         path: '/profile-demo',
         builder: (context, state) => const ProfileDemoPage(),
+      ),
+
+      // Payment Return Handler
+      GoRoute(
+        path: '/payment-return',
+        builder: (context, state) {
+          // Extract query params from URL
+          final uri = Uri.base;
+          final params = <String, String>{};
+          uri.queryParameters.forEach((key, value) {
+            params[key] = value;
+          });
+          return PaymentReturnPage(queryParams: params);
+        },
       ),
 
       // Test Pages (Development)

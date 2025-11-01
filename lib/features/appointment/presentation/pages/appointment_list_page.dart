@@ -9,7 +9,8 @@ import '../widgets/appointment_table.dart';
 import '../widgets/appointment_tabs.dart';
 import '../../data/services/appointment_api_service.dart';
 import '../../../admin/data/services/user_storage_service.dart';
-import 'package:url_launcher/url_launcher.dart';
+import '../../../lawyer/data/services/lawyer_api_service.dart';
+import 'appointment_confirmation_page.dart';
 
 class AppointmentListPage extends StatefulWidget {
   const AppointmentListPage({super.key});
@@ -37,18 +38,62 @@ class _BookingPageState extends State<BookingPage> {
   String? _selectedSlot;
   bool _loading = false;
   Set<String> _occupied = <String>{};
+  double? _hourlyRate;
 
   static const List<String> _slots = <String>[
-    '09:00 - 10:00',
-    '10:00 - 11:00',
-    '14:00 - 15:00',
-    '15:00 - 16:00',
+    '08:00 - 10:00',
+    '10:00 - 12:00',
+    '13:00 - 15:00',
+    '15:00 - 17:00',
   ];
 
   @override
   void initState() {
     super.initState();
     _loadOccupied();
+    _loadLawyerProfile();
+  }
+
+  Future<void> _loadLawyerProfile() async {
+    try {
+      final response = await LawyerApiService.getLawyerById(widget.lawyerId);
+      if (response.statusCode == 200) {
+        final data = response.data;
+        final profile =
+            data is Map<String, dynamic> ? (data['result'] ?? data) : data;
+        if (profile is Map<String, dynamic>) {
+          setState(() {
+            _hourlyRate = (profile['pricePerHour'] ??
+                profile['hourlyRate'] ??
+                0) as double?;
+          });
+        }
+      }
+    } catch (e) {
+      print('Failed to load lawyer profile: $e');
+    }
+  }
+
+  double _calculateDeposit() {
+    if (_hourlyRate == null || _selectedSlot == null) return 0;
+    // Extract hours from slot: "08:00 - 10:00" -> 2 hours
+    final parts = _selectedSlot!.split(' - ');
+    if (parts.length != 2) return 0;
+    try {
+      final start = parts[0].split(':');
+      final end = parts[1].split(':');
+      final startHour = int.parse(start[0]);
+      final startMin = int.parse(start[1]);
+      final endHour = int.parse(end[0]);
+      final endMin = int.parse(end[1]);
+      final startTime = startHour + startMin / 60.0;
+      final endTime = endHour + endMin / 60.0;
+      final hours = endTime - startTime;
+      // Deposit = (hourlyRate × hours) × 30%
+      return (_hourlyRate! * hours) * 0.3;
+    } catch (_) {
+      return 0;
+    }
   }
 
   Future<void> _loadOccupied() async {
@@ -76,110 +121,101 @@ class _BookingPageState extends State<BookingPage> {
   }
 
   Future<void> _confirm() async {
-    if (_selectedSlot == null) return;
-    setState(() => _loading = true);
+    if (_selectedSlot == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng chọn khung giờ')),
+      );
+      return;
+    }
 
-    try {
-      final currentUser = await UserStorageService.getCurrentUser();
-      if (currentUser == null) {
-        setState(() => _loading = false);
+    final currentUser = await UserStorageService.getCurrentUser();
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng đăng nhập để đặt lịch')),
+      );
+      return;
+    }
+
+    // Nếu có 2+ dịch vụ, chuyển sang bước xác nhận & thanh toán
+    if (widget.services.length >= 2) {
+      final deposit = _calculateDeposit();
+      if (deposit <= 0) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Vui lòng đăng nhập để đặt lịch')),
+          const SnackBar(
+              content: Text('Không thể tính phí đặt cọc. Vui lòng thử lại.')),
         );
         return;
       }
+      // Navigate to confirmation & payment page
+      if (!mounted) return;
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => AppointmentConfirmationPage(
+            lawyerId: widget.lawyerId,
+            lawyerName: widget.lawyerName,
+            services: widget.services,
+            selectedDate: _selectedDate,
+            selectedSlot: _selectedSlot!,
+            depositAmount: deposit,
+            hourlyRate: _hourlyRate ?? 0,
+          ),
+        ),
+      );
+      return;
+    }
 
-      // Check số dịch vụ chọn
-      if (widget.services.length >= 2) {
-        // Tạo dữ liệu payment request theo swagger
-        final paymentData = {
-          'vnpAmount':
-              0, // TODO: Tính/tổng giá dịch vụ * 50% (cần lấy giá hoặc hỏi user)
-          'orderId': DateTime.now().millisecondsSinceEpoch.toString(),
-          'lawyerId': widget.lawyerId,
-          'userId': currentUser.id,
-          'orderInformation': 'Đặt cọc dịch vụ cho booking',
-          'returnUrl': 'app://vnpay-return',
-          // ... bổ sung field cần thiết theo swagger nếu thiếu ...
-        };
-        try {
-          final paymentResp =
-              await PaymentApiService.createVnpayPaymentUrl(paymentData);
-          if (paymentResp.statusCode == 200 && paymentResp.data is String) {
-            final vnpayUrl = paymentResp.data as String;
-            if (await canLaunchUrl(Uri.parse(vnpayUrl))) {
-              await launchUrl(Uri.parse(vnpayUrl),
-                  mode: LaunchMode.externalApplication);
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                  content: Text('Không mở được trang VNPay: $vnpayUrl')));
-            }
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                  content: Text(
-                      'Không lấy được link thanh toán: ${paymentResp.statusCode}')),
-            );
-          }
-        } catch (e) {
-          ScaffoldMessenger.of(context)
-              .showSnackBar(SnackBar(content: Text('Lỗi tạo thanh toán: $e')));
-        } finally {
+    // Nếu chỉ 1 dịch vụ, đặt lịch trực tiếp
+    setState(() => _loading = true);
+    try {
+      final appointmentData = {
+        'userId': currentUser.id,
+        'lawyerId': widget.lawyerId,
+        'scheduledAt': _selectedDate.toIso8601String(),
+        'slot': _selectedSlot!,
+        'spec': widget.services.isEmpty ? '' : widget.services.join(', '),
+        'services': widget.services,
+        'note': 'Đặt lịch từ mobile app',
+      };
+
+      final response =
+          await AppointmentApiService.createAppointment(appointmentData);
+
+      // Debug logging
+      print('Appointment creation response status: ${response.statusCode}');
+      print('Appointment creation response data: ${response.data}');
+
+      if (response.statusCode == 200) {
+        // Handle different response formats
+        final responseData = response.data;
+        bool isSuccess = false;
+
+        if (responseData is Map<String, dynamic>) {
+          isSuccess = responseData['success'] == true ||
+              responseData['isSuccess'] == true ||
+              responseData['Success'] == true;
+        } else {
+          // If response is not a map, consider it successful if status is 200
+          isSuccess = true;
+        }
+
+        if (isSuccess) {
           setState(() => _loading = false);
-        }
-        return;
-      }
-      // --- Booking truyền thống khi chỉ 1 dịch vụ ---
-      // Try API first
-      try {
-        final appointmentData = {
-          'userId': currentUser.id,
-          'lawyerId': widget.lawyerId,
-          'scheduledAt': _selectedDate.toIso8601String(),
-          'slot': _selectedSlot!,
-          'spec': widget.services.isEmpty ? '' : widget.services.join(', '),
-          'services': widget.services,
-          'note': 'Đặt lịch từ mobile app',
-        };
-
-        final response =
-            await AppointmentApiService.createAppointment(appointmentData);
-
-        // Debug logging
-        print('Appointment creation response status: ${response.statusCode}');
-        print('Appointment creation response data: ${response.data}');
-
-        if (response.statusCode == 200) {
-          // Handle different response formats
-          final responseData = response.data;
-          bool isSuccess = false;
-
-          if (responseData is Map<String, dynamic>) {
-            isSuccess = responseData['success'] == true ||
-                responseData['isSuccess'] == true ||
-                responseData['Success'] == true;
-          } else {
-            // If response is not a map, consider it successful if status is 200
-            isSuccess = true;
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đặt lịch thành công')),
+          );
+          if (mounted) {
+            Navigator.of(context).pushReplacementNamed('/appointments');
           }
-
-          if (isSuccess) {
-            setState(() => _loading = false);
-            if (!mounted) return;
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Đặt lịch thành công')),
-            );
-            if (mounted) {
-              Navigator.of(context).pushReplacementNamed('/appointments');
-            }
-            return;
-          }
+          return;
         }
-      } catch (e) {
-        print('API booking failed, falling back to local: $e');
       }
+    } catch (e) {
+      print('API booking failed, falling back to local: $e');
+    }
 
-      // Fallback to local storage
+    // Fallback to local storage
+    try {
       final ok = await AppointmentSyncService.createBookingForLawyerMulti(
         lawyerId: widget.lawyerId,
         lawyerName: widget.lawyerName,

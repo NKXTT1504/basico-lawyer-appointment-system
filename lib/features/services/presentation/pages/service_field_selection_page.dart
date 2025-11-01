@@ -402,7 +402,135 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
   }
 
   void _continue() {
-    // Chuyển đến trang chọn luật sư với danh sách dịch vụ đã chọn
+    final serviceCount = _selectedServices.length;
+    // Nếu chọn 2+ dịch vụ, hiển thị modal thông báo cọc
+    if (serviceCount >= 2) {
+      _showDepositNotification(serviceCount);
+    } else {
+      _navigateToLawyerSelection();
+    }
+  }
+
+  void _showDepositNotification(int serviceCount) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.info_outline, color: Colors.orange[600]),
+            const SizedBox(width: 8),
+            const Expanded(
+              child: Text(
+                'Thông báo đặt cọc',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Chính sách đặt lịch nhiều dịch vụ',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Icon(Icons.warning_amber_rounded,
+                    color: Colors.orange[600], size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Bạn đã chọn $serviceCount dịch vụ. Theo chính sách của chúng tôi, cần đặt cọc trước 30% của giờ làm luật sư để tiến hành đặt lịch.',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildInfoItem('Số dịch vụ:', '$serviceCount dịch vụ'),
+            _buildInfoItem('Tỷ lệ đặt cọc:', '30%'),
+            _buildInfoItem('Phương thức:', 'Chuyển khoản ngân hàng'),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.info_outline, color: Colors.orange[600], size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Bạn có thể chọn ít hơn $serviceCount dịch vụ để không cần đặt cọc. Đặt cọc sẽ được hoàn trả 100% nếu hủy lịch trước 24 giờ.',
+                      style: TextStyle(fontSize: 12, color: Colors.grey[700]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Chọn ít hơn'),
+          ),
+          OutlinedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _navigateToLawyerSelection();
+            },
+            child: const Text('1 dịch vụ'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _navigateToLawyerSelection();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF1E3A8A),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Xác nhận đặt cọc'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoItem(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 100,
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+            ),
+          ),
+          Text(
+            value,
+            style: const TextStyle(fontSize: 13),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _navigateToLawyerSelection() {
     context.push('/lawyer-selection', extra: {
       'services': _selectedServices.entries.map((e) => e.key).toList(),
       'field': _selectedField,
