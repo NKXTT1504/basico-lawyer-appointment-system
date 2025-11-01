@@ -20,7 +20,7 @@ export interface CreatePaymentResponse {
 export async function createPaymentForAppointment(
   payload: CreatePaymentForAppointmentPayload
 ): Promise<CreatePaymentResponse> {
-  const res = await api.post("/api/payments/create-url-for-appointment", payload);
+  const res = await api.appointment.post("/api/payments/create-url-for-appointment", payload);
   // normalize keys to lowercase if backend returns PascalCase
   const data = res.data || {};
   return {

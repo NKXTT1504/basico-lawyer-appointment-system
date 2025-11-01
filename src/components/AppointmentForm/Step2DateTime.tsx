@@ -11,10 +11,11 @@ interface Step2DateTimeProps {
   updateFormData: (field: string, value: string) => void;
   errors: Record<string, string>;
   getAvailableTimes: () => string[];
-  selectedService: any;
+  selectedServices: any[];
   selectedLawyer: any;
   prevStep: () => void;
   nextStep: () => void;
+  lawyerDetails: {[key: string]: any}; // Thêm prop này
 }
 
 const Step2DateTime: React.FC<Step2DateTimeProps> = ({
@@ -22,10 +23,11 @@ const Step2DateTime: React.FC<Step2DateTimeProps> = ({
   updateFormData,
   errors,
   getAvailableTimes,
-  selectedService,
+  selectedServices,
   selectedLawyer,
   prevStep,
   nextStep,
+  lawyerDetails // Nhận prop lawyerDetails
 }) => {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
 
@@ -97,11 +99,11 @@ const Step2DateTime: React.FC<Step2DateTimeProps> = ({
 
     return (
       <div className="border rounded-lg shadow-sm overflow-hidden">
-        {/* Header: điều khiển tháng */}
+        {/* Header: điều hướng tháng */}
         <div className="flex justify-between items-center p-3 bg-gray-50">
           <button
             type="button"
-            onClick={() => setCurrentMonth(addDays(currentMonth, -30))}
+            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1, 1))}
             className="p-1 rounded hover:bg-gray-200"
           >
             &larr;
@@ -111,7 +113,7 @@ const Step2DateTime: React.FC<Step2DateTimeProps> = ({
           </h3>
           <button
             type="button"
-            onClick={() => setCurrentMonth(addDays(currentMonth, 32))}
+            onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 1))}
             className="p-1 rounded hover:bg-gray-200"
           >
             &rarr;
@@ -168,6 +170,19 @@ const Step2DateTime: React.FC<Step2DateTimeProps> = ({
     );
   };
 
+  // Helper function to get lawyer name safely - sử dụng lawyerDetails
+  const getLawyerName = () => {
+    if (!selectedLawyer) return 'Chưa chọn luật sư';
+    
+    const lawyerId = selectedLawyer.lawyerProfile?.id || selectedLawyer.id;
+    const userDetail = lawyerDetails[lawyerId];
+    
+    return userDetail?.fullName || 
+           selectedLawyer.user?.fullName || 
+           selectedLawyer.fullName || 
+           'Chưa cập nhật';
+  };
+
   return (
     <div className="animate-fade-in">
       <h2 className="text-2xl font-bold text-gray-900 mb-6">Chọn ngày & giờ</h2>
@@ -214,12 +229,29 @@ const Step2DateTime: React.FC<Step2DateTimeProps> = ({
       {/* Tóm tắt */}
       <div className="mb-6 p-4 bg-gray-50 rounded-lg">
         <h3 className="font-medium text-gray-900 mb-2">Tóm tắt lịch hẹn:</h3>
-        <p>
-          <span className="font-medium">Dịch vụ:</span> {selectedService?.title}
-        </p>
+        
+        {/* Hiển thị tất cả dịch vụ đã chọn */}
+        <div className="mb-2">
+          <span className="font-medium">Dịch vụ:</span>
+          {selectedServices.length > 0 ? (
+            <div className="mt-1">
+              {selectedServices.map((service, index) => (
+                <div key={service.id} className="text-gray-700">
+                  • {service.title || service.name} {service.price && `- ${service.price}`}
+                </div>
+              ))}
+              <div className="text-sm text-gray-600 mt-1">
+                ({selectedServices.length} dịch vụ)
+              </div>
+            </div>
+          ) : (
+            <span className="text-gray-700"> Chưa chọn dịch vụ</span>
+          )}
+        </div>
+        
         <p>
           <span className="font-medium">Luật sư:</span>{' '}
-          {selectedLawyer?.user?.fullName || 'Chưa chọn'}
+          {getLawyerName()}
         </p>
         {formData.date && (
           <p>
@@ -236,10 +268,18 @@ const Step2DateTime: React.FC<Step2DateTimeProps> = ({
 
       {/* Nút điều hướng */}
       <div className="flex justify-between">
-        <button type="button" onClick={prevStep} className="btn-outline">
+        <button 
+          type="button" 
+          onClick={prevStep} 
+          className="px-6 py-3 border border-gray-300 text-gray-700 hover:bg-gray-50 rounded-lg font-medium transition-colors"
+        >
           Quay lại
         </button>
-        <button type="button" onClick={nextStep} className="btn-primary">
+        <button 
+          type="button" 
+          onClick={nextStep} 
+          className="px-6 py-3 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors"
+        >
           Tiếp tục
         </button>
       </div>

@@ -1,13 +1,78 @@
-import { useState } from 'react';
-import { services, serviceCategories } from '../../../data/services';
+import { useState, useEffect } from 'react';
 import ServiceCard from '../../../components/Service/ServiceCard';
+import api from '../../../config/axios';
 
 const Services = () => {
   const [activeCategory, setActiveCategory] = useState('all');
+  const [services, setServices] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    setError(null);
+
+    (async () => {
+      try {
+        const svcRes = await api.lawyer.get('/api/Service');
+        if (!mounted) return;
+
+        let servicesData = [];
+        if (svcRes) {
+          const d = svcRes.data;
+          if (Array.isArray(d)) servicesData = d;
+          else if (d && Array.isArray(d.result)) servicesData = d.result;
+        }
+        setServices(Array.isArray(servicesData) ? servicesData : []);
+      } catch (err) {
+        console.error('Service fetch error:', err);
+        if (mounted) setError(`Không tải được danh sách dịch vụ. Chi tiết: ${err.message || err}`);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const areaRes = await api.lawyer.get('/api/PracticeArea');
+        if (!mounted) return;
+
+        let areasData = [];
+        if (areaRes) {
+          const d = areaRes.data;
+          if (Array.isArray(d)) areasData = d;
+          else if (d && Array.isArray(d.result)) areasData = d.result;
+        }
+
+        // fallback: derive categories from services' practiceArea
+        if ((!areasData || areasData.length === 0) && Array.isArray(services)) {
+          const map = {};
+          services.forEach((s) => {
+            const pa = s.practiceArea;
+            if (pa && pa.code && !map[pa.code]) map[pa.code] = pa;
+          });
+          areasData = Object.values(map);
+        }
+
+        setCategories(Array.isArray(areasData) ? areasData : []);
+      } catch (err) {
+        console.error('PracticeArea fetch error:', err);
+        if (mounted) setError(`Không tải được danh mục lĩnh vực. Chi tiết: ${err.message || err}`);
+        setLoading(false);
+        return;
+      }
+
+      if (mounted) setLoading(false);
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   const filteredServices = activeCategory === 'all'
     ? services
-    : services.filter(service => service.category.toLowerCase() === activeCategory);
+    : services.filter(s => (s.practiceArea?.code || '').toLowerCase() === activeCategory);
 
   return (
     <main>
@@ -28,31 +93,55 @@ const Services = () => {
           <div className="mb-10">
             <div className="flex justify-center mb-8">
               <div className="inline-flex flex-wrap justify-center gap-2 p-1 bg-gray-100 rounded-lg">
-                {serviceCategories.map(category => (
+                <button
+                  onClick={() => setActiveCategory('all')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors
+                    ${activeCategory === 'all' ? 'bg-primary-700 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+                >
+                  Tất cả
+                </button>
+
+                {categories.map(cat => (
                   <button
-                    key={category.id}
+                    key={cat.id ?? cat.code}
+                    onClick={() => setActiveCategory((cat.code || '').toLowerCase())}
                     className={`px-4 py-2 rounded-md text-sm font-medium transition-colors
-                      ${activeCategory === category.id.toLowerCase()
-                        ? 'bg-primary-700 text-white'
-                        : 'text-gray-700 hover:bg-gray-200'
-                      }`}
-                    onClick={() => setActiveCategory(category.id.toLowerCase())}
+                      ${activeCategory === (cat.code || '').toLowerCase() ? 'bg-primary-700 text-white' : 'text-gray-700 hover:bg-gray-200'}`}
                   >
-                    {category.name}
+                    {cat.name}
                   </button>
                 ))}
               </div>
             </div>
 
             <p className="text-center text-gray-600 max-w-3xl mx-auto">
-              Chọn một danh mục để lọc các dịch vụ của chúng tôi và tìm chính xác những gì bạn đang tìm kiếm.            </p>
+              Chọn một danh mục để lọc các dịch vụ của chúng tôi và tìm chính xác những gì bạn đang tìm kiếm.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredServices.map(service => (
-              <ServiceCard key={service.id} service={service} />
-            ))}
-          </div>
+          {error && (
+            <div className="text-center py-6 text-red-600 bg-red-50 rounded-lg mb-8 max-w-2xl mx-auto">
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+                  <div className="h-3 bg-gray-200 rounded w-full mb-2"></div>
+                  <div className="h-3 bg-gray-200 rounded w-5/6"></div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {filteredServices.map(service => (
+                <ServiceCard key={service.id} service={service} />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
@@ -64,12 +153,8 @@ const Services = () => {
               Đội ngũ pháp lý của chúng tôi sẵn sàng cung cấp hỗ trợ cá nhân hóa phù hợp với tình huống cụ thể của bạn. Hãy liên hệ với chúng tôi ngay hôm nay để thảo luận về nhu cầu pháp lý của bạn.
             </p>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <a href="/contact" className="btn-outline">
-                Liên hệ với chúng tôi
-              </a>
-              <a href="/appointment" className="btn-primary">
-                Đặt lịch tư vấn
-              </a>
+              <a href="/contact" className="btn-outline">Liên hệ với chúng tôi</a>
+              <a href="/appointment" className="btn-primary">Đặt lịch tư vấn</a>
             </div>
           </div>
         </div>

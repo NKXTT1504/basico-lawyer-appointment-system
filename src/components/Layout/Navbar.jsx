@@ -93,6 +93,7 @@ const Navbar = () => {
         { name: "Lịch hẹn", path: "/appointmentmanagement" },
         { name: "Đánh giá", path: "/reviewmanagement" },
         { name: "Form", path: "/formmanagement" },
+        { name: "Thanh toán", path: "/paymentmanagement" },
       ]
     }
   ];
@@ -198,12 +199,20 @@ const Navbar = () => {
                         Cài đặt
                       </Link>
                       {userRole === "Customer" && (
-                        <Link
-                          to="/history-appointments"
-                          className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        >
-                          Cuộc hẹn
-                        </Link>
+                        <>
+                          <Link
+                            to="/history-appointments"
+                            className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          >
+                            Cuộc hẹn
+                          </Link>
+                          <Link
+                            to="/customer-payment"
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          >
+                            Lịch sử thanh toán
+                          </Link>
+                        </>
                       )}
                       <button
                         onClick={handleLogout}

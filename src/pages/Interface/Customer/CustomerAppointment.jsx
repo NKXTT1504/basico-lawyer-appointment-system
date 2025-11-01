@@ -109,6 +109,16 @@ const CustomerAppointment = () => {
     );
   }
 
+  // helper to render date/time label
+  const renderDateLabel = (app) => {
+    const timeRange = slotToTime[app.slot];
+    if (!app.scheduledAt || !timeRange) return "Không xác định";
+    const startTime = timeRange.split("~")[0].trim();
+    const dateStr = `${app.scheduledAt.slice(0, 10)}T${startTime}:00`;
+    const dateObj = parseISO(dateStr);
+    return !isNaN(dateObj) ? `${timeRange}, ${format(dateObj, "EEEE, dd/MM/yyyy", { locale: vi })}` : "Không xác định";
+  };
+
   return (
     <div className="p-6 max-w-7xl mx-auto">
       <h1 className="text-4xl font-extrabold text-primary-900 text-center mb-10">LỊCH HẸN CỦA BẠN</h1>
@@ -150,56 +160,59 @@ const CustomerAppointment = () => {
                   <th className="px-6 py-4 text-center font-bold text-gray-700 uppercase tracking-wider">Ngày</th>
                   <th className="px-6 py-4 text-center font-bold text-gray-700 uppercase tracking-wider">Dịch vụ</th>
                   <th className="px-6 py-4 text-center font-bold text-gray-700 uppercase tracking-wider">Trạng thái</th>
-                  <th className="px-6 py-4 text-center font-bold text-gray-700 uppercase tracking-wider">Thao tác</th> {/* Thêm cột thao tác */}
+                  <th className="px-6 py-4 text-center font-bold text-gray-700 uppercase tracking-wider">Thao tác</th>
                 </tr>
               </thead>
+
               <tbody className="bg-white divide-y divide-gray-200">
-                {paginated(filteredAppointments(activeTab)).map((app) => (
-                  <tr key={app.id}>
-                    <td className="px-6 py-4 text-center font-bold text-gray-900">
-                      {lawyerMap[app.lawyerId] || "Chưa xác định"}
-                    </td>
-                    <td className="px-6 py-4 text-center font-bold text-gray-700">
-                      {(() => {
-                        const timeRange = slotToTime[app.slot];
-                        if (!app.scheduledAt || !timeRange) return "Không xác định";
-                        const startTime = timeRange.split("~")[0].trim();
-                        const dateStr = `${app.scheduledAt.slice(0, 10)}T${startTime}:00`;
-                        const dateObj = parseISO(dateStr);
-                        return !isNaN(dateObj)
-                          ? `${timeRange}, ${format(dateObj, "EEEE, dd/MM/yyyy", { locale: vi })}`
-                          : "Không xác định";
-                      })()}
-                    </td>
-                    <td className="px-6 py-4 text-center font-bold text-gray-700">
-                      {app.services?.join(", ")}
-                    </td>
-                    <td className="px-6 py-4 text-center font-bold">
-                      <span className={`px-3 py-1 inline-flex text-base font-bold rounded-full ${statusMap[app.status].color}`}>
-                        {statusMap[app.status].label}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 text-center font-bold">
-                      {(activeTab === "upcoming" && (app.status === 0 || app.status === 1)) ? (
-                        <button
-                          onClick={() => handleCancel(app.id)}
-                          className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
-                        >
-                          Hủy
-                        </button>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-                {paginated(filteredAppointments(activeTab)).length === 0 && (
-                  <tr>
-                    <td colSpan="5" className="px-6 py-6 text-center text-base text-gray-500 font-semibold">
-                      {activeTab === "upcoming" ? "Không có cuộc hẹn sắp tới." : "Chưa có lịch sử cuộc hẹn."}
-                    </td>
-                  </tr>
-                )}
+                {(() => {
+                  // build visible rows explicitly to avoid accidental text nodes between <tr>
+                  const visible = paginated(filteredAppointments(activeTab));
+                  if (visible.length === 0) {
+                    return (
+                      <tr>
+                        <td colSpan="5" className="px-6 py-6 text-center text-base text-gray-500 font-semibold">
+                          {activeTab === "upcoming" ? "Không có cuộc hẹn sắp tới." : "Chưa có lịch sử cuộc hẹn."}
+                        </td>
+                      </tr>
+                    );
+                  }
+
+                  return visible.map((app) => (
+                    <tr key={app.id}>
+                      <td className="px-6 py-4 text-center font-bold text-gray-900">
+                        {lawyerMap[app.lawyerId] || "Chưa xác định"}
+                      </td>
+
+                      <td className="px-6 py-4 text-center font-bold text-gray-700">
+                        {renderDateLabel(app)}
+                      </td>
+
+                      <td className="px-6 py-4 text-center font-bold text-gray-700">
+                        {app.services?.join(", ")}
+                      </td>
+
+                      <td className="px-6 py-4 text-center font-bold">
+                        <span className={`px-3 py-1 inline-flex text-base font-bold rounded-full ${statusMap[app.status]?.color || 'text-gray-600'}`}>
+                          {statusMap[app.status]?.label || 'Không xác định'}
+                        </span>
+                      </td>
+
+                      <td className="px-6 py-4 text-center font-bold">
+                        {(activeTab === "upcoming" && (app.status === 0 || app.status === 1)) ? (
+                          <button
+                            onClick={() => handleCancel(app.id)}
+                            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 transition"
+                          >
+                            Hủy
+                          </button>
+                        ) : (
+                          <span className="text-gray-400">-</span>
+                        )}
+                      </td>
+                    </tr>
+                  ));
+                })()}
               </tbody>
             </table>
           </div>

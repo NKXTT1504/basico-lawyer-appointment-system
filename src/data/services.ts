@@ -96,3 +96,17 @@ export const serviceCategories = [
   { id: 'personal', name: 'Cá nhân' },
   { id: 'property', name: 'Bất động sản' }
 ];
+
+// add slugify helper for consistent URLs
+export const slugify = (input: string) => {
+  if (!input) return '';
+  return input
+    .toString()
+    .toLowerCase()
+    .normalize('NFD') // decompose combined letters + diacritics
+    .replace(/\p{Diacritic}/gu, '') // remove diacritic marks (Unicode-aware)
+    .replace(/[^a-z0-9\s-]/g, '') // remove invalid chars
+    .trim()
+    .replace(/\s+/g, '-') // spaces -> hyphens
+    .replace(/-+/g, '-'); // collapse hyphens
+};

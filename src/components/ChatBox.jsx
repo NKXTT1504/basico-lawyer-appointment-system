@@ -136,10 +136,10 @@ const ChatBox = () => {
 
   const SuggestedQuestions = () => {
     const questions = [
-      "Giới thiệu về hệ thống BASICO",
-      "Có bao nhiêu luật sư ở BASICO?",
-      "Các dịch vụ của BASICO là gì?",
-      "Phổ biến về luật doanh nghiệp?"
+      "Giới thiệu về hệ thống",
+      "Có bao nhiêu luật sư trên hệ thống này?",
+      "Các dịch vụ của hệ thống ở đây là gì?",
+      "Phổ biến về các lĩnh vực pháp lý?"
     ];
 
     return (

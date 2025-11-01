@@ -1,16 +1,109 @@
 import { useParams, Link } from 'react-router-dom';
-import { services, getIconComponent } from '../../../data/services';
+import { getIconComponent, slugify } from '../../../data/services';
+import api from '../../../config/axios';
+import { useEffect, useState } from 'react';
 import { ArrowLeft, Check } from 'lucide-react';
 
 const ServiceDetails = () => {
-  const { id } = useParams();
-  const service = services.find(s => s.id === id);
+  const { slug } = useParams();
+  const [service, setService] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  if (!service) {
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    setError(null);
+
+    (async () => {
+      try {
+        // fetch service list to resolve slug -> id
+        const listRes = await api.lawyer.get('/api/Service');
+        if (!mounted) return;
+        
+        let list = [];
+        if (listRes && listRes.data && listRes.data.isSuccess) {
+          // Extract from result field
+          list = listRes.data.result || [];
+        }
+
+        if (!Array.isArray(list) || list.length === 0) {
+          if (mounted) setError('Không có dịch vụ nào');
+          return;
+        }
+
+        const matched = list.find((s) =>
+          slugify(s.name || s.title || String(s.id)) === slug
+        );
+        
+        if (!matched) {
+          if (mounted) setError('Dịch vụ không tồn tại');
+          return;
+        }
+
+        // fetch full detail by id
+        try {
+          const detailRes = await api.lawyer.get(`/api/Service/${matched.id}`);
+          if (!mounted) return;
+          
+          let detailData = matched; // fallback to matched item
+          
+          if (detailRes && detailRes.data && detailRes.data.isSuccess) {
+            detailData = detailRes.data.result || matched;
+          }
+          
+          // Add missing fields with default values
+          const enhancedService = {
+            ...detailData,
+            // Use name if title doesn't exist
+            title: detailData.title || detailData.name,
+            // Default price if not provided
+            price: detailData.price || 'Liên hệ để biết giá',
+            // Default duration if not provided  
+            duration: detailData.duration || 'Theo thỏa thuận',
+            // Default icon if not provided
+            icon: detailData.icon || 'Scale'
+          };
+          
+          if (mounted) setService(enhancedService);
+        } catch (err) {
+          console.error('Detail fetch error:', err);
+          // fallback to matched item with enhanced fields
+          const enhancedMatched = {
+            ...matched,
+            title: matched.title || matched.name,
+            price: matched.price || 'Liên hệ để biết giá',
+            duration: matched.duration || 'Theo thỏa thuận',
+            icon: matched.icon || 'Scale'
+          };
+          if (mounted) setService(enhancedMatched);
+        }
+      } catch (err) {
+        console.error('Service list fetch error:', err);
+        if (mounted) setError('Không tải được dữ liệu dịch vụ. Vui lòng thử lại.');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    })();
+
+    return () => {
+      mounted = false;
+    };
+  }, [slug]);
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-16 text-center">
+        <div className="text-gray-500">Đang tải...</div>
+      </div>
+    );
+  }
+
+  if (error || !service) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Dịch vụ không tồn tại</h2>
-        <p className="text-gray-600 mb-6">Dịch vụ bạn đang tìm kiếm không tồn tại hoặc đã bị gỡ bỏ.</p>
+        <p className="text-gray-600 mb-6">{error || 'Dịch vụ bạn đang tìm kiếm không tồn tại hoặc đã bị gỡ bỏ.'}</p>
         <Link to="/services" className="btn-primary">
           Xem tất cả dịch vụ
         </Link>
@@ -79,7 +172,9 @@ const ServiceDetails = () => {
 
               <div>
                 <span className="block text-gray-300 text-sm">Danh mục</span>
-                <span className="text-lg font-medium text-white">{service.category}</span>
+                <span className="text-lg font-medium text-white">
+                  {service.practiceArea?.name || service.category || 'Chưa phân loại'}
+                </span>
               </div>
             </div>
           </div>
@@ -148,7 +243,7 @@ const ServiceDetails = () => {
                 </p>
 
                 <Link 
-                  to={`/appointment?service=${service.id}`}
+                  to={`/appointment?service=${slugify(service.title || service.name || String(service.id))}`}
                   className="btn-primary w-full justify-center mb-4"
                 >
                   Đặt lịch tư vấn
@@ -179,35 +274,7 @@ const ServiceDetails = () => {
         </div>
       </section>
 
-      <section className="py-16 bg-gray-50">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6">Khám phá các dịch vụ khác</h2>
-          <p className="text-gray-600 max-w-3xl mx-auto mb-10">
-            Khám phá các dịch vụ pháp lý toàn diện của chúng tôi để đáp ứng mọi nhu cầu pháp lý của bạn.
-          </p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {services
-              .filter(s => s.id !== service.id)
-              .slice(0, 4)
-              .map(s => {
-                const ServiceIcon = getIconComponent(s.icon);
-                return (
-                  <Link 
-                    key={s.id}
-                    to={`/services/${s.id}`}
-                    className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow text-center"
-                  >
-                    <div className="p-3 bg-primary-50 rounded-full w-14 h-14 flex items-center justify-center mx-auto mb-4">
-                      <ServiceIcon className="h-7 w-7 text-primary-700" />
-                    </div>
-                    <h4 className="text-xl font-medium text-gray-900">{s.title}</h4>
-                  </Link>
-                );
-              })}
-          </div>
-        </div>
-      </section>
+      {/* Removed related services section for now since we don't have related data */}
     </main>
   );
 };

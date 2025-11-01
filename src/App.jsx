@@ -6,6 +6,8 @@ import Navbar from './components/Layout/Navbar';
 import Footer from './components/Layout/Footer';
 import ProtectedRoute from './components/ProtectedRoute';
 import ChatBox from './components/ChatBox';
+import PaymentResult from './components/AppointmentForm/PaymentResult';
+import AppointmentSuccess from './components/AppointmentForm/AppointmentSuccess';
 
 // Pages
 import Home from './pages/Interface/Customer/Home';
@@ -36,7 +38,9 @@ import Unauthorized from './pages/Authentication/Unauthorized';
 import ForgotPassword from './pages/Authentication/ForgotPassword';
 import ChangePassword from './pages/Authentication/ChangePassword';
 import AppointmentManagement from './pages/Interface/Admin/AppointmentManagement';
+import PaymentManagement from './pages/Interface/Admin/PaymentManagement';
 import Diploma from './pages/Interface/Customer/Diploma';
+import CustomerPaymentManagement from './pages/Interface/Customer/CustomerPayment';
 
 function App() {
   const [role, setRole] = useState(localStorage.getItem("role"));
@@ -70,6 +74,7 @@ function App() {
               <Route path="/lawyermanagement" element={<ManageLawyer />} />
               <Route path="/manageaccount" element={<ManageAccount />} />
               <Route path="/formmanagement" element={<FormManagement />} />
+              <Route path="/paymentmanagement" element={<PaymentManagement />} />
             </Route>
 
             {/* Routes cho Lawyer */}
@@ -87,13 +92,16 @@ function App() {
               <Route path="/appointment" element={<Appointment />} />
               <Route path="/history-appointments" element={<CustomerAppointment />} />
               <Route path="/customer-profile" element={<CustomerProfile />} />
+              <Route path="/payment-result" element={<PaymentResult />} />
+              <Route path="/appointment-success" element={<AppointmentSuccess />} />
+              <Route path="/customer-payment" element={<CustomerPaymentManagement />} />
             </Route>
 
             {/* Public routes */}
             <Route path="/" element={<Home />} />
             {/* Thêm các route công khai khác ở đây */}
             <Route path="/services" element={<Services />} />
-            <Route path="/services/:id" element={<ServiceDetails />} />
+            <Route path="/services/:slug" element={<ServiceDetails />} />
             <Route path="/lawyers" element={<Lawyers />} />
             <Route path="/lawyers/:slug" element={<LawyerDetails />} />
             <Route path="/about" element={<About />} />
@@ -104,7 +112,7 @@ function App() {
             <Route path="/forms/:id" element={<FormDetails />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/lawyers/:slug/diploma" element={<Diploma />} />
-             <Route path="/change-password" element={<ChangePassword />} />
+            <Route path="/change-password" element={<ChangePassword />} />
           </Routes>
         </div>
         <ChatBox />

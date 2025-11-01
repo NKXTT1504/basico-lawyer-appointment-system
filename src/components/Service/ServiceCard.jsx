@@ -1,40 +1,47 @@
 import { Link } from 'react-router-dom';
-import { getIconComponent } from '../../data/services';
-import { ArrowRight } from 'lucide-react';
+import { getIconComponent, slugify } from '../../data/services';
 
 const ServiceCard = ({ service }) => {
-  const IconComponent = getIconComponent(service.icon);
+  // fallback mapping from practiceArea.code -> icon name (used by getIconComponent)
+  const practiceToIconName = {
+    MARRIAGE: 'Users',
+    BUSINESS: 'Briefcase',
+    INSURANCE: 'Shield',
+    CONTRACT: 'FileText',
+    LABOR: 'Users',
+    CONSTRUCTION: 'Home',
+  };
+
+  const iconName =
+    service.icon ||
+    (service.practiceArea && practiceToIconName[(service.practiceArea.code || '').toString().toUpperCase()]) ||
+    'FileText';
+
+  const IconComponent = getIconComponent(iconName);
+
+  // build slug from title/name
+  const slug = slugify(service.title || service.name || String(service.id));
 
   return (
-    <div className="card group h-full flex flex-col transition-all duration-300 hover:border-l-4 hover:border-l-primary-700">
-      <div className="p-6 flex-1 flex flex-col">
-        <div className="p-3 bg-primary-50 rounded-lg w-14 h-14 flex items-center justify-center mb-4 group-hover:bg-primary-100 transition-colors">
-          <IconComponent className="h-7 w-7 text-primary-700" />
+    <Link to={`/services/${slug}`} className="block group">
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg transition-all duration-300 h-full transform group-hover:-translate-y-1">
+        <div className="flex items-start gap-4">
+          <div className="flex-shrink-0 p-3 bg-primary-50 rounded-xl group-hover:bg-primary-100 transition-colors">
+            {IconComponent && <IconComponent className="h-6 w-6 text-primary-700" />}
+          </div>
+
+          <div className="min-w-0">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-primary-700 transition-colors line-clamp-2">
+              {service.title || service.name}
+            </h3>
+
+            <p className="text-gray-600 text-sm leading-relaxed line-clamp-3">
+              {service.description}
+            </p>
+          </div>
         </div>
-        
-        <h3 className="text-xl font-medium text-gray-900 mb-3">{service.title}</h3>
-        
-        <p className="text-gray-600 mb-4 flex-grow">{service.description}</p>
-        
-        <div className="flex flex-wrap gap-2 mb-4">
-          <span className="text-sm font-medium text-gray-700">
-            <span className="font-bold">Giá:</span> {service.price}
-          </span>
-          <br/>
-          <span className="text-sm font-medium text-gray-700">
-            <span className="font-bold">Thời lượng:</span> {service.duration}
-          </span>
-        </div>
-        
-        <Link 
-          to={`/services/${service.id}`}
-          className="group mt-auto inline-flex items-center text-primary-700 font-medium hover:text-primary-800"
-        >
-          <span>Tìm hiểu thêm</span>
-          <ArrowRight className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
-        </Link>
       </div>
-    </div>
+    </Link>
   );
 };
 
