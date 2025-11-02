@@ -164,15 +164,37 @@ class AppointmentSyncService {
     final chosenDate = date ?? now.add(const Duration(days: 1));
 
     // Conflict check: prevent overlapping bookings for the same lawyer at the same day/time
+    // Normalize both timeSlot values to time range format for comparison
+    final normalizedTimeSlot = SlotMapper.slotToTime(timeSlot);
+    final normalizedLawyerId = lawyerId.toString();
+    final normalizedChosenDate =
+        DateTime(chosenDate.year, chosenDate.month, chosenDate.day);
+
     final existing = await UserStorageService.getAppointments();
-    final hasConflict = existing.any((a) =>
-        a.lawyerId == lawyerId &&
-        a.appointmentDate.year == chosenDate.year &&
-        a.appointmentDate.month == chosenDate.month &&
-        a.appointmentDate.day == chosenDate.day &&
-        a.timeSlot == timeSlot &&
-        a.status != admin_appointment.AppointmentStatus.cancelled);
-    if (hasConflict) return false;
+    final hasConflict = existing.any((a) {
+      final aptLawyerId = a.lawyerId.toString();
+      final aptDate = DateTime(
+        a.appointmentDate.year,
+        a.appointmentDate.month,
+        a.appointmentDate.day,
+      );
+      final aptTimeSlot = SlotMapper.slotToTime(a.timeSlot);
+
+      return aptLawyerId == normalizedLawyerId &&
+          aptDate.year == normalizedChosenDate.year &&
+          aptDate.month == normalizedChosenDate.month &&
+          aptDate.day == normalizedChosenDate.day &&
+          aptTimeSlot == normalizedTimeSlot &&
+          aptTimeSlot.isNotEmpty &&
+          normalizedTimeSlot.isNotEmpty &&
+          a.status != admin_appointment.AppointmentStatus.cancelled;
+    });
+
+    if (hasConflict) {
+      print(
+          '⚠️ Conflict detected: Slot $normalizedTimeSlot already booked for lawyer $normalizedLawyerId on ${normalizedChosenDate.toString().split(' ')[0]}');
+      return false;
+    }
     final newApt = admin_appointment.Appointment(
       id: 'apt_${DateTime.now().millisecondsSinceEpoch}',
       customerId: customer.id,
@@ -222,18 +244,32 @@ class AppointmentSyncService {
   }) async {
     final occupiedSlots = <String>{};
 
+    // Normalize date to start of day for comparison
+    final normalizedDate = DateTime(date.year, date.month, date.day);
+    final normalizedLawyerId = lawyerId.toString();
+
     // Check local storage
     final localList = await UserStorageService.getAppointments();
-    final localMatches = localList.where((a) =>
-        a.lawyerId == lawyerId &&
-        a.appointmentDate.year == date.year &&
-        a.appointmentDate.month == date.month &&
-        a.appointmentDate.day == date.day &&
-        a.status != admin_appointment.AppointmentStatus.cancelled);
+    final localMatches = localList.where((a) {
+      final aptLawyerId = a.lawyerId.toString();
+      final aptDate = DateTime(
+        a.appointmentDate.year,
+        a.appointmentDate.month,
+        a.appointmentDate.day,
+      );
+      return aptLawyerId == normalizedLawyerId &&
+          aptDate.year == normalizedDate.year &&
+          aptDate.month == normalizedDate.month &&
+          aptDate.day == normalizedDate.day &&
+          a.status != admin_appointment.AppointmentStatus.cancelled;
+    });
 
     // Convert slot numbers to time ranges for comparison with UI slots
     for (final apt in localMatches) {
-      occupiedSlots.add(SlotMapper.slotToTime(apt.timeSlot));
+      final timeRange = SlotMapper.slotToTime(apt.timeSlot);
+      if (timeRange.isNotEmpty) {
+        occupiedSlots.add(timeRange);
+      }
     }
 
     // Also check API appointments (if available)
@@ -270,36 +306,44 @@ class AppointmentSyncService {
             final aptStatus = json['status'];
             final scheduledAt = json['scheduledAt'];
 
-            if (aptLawyerId == lawyerId &&
-                scheduledAt != null &&
-                aptSlot.isNotEmpty) {
-              // Parse date
-              DateTime? aptDate;
-              try {
-                aptDate = DateTime.parse(scheduledAt.toString());
-              } catch (_) {
-                continue;
+            // Compare lawyer IDs as strings
+            if (aptLawyerId != normalizedLawyerId ||
+                scheduledAt == null ||
+                aptSlot.isEmpty) {
+              continue;
+            }
+
+            // Parse date and normalize to start of day
+            DateTime? aptDate;
+            try {
+              final parsed = DateTime.parse(scheduledAt.toString());
+              aptDate = DateTime(parsed.year, parsed.month, parsed.day);
+            } catch (_) {
+              continue;
+            }
+
+            // Check if same day
+            if (aptDate.year == normalizedDate.year &&
+                aptDate.month == normalizedDate.month &&
+                aptDate.day == normalizedDate.day) {
+              // Check if not cancelled (status 3 or cancelled string)
+              bool isCancelled = false;
+              if (aptStatus is int) {
+                isCancelled = aptStatus == 3;
+              } else if (aptStatus is String) {
+                isCancelled = aptStatus.toLowerCase() == 'cancelled';
               }
 
-              // Check if same day
-              if (aptDate.year == date.year &&
-                  aptDate.month == date.month &&
-                  aptDate.day == date.day) {
-                // Check if not cancelled (status 3 or cancelled string)
-                bool isCancelled = false;
-                if (aptStatus is int) {
-                  isCancelled = aptStatus == 3;
-                } else if (aptStatus is String) {
-                  isCancelled = aptStatus.toLowerCase() == 'cancelled';
-                }
-
-                if (!isCancelled) {
-                  occupiedSlots.add(SlotMapper.slotToTime(aptSlot));
+              if (!isCancelled) {
+                final timeRange = SlotMapper.slotToTime(aptSlot);
+                if (timeRange.isNotEmpty) {
+                  occupiedSlots.add(timeRange);
                 }
               }
             }
-          } catch (_) {
+          } catch (e) {
             // Skip invalid appointment entries
+            print('Error processing appointment in getOccupiedTimeSlots: $e');
             continue;
           }
         }
@@ -309,6 +353,8 @@ class AppointmentSyncService {
       print('Failed to fetch occupied slots from API: $e');
     }
 
+    print(
+        '🔍 Occupied slots for lawyer $normalizedLawyerId on ${normalizedDate.toString().split(' ')[0]}: $occupiedSlots');
     return occupiedSlots;
   }
 

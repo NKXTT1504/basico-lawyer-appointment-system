@@ -198,6 +198,8 @@ class _BookingPageState extends State<BookingPage> {
 
         if (isSuccess) {
           setState(() => _loading = false);
+          // Reload occupied slots to reflect the new booking
+          await _loadOccupied();
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Đặt lịch thành công')),
@@ -223,6 +225,9 @@ class _BookingPageState extends State<BookingPage> {
       );
       if (!mounted) return;
       setState(() => _loading = false);
+      // Always reload occupied slots after booking attempt
+      await _loadOccupied();
+
       if (ok) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -232,10 +237,23 @@ class _BookingPageState extends State<BookingPage> {
           Navigator.of(context).pushReplacementNamed('/appointments');
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Khung giờ đã có người đặt')),
+        // Check if the slot is actually occupied now
+        final currentOccupied =
+            await AppointmentSyncService.getOccupiedTimeSlots(
+          lawyerId: widget.lawyerId,
+          date: _selectedDate,
         );
-        await _loadOccupied();
+        if (currentOccupied.contains(_selectedSlot)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Khung giờ đã có người đặt')),
+          );
+        } else {
+          // Slot is not actually occupied, might be a conflict check issue
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Không thể đặt lịch. Vui lòng thử lại.')),
+          );
+        }
       }
     } catch (e) {
       setState(() => _loading = false);
