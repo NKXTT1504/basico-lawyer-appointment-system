@@ -11,6 +11,7 @@ import '../../data/services/appointment_api_service.dart';
 import '../../../admin/data/services/user_storage_service.dart';
 import '../../../lawyer/data/services/lawyer_api_service.dart';
 import 'appointment_confirmation_page.dart';
+import '../../../../core/utils/slot_mapper.dart';
 
 class AppointmentListPage extends StatefulWidget {
   const AppointmentListPage({super.key});
@@ -40,12 +41,7 @@ class _BookingPageState extends State<BookingPage> {
   Set<String> _occupied = <String>{};
   double? _hourlyRate;
 
-  static const List<String> _slots = <String>[
-    '08:00 - 10:00',
-    '10:00 - 12:00',
-    '13:00 - 15:00',
-    '15:00 - 17:00',
-  ];
+  static List<String> get _slots => SlotMapper.allTimeRanges;
 
   @override
   void initState() {
@@ -167,11 +163,13 @@ class _BookingPageState extends State<BookingPage> {
     // Nếu chỉ 1 dịch vụ, đặt lịch trực tiếp
     setState(() => _loading = true);
     try {
+      // Convert time range to slot number for backend API
+      final slotNumber = SlotMapper.timeToSlot(_selectedSlot!);
       final appointmentData = {
         'userId': currentUser.id,
         'lawyerId': widget.lawyerId,
         'scheduledAt': _selectedDate.toIso8601String(),
-        'slot': _selectedSlot!,
+        'slot': slotNumber, // Send slot number (1, 2, 3, 4) to backend
         'spec': widget.services.isEmpty ? '' : widget.services.join(', '),
         'services': widget.services,
         'note': 'Đặt lịch từ mobile app',
@@ -374,9 +372,18 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
 
           // Parse the JSON to check userId before creating Appointment objects
           // Match by email since backend userId might be different from local ID
+          // Also filter out deleted appointments (isDel must be false or null)
           final List<Map<String, dynamic>> filteredJson = [];
 
           for (var json in appointmentsData) {
+            // Check if appointment is deleted (isDel must be false or null)
+            final isDel = json['isDel'];
+            final isDeleted = isDel == true || isDel == 'true';
+            if (isDeleted) {
+              print('⏭️ Skipping deleted appointment: ${json['id']}');
+              continue;
+            }
+
             final customerEmail = json['user']?['email']?.toString();
             print(
                 '🔍 Checking appointment - Email: $customerEmail, Current: ${currentUser.email}');

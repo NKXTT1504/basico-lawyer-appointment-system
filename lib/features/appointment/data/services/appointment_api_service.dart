@@ -3,6 +3,8 @@ import '../../../../core/network/api_services.dart';
 
 class AppointmentApiService {
   // Create appointment - từ Swagger Appointments API v1
+  // api_services.dart đã thêm prefix /api/appointments
+  // URL cuối: /api/appointments/api/Appointment/CREATE
   static Future<Response> createAppointment(
       Map<String, dynamic> appointmentData) async {
     return await Api.appointments
@@ -10,6 +12,8 @@ class AppointmentApiService {
   }
 
   // Get all appointments with user and lawyer info
+  // api_services.dart đã thêm prefix /api/appointments
+  // URL cuối: /api/appointments/api/AppointmentWithUserLawyer/GetAllAppointment
   static Future<Response> getAllAppointments() async {
     return await Api.appointments
         .get('/api/AppointmentWithUserLawyer/GetAllAppointment');
@@ -50,7 +54,6 @@ class PaymentApiService {
   // Gọi API tạo link thanh toán VNPay cho appointment
   static Future<Response> createVnpayPaymentUrl(
       Map<String, dynamic> paymentData) async {
-    // Sử dụng URL đúng như swagger: /api/Payments/create-url-for-appointment
     return await Api.appointments
         .post('/api/Payments/create-url-for-appointment', data: paymentData);
   }

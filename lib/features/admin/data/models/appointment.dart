@@ -109,7 +109,8 @@ class Appointment extends Equatable {
       lawyerId: parseId(json['lawyerId']),
       lawyerName: lawyerName,
       appointmentDate: parseDate(json['scheduledAt']),
-      timeSlot: parseString(json['slot']),
+      timeSlot: parseString(
+          json['slot']), // Keep as-is, conversion happens in display layer
       duration: '60m', // Default duration
       type: parseString(json['spec']),
       description: description,

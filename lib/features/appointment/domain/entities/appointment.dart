@@ -1,3 +1,5 @@
+import '../../../../core/utils/slot_mapper.dart';
+
 class Appointment {
   final String id;
   final String lawyerName;
@@ -43,8 +45,10 @@ class Appointment {
     final String date =
         '${scheduledDate.day}/${scheduledDate.month}/${scheduledDate.year}';
 
-    final String time =
+    // Map slot number from backend to time range for display
+    final slotFromBackend =
         json['time']?.toString() ?? json['slot']?.toString() ?? '';
+    final String time = SlotMapper.slotToTime(slotFromBackend);
 
     // Get day of week
     final days = [

@@ -44,6 +44,7 @@ class ApiServices {
   }
 
   // Appointments API - từ Swagger Appointments API v1
+  // Base URL là gateway, tất cả appointments endpoints cần prefix /api/appointments
   static Future<Response> appointmentsGet(String path,
       {Map<String, dynamic>? queryParameters, Options? options}) {
     return _apiClient.get('${API_URLS['APPOINTMENTS']}/api/appointments$path',
@@ -52,18 +53,21 @@ class ApiServices {
 
   static Future<Response> appointmentsPost(String path,
       {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) {
+    // Tất cả appointments endpoints cần prefix /api/appointments
     return _apiClient.post('${API_URLS['APPOINTMENTS']}/api/appointments$path',
         data: data, queryParameters: queryParameters, options: options);
   }
 
   static Future<Response> appointmentsPut(String path,
       {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) {
+    // Tất cả appointments endpoints cần prefix /api/appointments
     return _apiClient.put('${API_URLS['APPOINTMENTS']}/api/appointments$path',
         data: data, queryParameters: queryParameters, options: options);
   }
 
   static Future<Response> appointmentsDelete(String path,
       {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) {
+    // Tất cả appointments endpoints cần prefix /api/appointments
     return _apiClient.delete(
         '${API_URLS['APPOINTMENTS']}/api/appointments$path',
         data: data,

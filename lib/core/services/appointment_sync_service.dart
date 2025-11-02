@@ -3,6 +3,8 @@ import '../../features/appointment/domain/entities/appointment.dart'
 import '../../features/admin/data/models/appointment.dart' as admin_appointment;
 import '../../features/admin/data/services/user_storage_service.dart';
 import '../../features/admin/data/models/admin_user.dart' as admin_model;
+import '../utils/slot_mapper.dart';
+import '../../features/appointment/data/services/appointment_api_service.dart';
 
 class AppointmentSyncService {
   /// Convert from home appointment format to admin appointment format
@@ -212,18 +214,102 @@ class AppointmentSyncService {
   }
 
   /// Return occupied time slots for a lawyer on a specific day (not cancelled)
+  /// Converts slot numbers from backend/API to time ranges for UI display
+  /// Checks both API appointments and local storage
   static Future<Set<String>> getOccupiedTimeSlots({
     required String lawyerId,
     required DateTime date,
   }) async {
-    final list = await UserStorageService.getAppointments();
-    final dayMatches = list.where((a) =>
+    final occupiedSlots = <String>{};
+
+    // Check local storage
+    final localList = await UserStorageService.getAppointments();
+    final localMatches = localList.where((a) =>
         a.lawyerId == lawyerId &&
         a.appointmentDate.year == date.year &&
         a.appointmentDate.month == date.month &&
         a.appointmentDate.day == date.day &&
         a.status != admin_appointment.AppointmentStatus.cancelled);
-    return dayMatches.map((a) => a.timeSlot).toSet();
+
+    // Convert slot numbers to time ranges for comparison with UI slots
+    for (final apt in localMatches) {
+      occupiedSlots.add(SlotMapper.slotToTime(apt.timeSlot));
+    }
+
+    // Also check API appointments (if available)
+    try {
+      final apiAppointments = await AppointmentApiService.getAllAppointments();
+      if (apiAppointments.statusCode == 200) {
+        final responseData = apiAppointments.data;
+        List<dynamic> appointmentsData;
+
+        if (responseData is List) {
+          appointmentsData = responseData;
+        } else if (responseData is Map<String, dynamic>) {
+          final dynamic data = responseData['data'] ??
+              responseData['result'] ??
+              responseData['appointments'];
+          appointmentsData = data is List ? data : <dynamic>[];
+        } else {
+          appointmentsData = [];
+        }
+
+        // Filter by lawyer, date, status, and isDel
+        for (final json in appointmentsData) {
+          try {
+            // Skip deleted appointments (isDel must be false or null)
+            final isDel = json['isDel'];
+            final isDeleted = isDel == true || isDel == 'true';
+            if (isDeleted) {
+              continue;
+            }
+
+            final aptLawyerId = json['lawyerId']?.toString() ?? '';
+            final aptSlot =
+                json['slot']?.toString() ?? json['time']?.toString() ?? '';
+            final aptStatus = json['status'];
+            final scheduledAt = json['scheduledAt'];
+
+            if (aptLawyerId == lawyerId &&
+                scheduledAt != null &&
+                aptSlot.isNotEmpty) {
+              // Parse date
+              DateTime? aptDate;
+              try {
+                aptDate = DateTime.parse(scheduledAt.toString());
+              } catch (_) {
+                continue;
+              }
+
+              // Check if same day
+              if (aptDate.year == date.year &&
+                  aptDate.month == date.month &&
+                  aptDate.day == date.day) {
+                // Check if not cancelled (status 3 or cancelled string)
+                bool isCancelled = false;
+                if (aptStatus is int) {
+                  isCancelled = aptStatus == 3;
+                } else if (aptStatus is String) {
+                  isCancelled = aptStatus.toLowerCase() == 'cancelled';
+                }
+
+                if (!isCancelled) {
+                  occupiedSlots.add(SlotMapper.slotToTime(aptSlot));
+                }
+              }
+            }
+          } catch (_) {
+            // Skip invalid appointment entries
+            continue;
+          }
+        }
+      }
+    } catch (e) {
+      // If API call fails, just use local storage data
+      print('Failed to fetch occupied slots from API: $e');
+    }
+
+    return occupiedSlots;
   }
 
   /// Update appointment status by id

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/services/appointment_api_service.dart';
 import '../../../../core/services/appointment_sync_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../../core/utils/slot_mapper.dart';
 
 class PaymentReturnPage extends StatefulWidget {
   final Map<String, String>? queryParams;
@@ -111,11 +112,13 @@ class _PaymentReturnPageState extends State<PaymentReturnPage> {
 
       // Create appointment via API
       try {
+        // Convert time range to slot number for backend API
+        final slotNumber = SlotMapper.timeToSlot(selectedSlot);
         final appointmentData = {
           'userId': userId,
           'lawyerId': lawyerId,
           'scheduledAt': selectedDate.toIso8601String(),
-          'slot': selectedSlot,
+          'slot': slotNumber, // Send slot number (1, 2, 3, 4) to backend
           'spec': services.isEmpty ? '' : services.join(', '),
           'services': services,
           'note': notes.isEmpty
