@@ -28,9 +28,46 @@ class _LawyerDetailPageState extends State<LawyerDetailPage> {
     final res = await http.get(uri, headers: {'Accept': 'application/json'});
     if (res.statusCode == 200) {
       final data = json.decode(res.body);
-      final result = data['result'];
-      if (result != null) return Map<String, dynamic>.from(result);
-      throw Exception('Không tìm thấy hồ sơ luật sư với ID này');
+      final result = data['result'] ?? data;
+
+      // Try to fetch fullName from User API if not in profile
+      Map<String, dynamic> profile = Map<String, dynamic>.from(result);
+      final userId = profile['userId']?.toString() ??
+          profile['user']?['id']?.toString() ??
+          profile['User']?['Id']?.toString();
+
+      // If we don't have fullName in profile, fetch from User API
+      bool hasFullName = profile['user']?['fullName'] != null ||
+          profile['User']?['FullName'] != null ||
+          profile['fullName'] != null ||
+          profile['name'] != null;
+
+      if (userId != null && !hasFullName) {
+        try {
+          final userUri =
+              Uri.parse('https://localhost:5000/api/users/api/User/$userId');
+          final userRes =
+              await http.get(userUri, headers: {'Accept': 'application/json'});
+          if (userRes.statusCode == 200) {
+            final userData = json.decode(userRes.body);
+            final userResult = userData['result'] ?? userData;
+            if (userResult is Map && userResult['fullName'] != null) {
+              // Ensure user object exists in profile
+              if (profile['user'] == null) {
+                profile['user'] = {};
+              }
+              if (profile['user'] is! Map) {
+                profile['user'] = {};
+              }
+              profile['user']['fullName'] = userResult['fullName'];
+            }
+          }
+        } catch (e) {
+          print('Warning: Could not fetch user fullName: $e');
+        }
+      }
+
+      return profile;
     }
     throw Exception('Không lấy được thông tin luật sư');
   }
@@ -74,7 +111,22 @@ class _LawyerDetailPageState extends State<LawyerDetailPage> {
             return const Center(child: Text('Không có dữ liệu'));
           }
           final l = snapshot.data!;
-          final name = l['name'] ?? l['fullName'] ?? '';
+          // Try to get fullName from nested user object first
+          String? fullNameFromUser;
+          if (l['user'] is Map) {
+            fullNameFromUser =
+                (l['user']['fullName'] ?? l['user']['name'])?.toString();
+          } else if (l['User'] is Map) {
+            fullNameFromUser = (l['User']['FullName'] ??
+                    l['User']['Name'] ??
+                    l['User']['fullName'] ??
+                    l['User']['name'])
+                ?.toString();
+          }
+          final String name = fullNameFromUser?.isNotEmpty == true
+              ? fullNameFromUser!
+              : (l['name'] ?? l['fullName'] ?? 'Luật sư')?.toString() ??
+                  'Luật sư';
           final city = l['description'] ?? (l['address'] ?? '');
           final years = (l['expYears'] ?? l['experienceYears'] ?? 0).toString();
           final avatar = (l['img'] ?? l['imageUrl'] ?? '').isNotEmpty

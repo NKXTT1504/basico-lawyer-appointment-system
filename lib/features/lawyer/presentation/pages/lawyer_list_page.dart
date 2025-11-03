@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../admin/data/services/user_storage_service.dart';
 import '../../../admin/data/models/lawyer.dart' as model;
 import '../../data/services/lawyer_api_service.dart';
+import '../../../../core/network/api_services.dart';
 
 // Removed mock class; now reading real lawyers from storage
 
@@ -54,7 +55,7 @@ class _LawyerListPageState extends State<LawyerListPage> {
 
   Future<void> _load() async {
     try {
-      // Try to load from API first
+      // BƯỚC 1: Fetch lawyers từ Lawyer API
       final response = await LawyerApiService.getLawyers();
       if (response.statusCode == 200) {
         // Swagger may return either a raw list or a wrapped object
@@ -80,10 +81,62 @@ class _LawyerListPageState extends State<LawyerListPage> {
           lawyersData = <dynamic>[];
         }
 
-        final lawyers = lawyersData
-            .whereType<Map<String, dynamic>>()
-            .map((json) => model.Lawyer.fromJson(json))
-            .toList();
+        // BƯỚC 2: Fetch users từ User API để lấy fullName
+        Map<String, String> userFullNameMap = {};
+        try {
+          final usersResponse = await ApiServices.usersGet('/api/User');
+          if (usersResponse.statusCode == 200) {
+            final usersData = usersResponse.data;
+            List<dynamic> usersList = [];
+
+            if (usersData is List) {
+              usersList = usersData;
+            } else if (usersData is Map<String, dynamic>) {
+              final result = usersData['result'] ?? usersData['data'];
+              if (result is List) {
+                usersList = result;
+              }
+            }
+
+            // Map userId -> fullName
+            for (var user in usersList) {
+              if (user is Map<String, dynamic>) {
+                final userId = user['id']?.toString();
+                final fullName = user['fullName']?.toString();
+                if (userId != null && fullName != null && fullName.isNotEmpty) {
+                  userFullNameMap[userId] = fullName;
+                }
+              }
+            }
+          }
+        } catch (e) {
+          print('Warning: Could not fetch users for fullName: $e');
+        }
+
+        // BƯỚC 3: Enrich lawyers với fullName từ users
+        final lawyers =
+            lawyersData.whereType<Map<String, dynamic>>().map((json) {
+          // Try to get userId from lawyer profile
+          final userId = json['userId']?.toString() ??
+              json['user']?['id']?.toString() ??
+              json['User']?['Id']?.toString() ??
+              json['User']?['id']?.toString();
+
+          // If we have userId and fullName from users map, enrich the json
+          if (userId != null && userFullNameMap.containsKey(userId)) {
+            // Ensure user object exists in json
+            if (json['user'] == null) {
+              json['user'] = {};
+            }
+            if (json['user'] is! Map) {
+              json['user'] = {};
+            }
+            json['user']['fullName'] = userFullNameMap[userId];
+          }
+
+          return model.Lawyer.fromJson(json);
+        }).toList();
+
         setState(() {
           _allLawyers = lawyers;
           _filtered = lawyers;

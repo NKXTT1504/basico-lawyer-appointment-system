@@ -105,10 +105,26 @@ class Lawyer extends Equatable {
       }
     }
 
+    // Try to get fullName from nested user object first
+    String? fullNameFromUser;
+    if (json['user'] is Map) {
+      fullNameFromUser =
+          parseString(json['user']['fullName'] ?? json['user']['name']);
+    } else if (json['User'] is Map) {
+      fullNameFromUser = parseString(json['User']['FullName'] ??
+          json['User']['Name'] ??
+          json['User']['fullName'] ??
+          json['User']['name']);
+    }
+
     return Lawyer(
       id: parseId(json['id'] ?? json['lawyerId'] ?? json['userId']),
-      name: parseString(json['name'] ?? json['fullName']),
-      email: parseString(json['email'] ?? json['userEmail']),
+      name: (fullNameFromUser?.isNotEmpty == true
+              ? fullNameFromUser
+              : parseString(json['name'] ?? json['fullName'] ?? 'Luật sư')) ??
+          'Luật sư',
+      email: parseString(
+          json['email'] ?? json['userEmail'] ?? json['user']?['email']),
       phone: parseString(json['phone'] ?? json['phoneNumber']),
       address: parseString(json['address']),
       specialization: resolveSpecialization(json),

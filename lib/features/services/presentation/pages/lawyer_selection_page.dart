@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../lawyer/data/services/lawyer_api_service.dart';
-// removed unused import
+import '../../../../core/network/api_services.dart';
 
 class LawyerSelectionPage extends StatefulWidget {
   final List<String> services;
@@ -35,11 +35,68 @@ class _LawyerSelectionPageState extends State<LawyerSelectionPage> {
         _error = null;
       });
 
+      // BƯỚC 1: Fetch lawyers từ Lawyer API
       final response = await LawyerApiService.getLawyers();
       if (response.statusCode == 200) {
         final List<dynamic> data = _extractList(response.data);
-        final allLawyers =
-            data.map((json) => Lawyer.fromJson(_asMap(json))).toList();
+
+        // BƯỚC 2: Fetch users từ User API để lấy fullName
+        Map<String, String> userFullNameMap = {};
+        try {
+          final usersResponse = await ApiServices.usersGet('/api/User');
+          if (usersResponse.statusCode == 200) {
+            final usersData = usersResponse.data;
+            List<dynamic> usersList = [];
+
+            if (usersData is List) {
+              usersList = usersData;
+            } else if (usersData is Map<String, dynamic>) {
+              final result = usersData['result'] ?? usersData['data'];
+              if (result is List) {
+                usersList = result;
+              }
+            }
+
+            // Map userId -> fullName
+            for (var user in usersList) {
+              if (user is Map<String, dynamic>) {
+                final userId = user['id']?.toString();
+                final fullName = user['fullName']?.toString();
+                if (userId != null && fullName != null && fullName.isNotEmpty) {
+                  userFullNameMap[userId] = fullName;
+                }
+              }
+            }
+          }
+        } catch (e) {
+          print('Warning: Could not fetch users for fullName: $e');
+        }
+
+        // BƯỚC 3: Enrich lawyers với fullName từ users
+        final allLawyers = data.map((json) {
+          final jsonMap = _asMap(json);
+
+          // Try to get userId from lawyer profile
+          final userId = jsonMap['userId']?.toString() ??
+              jsonMap['user']?['id']?.toString() ??
+              jsonMap['User']?['Id']?.toString() ??
+              jsonMap['User']?['id']?.toString();
+
+          // If we have userId and fullName from users map, enrich the json
+          if (userId != null && userFullNameMap.containsKey(userId)) {
+            // Ensure user object exists in json
+            if (jsonMap['user'] == null) {
+              jsonMap['user'] = <String, dynamic>{};
+            }
+            if (jsonMap['user'] is! Map) {
+              jsonMap['user'] = <String, dynamic>{};
+            }
+            (jsonMap['user'] as Map<String, dynamic>)['fullName'] =
+                userFullNameMap[userId];
+          }
+
+          return Lawyer.fromJson(jsonMap);
+        }).toList();
 
         // Lọc luật sư theo lĩnh vực hoặc các dịch vụ đã chọn
         final selectedServiceNames =
@@ -398,15 +455,35 @@ class Lawyer {
   });
 
   factory Lawyer.fromJson(Map<String, dynamic> json) {
+    // Try to get fullName from nested user object first
+    String? fullNameFromUser;
+    if (json['user'] is Map) {
+      fullNameFromUser = json['user']['fullName']?.toString() ??
+          json['user']['name']?.toString();
+    } else if (json['User'] is Map) {
+      fullNameFromUser = json['User']['FullName']?.toString() ??
+          json['User']['Name']?.toString() ??
+          json['User']['fullName']?.toString() ??
+          json['User']['name']?.toString();
+    }
+
     return Lawyer(
       id: json['id']?.toString(),
-      name: json['name']?.toString(),
+      name: fullNameFromUser?.isNotEmpty == true
+          ? fullNameFromUser
+          : (json['name']?.toString() ??
+              json['fullName']?.toString() ??
+              'Luật sư'),
       specialization: json['specialization']?.toString(),
       description: json['description']?.toString(),
-      avatarUrl: json['avatarUrl']?.toString(),
+      avatarUrl: json['avatarUrl']?.toString() ?? json['img']?.toString(),
       experience: json['experience'] is int
           ? json['experience']
-          : int.tryParse(json['experience']?.toString() ?? ''),
+          : (json['expYears'] is int
+              ? json['expYears']
+              : int.tryParse(json['experience']?.toString() ??
+                  json['expYears']?.toString() ??
+                  '')),
       rating: json['rating'] is double
           ? json['rating']
           : double.tryParse(json['rating']?.toString() ?? ''),
