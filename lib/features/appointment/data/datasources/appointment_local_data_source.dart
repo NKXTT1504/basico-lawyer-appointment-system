@@ -24,6 +24,7 @@ class AppointmentLocalDataSourceImpl implements AppointmentLocalDataSource {
               time: appointment.time,
               dayOfWeek: appointment.dayOfWeek,
               service: appointment.service,
+              services: appointment.services,
               status: appointment.status,
               action: appointment.action,
             ))
@@ -45,6 +46,7 @@ class AppointmentLocalDataSourceImpl implements AppointmentLocalDataSource {
               time: appointment.time,
               dayOfWeek: appointment.dayOfWeek,
               service: appointment.service,
+              services: appointment.services,
               status: appointment.status,
               action: appointment.action,
             ))
@@ -67,6 +69,7 @@ class AppointmentLocalDataSourceImpl implements AppointmentLocalDataSource {
               time: appointment.time,
               dayOfWeek: appointment.dayOfWeek,
               service: appointment.service,
+              services: appointment.services,
               status: appointment.status,
               action: appointment.action,
             ))

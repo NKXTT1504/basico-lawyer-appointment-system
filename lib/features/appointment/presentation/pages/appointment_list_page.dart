@@ -394,6 +394,8 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
           final List<Map<String, dynamic>> filteredJson = [];
 
           for (var json in appointmentsData) {
+            print('\n🔍 Processing appointment: ${json['id']}');
+
             // Check if appointment is deleted (isDel must be false or null)
             final isDel = json['isDel'];
             final isDeleted = isDel == true || isDel == 'true';
@@ -402,20 +404,44 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
               continue;
             }
 
-            final customerEmail = json['user']?['email']?.toString();
-            print(
-                '🔍 Checking appointment - Email: $customerEmail, Current: ${currentUser.email}');
+            // Check multiple ways to get customer email
+            final customerEmail = json['user']?['email']?.toString() ??
+                json['User']?['Email']?.toString() ??
+                json['userId'];
+            print('  Customer Email/ID: $customerEmail');
+            print('  Current User Email: ${currentUser.email}');
+            print('  Current User ID: ${currentUser.id}');
 
-            final matches =
-                customerEmail?.toLowerCase() == currentUser.email.toLowerCase();
-            print('  Match: $matches');
+            // Try matching by email first
+            bool matches = false;
+            if (customerEmail != null &&
+                customerEmail.toString().contains('@')) {
+              matches = customerEmail.toString().toLowerCase() ==
+                  currentUser.email.toLowerCase();
+              print('  Match by email: $matches');
+            } else {
+              // Try matching by userId
+              final jsonUserId = json['userId']?.toString();
+              final currentUserId = currentUser.id.toString();
+              if (jsonUserId != null && jsonUserId == currentUserId) {
+                matches = true;
+                print('  Match by userId: true');
+              } else {
+                print(
+                    '  Match by userId: false (JSON: $jsonUserId, Current: $currentUserId)');
+              }
+            }
 
             if (matches) {
+              print('✅ Added appointment: ${json['id']}');
               filteredJson.add(json);
+            } else {
+              print('❌ Skipped appointment: ${json['id']} (no match)');
             }
           }
 
-          print('✅ Found ${filteredJson.length} appointments for current user');
+          print(
+              '\n✅ Found ${filteredJson.length} appointments for current user');
 
           final appointments = filteredJson
               .map((json) {

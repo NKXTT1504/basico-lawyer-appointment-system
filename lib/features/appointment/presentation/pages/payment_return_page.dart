@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/services/appointment_api_service.dart';
-import '../../../../core/services/appointment_sync_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../../../core/utils/slot_mapper.dart';
 
 class PaymentReturnPage extends StatefulWidget {
   final Map<String, String>? queryParams;
@@ -42,13 +40,21 @@ class _PaymentReturnPageState extends State<PaymentReturnPage> {
         } else if (orderInfo.startsWith('APPT-')) {
           orderId = orderInfo;
         }
+        // Try to extract from orderInfo format: "GD: APPT-xxx-xxx"
+        if (orderId == null || orderId.isEmpty) {
+          final match =
+              RegExp(r'(?:APPT|GD)[\s:-]*([A-Z0-9-]+)').firstMatch(orderInfo);
+          if (match != null) {
+            orderId = match.group(1);
+          }
+        }
       }
       final finalOrderId = orderId ?? 'UNKNOWN';
       _orderId = finalOrderId;
 
       if (responseCode == '00') {
-        // Payment successful
-        await _createAppointmentFromOrder(finalOrderId);
+        // Payment successful - verify với backend (giống React app)
+        await _verifyPaymentAndUpdateAppointment(params, finalOrderId);
       } else {
         // Payment failed
         setState(() {
@@ -75,113 +81,123 @@ class _PaymentReturnPageState extends State<PaymentReturnPage> {
     return params;
   }
 
-  Future<void> _createAppointmentFromOrder(String orderId) async {
+  Future<void> _verifyPaymentAndUpdateAppointment(
+      Map<String, String> params, String orderId) async {
     try {
-      // Retrieve stored booking data
-      final prefs = await SharedPreferences.getInstance();
-      final bookingDataStr = prefs.getString('pending_booking_$orderId');
+      // BƯỚC 1: Verify payment với backend (giống React app)
+      final verifyResponse =
+          await PaymentApiService.verifyPaymentReturn(params);
 
-      if (bookingDataStr == null) {
-        setState(() {
-          _processing = false;
-          _success = false;
-          _message = 'Không tìm thấy thông tin đặt lịch. Vui lòng đặt lại.';
-        });
-        return;
-      }
+      if (verifyResponse.statusCode == 200) {
+        final verifyData = verifyResponse.data;
+        bool isSuccess = false;
+        dynamic appointmentId;
 
-      final bookingData = bookingDataStr.split('|');
-      if (bookingData.length < 5) {
-        setState(() {
-          _processing = false;
-          _success = false;
-          _message = 'Dữ liệu đặt lịch không hợp lệ.';
-        });
-        return;
-      }
+        if (verifyData is Map<String, dynamic>) {
+          isSuccess = verifyData['status'] == 'success' ||
+              verifyData['isSuccess'] == true ||
+              verifyData['Success'] == true;
+          // Extract appointmentId from response
+          appointmentId = verifyData['appointmentId'] ??
+              verifyData['AppointmentId'] ??
+              verifyData['id'] ??
+              verifyData['Id'];
+        }
 
-      final userId = bookingData[0];
-      final lawyerId = bookingData[1];
-      final lawyerName = bookingData[2];
-      final selectedDate = DateTime.parse(bookingData[3]);
-      final selectedSlot = bookingData[4];
-      final services = bookingData.length > 5
-          ? bookingData[5].split(',').where((s) => s.isNotEmpty).toList()
-          : <String>[];
-      final notes = bookingData.length > 6 ? bookingData[6] : '';
-
-      // Create appointment via API
-      try {
-        // Convert time range to slot number for backend API
-        final slotNumber = SlotMapper.timeToSlot(selectedSlot);
-        final appointmentData = {
-          'userId': userId,
-          'lawyerId': lawyerId,
-          'scheduledAt': selectedDate.toIso8601String(),
-          'slot': slotNumber, // Send slot number (1, 2, 3, 4) to backend
-          'spec': services.isEmpty ? '' : services.join(', '),
-          'services': services,
-          'note': notes.isEmpty
-              ? 'Đặt lịch từ mobile app - Đã thanh toán cọc'
-              : notes,
-        };
-
-        final response =
-            await AppointmentApiService.createAppointment(appointmentData);
-
-        if (response.statusCode == 200) {
-          final responseData = response.data;
-          bool isSuccess = false;
-
-          if (responseData is Map<String, dynamic>) {
-            isSuccess = responseData['success'] == true ||
-                responseData['isSuccess'] == true ||
-                responseData['Success'] == true;
-          } else {
-            isSuccess = true;
-          }
-
-          if (isSuccess) {
-            // Clean up stored data
-            await prefs.remove('pending_booking_$orderId');
-
-            setState(() {
-              _processing = false;
-              _success = true;
-              _message = 'Thanh toán thành công! Lịch hẹn đã được tạo.';
-            });
-
-            // Navigate to appointments page after delay
-            Future.delayed(const Duration(seconds: 3), () {
-              if (mounted) {
-                context.go('/appointments');
-              }
-            });
-            return;
+        // Nếu không có appointmentId từ response, extract từ orderId
+        if (appointmentId == null) {
+          // orderId format: APPT-{appointmentId}-{timestamp}
+          final match = RegExp(r'APPT-(\d+)-').firstMatch(orderId);
+          if (match != null) {
+            appointmentId = int.tryParse(match.group(1)!);
           }
         }
-      } catch (e) {
-        print('API appointment creation failed: $e');
+
+        // Nếu vẫn không có, lấy từ SharedPreferences
+        if (appointmentId == null) {
+          final prefs = await SharedPreferences.getInstance();
+          final storedId = prefs.getString('payment_appointment_id_$orderId');
+          if (storedId != null) {
+            appointmentId = int.tryParse(storedId);
+          }
+        }
+
+        if (isSuccess && appointmentId != null) {
+          // Clean up stored data
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('payment_appointment_id_$orderId');
+
+          setState(() {
+            _processing = false;
+            _success = true;
+            _message = 'Thanh toán thành công! Lịch hẹn đã được xác nhận.';
+          });
+
+          // Navigate to appointments page after delay
+          Future.delayed(const Duration(seconds: 3), () {
+            if (mounted) {
+              context.go('/appointments');
+            }
+          });
+          return;
+        } else if (isSuccess) {
+          // Payment verified nhưng không tìm thấy appointmentId
+          setState(() {
+            _processing = false;
+            _success = true;
+            _message =
+                'Thanh toán thành công! Vui lòng kiểm tra lịch hẹn của bạn.';
+          });
+          Future.delayed(const Duration(seconds: 3), () {
+            if (mounted) {
+              context.go('/appointments');
+            }
+          });
+          return;
+        }
       }
 
-      // Fallback to local storage
-      final ok = await AppointmentSyncService.createBookingForLawyerMulti(
-        lawyerId: lawyerId,
-        lawyerName: lawyerName,
-        services: services,
-        date: selectedDate,
-        timeSlot: selectedSlot,
-      );
+      // Fallback: Nếu verify API fail, thử extract appointmentId từ orderId
+      final match = RegExp(r'APPT-(\d+)-').firstMatch(orderId);
+      if (match != null) {
+        final appointmentId = int.tryParse(match.group(1)!);
+        if (appointmentId != null) {
+          // Payment successful nhưng verify API failed - vẫn coi là success
+          // Backend sẽ tự update appointment status khi nhận IPN từ VNPay
+          setState(() {
+            _processing = false;
+            _success = true;
+            _message =
+                'Thanh toán thành công! Lịch hẹn sẽ được xác nhận trong giây lát.';
+          });
+          Future.delayed(const Duration(seconds: 3), () {
+            if (mounted) {
+              context.go('/appointments');
+            }
+          });
+          return;
+        }
+      }
 
-      await prefs.remove('pending_booking_$orderId');
+      // Nếu tất cả đều fail
+      setState(() {
+        _processing = false;
+        _success = false;
+        _message =
+            'Thanh toán đã thành công nhưng không thể xác minh. Vui lòng liên hệ hỗ trợ.';
+      });
+    } catch (e) {
+      print('Payment verification error: $e');
 
-      if (ok) {
+      // Fallback: Extract appointmentId từ orderId và coi là success
+      final match = RegExp(r'APPT-(\d+)-').firstMatch(orderId);
+      if (match != null) {
         setState(() {
           _processing = false;
           _success = true;
-          _message = 'Thanh toán thành công! Lịch hẹn đã được tạo.';
+          _message =
+              'Thanh toán thành công! Lịch hẹn sẽ được xác nhận trong giây lát.';
         });
-
         Future.delayed(const Duration(seconds: 3), () {
           if (mounted) {
             context.go('/appointments');
@@ -191,15 +207,9 @@ class _PaymentReturnPageState extends State<PaymentReturnPage> {
         setState(() {
           _processing = false;
           _success = false;
-          _message = 'Không thể tạo lịch hẹn. Vui lòng liên hệ hỗ trợ.';
+          _message = 'Lỗi xác minh thanh toán: $e';
         });
       }
-    } catch (e) {
-      setState(() {
-        _processing = false;
-        _success = false;
-        _message = 'Lỗi tạo lịch hẹn: $e';
-      });
     }
   }
 

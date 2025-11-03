@@ -64,13 +64,25 @@ class AppointmentSyncService {
     ];
     final dayOfWeek = weekdays[adminAppointment.appointmentDate.weekday % 7];
 
+    // Parse services from type (could be comma-separated)
+    final servicesList = adminAppointment.type
+        .split(',')
+        .map((s) => s.trim())
+        .where((s) => s.isNotEmpty)
+        .toList();
+    if (servicesList.isEmpty) {
+      servicesList.add(adminAppointment.type);
+    }
+
     return home_appointment.Appointment(
       id: adminAppointment.id,
       lawyerName: adminAppointment.lawyerName,
       date: date,
       time: adminAppointment.timeSlot,
       dayOfWeek: dayOfWeek,
-      service: adminAppointment.type,
+      service:
+          servicesList.isNotEmpty ? servicesList.first : adminAppointment.type,
+      services: servicesList,
       status: _convertStatusToHome(adminAppointment.status),
       action: adminAppointment.notes.isNotEmpty ? adminAppointment.notes : null,
     );

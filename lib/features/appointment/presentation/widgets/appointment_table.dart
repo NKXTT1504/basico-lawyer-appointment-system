@@ -133,7 +133,11 @@ class AppointmentTable extends StatelessWidget {
           ),
           Expanded(
             flex: 2,
-            child: _buildDataCell(appointment.service),
+            child: _buildDataCell(
+              appointment.services.isNotEmpty
+                  ? appointment.services.join(', ')
+                  : appointment.service,
+            ),
           ),
           Expanded(
             flex: 1,
@@ -258,13 +262,48 @@ class AppointmentTable extends StatelessWidget {
             ),
           ),
           SizedBox(height: screenHeight * 0.01), // 1% of screen height
-          Text(
-            'Dịch vụ: ${appointment.service}',
-            style: TextStyle(
-              fontSize: screenWidth * 0.035, // 3.5% of screen width
-              color: Colors.grey[600],
+          // Display all services
+          if (appointment.services.isNotEmpty) ...[
+            Text(
+              'Dịch vụ:',
+              style: TextStyle(
+                fontSize: screenWidth * 0.035,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[700],
+              ),
             ),
-          ),
+            SizedBox(height: screenHeight * 0.005),
+            // Show all services as chips or comma-separated
+            Wrap(
+              spacing: 4,
+              runSpacing: 4,
+              children: appointment.services.map((service) {
+                return Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.green.shade200, width: 1),
+                  ),
+                  child: Text(
+                    service,
+                    style: TextStyle(
+                      fontSize: screenWidth * 0.03,
+                      color: Colors.green.shade800,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ] else ...[
+            Text(
+              'Dịch vụ: ${appointment.service}',
+              style: TextStyle(
+                fontSize: screenWidth * 0.035, // 3.5% of screen width
+                color: Colors.grey[600],
+              ),
+            ),
+          ],
           if (appointment.action != null) ...[
             SizedBox(height: screenHeight * 0.01), // 1% of screen height
             Text(

@@ -57,4 +57,29 @@ class PaymentApiService {
     return await Api.appointments
         .post('/api/Payments/create-url-for-appointment', data: paymentData);
   }
+
+  // Verify payment return từ VNPay
+  static Future<Response> verifyPaymentReturn(
+      Map<String, String> queryParams) async {
+    final queryString = Uri(queryParameters: queryParams).query;
+    return await Api.appointments.get('/api/Payments/return?$queryString');
+  }
+
+  // Retry payment cho appointment đã tạo
+  static Future<Response> retryPayment(int appointmentId,
+      {required String returnUrl}) async {
+    return await Api.appointments.post(
+      '/api/Payments/retry-payment/$appointmentId',
+      data: {
+        'vendor': 'vnpay',
+        'returnUrl': returnUrl,
+      },
+    );
+  }
+
+  // Get payment by appointment ID
+  static Future<Response> getPaymentByAppointment(int appointmentId) async {
+    return await Api.appointments
+        .get('/api/Payments/by-appointment/$appointmentId');
+  }
 }

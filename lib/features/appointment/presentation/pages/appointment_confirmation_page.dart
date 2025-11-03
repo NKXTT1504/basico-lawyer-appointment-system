@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/utils/responsive_helper.dart';
+import '../../../../core/utils/slot_mapper.dart';
 import '../../data/services/appointment_api_service.dart';
 import '../../../admin/data/services/user_storage_service.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -64,21 +65,6 @@ class _AppointmentConfirmationPageState
     super.dispose();
   }
 
-  Future<void> _storeBookingData(String orderId, String userId) async {
-    final prefs = await SharedPreferences.getInstance();
-    // Store: userId|lawyerId|lawyerName|date|slot|services|notes
-    final data = [
-      userId,
-      widget.lawyerId,
-      widget.lawyerName,
-      widget.selectedDate.toIso8601String(),
-      widget.selectedSlot,
-      widget.services.join(','),
-      _notesController.text.trim(),
-    ].join('|');
-    await prefs.setString('pending_booking_$orderId', data);
-  }
-
   Future<void> _processPayment() async {
     setState(() => _loading = true);
 
@@ -92,44 +78,94 @@ class _AppointmentConfirmationPageState
         return;
       }
 
-      // Tạo payment request
+      // BƯỚC 1: Tạo appointment TRƯỚC (giống React web app)
+      // Convert time range to slot number for backend API
+      final slotNumber = SlotMapper.timeToSlot(widget.selectedSlot);
+      final appointmentData = {
+        'userId': currentUser.id,
+        'lawyerId': widget.lawyerId,
+        'scheduledAt': widget.selectedDate.toIso8601String(),
+        'slot': slotNumber.toString(),
+        'spec': widget.services.isEmpty ? '' : widget.services.join(', '),
+        'services': widget.services,
+        'note': _notesController.text.trim().isEmpty
+            ? 'Đặt lịch từ mobile app - Chờ thanh toán cọc'
+            : _notesController.text.trim(),
+      };
+
+      print('Creating appointment before payment...');
+      final appointmentResponse =
+          await AppointmentApiService.createAppointment(appointmentData);
+
+      // Extract appointmentId from response
+      dynamic appointmentId;
+      if (appointmentResponse.statusCode == 200 ||
+          appointmentResponse.statusCode == 201) {
+        final responseData = appointmentResponse.data;
+        if (responseData is Map<String, dynamic>) {
+          appointmentId = responseData['appointmentId'] ??
+              responseData['AppointmentId'] ??
+              responseData['id'] ??
+              responseData['Id'];
+        }
+      }
+
+      if (appointmentId == null) {
+        throw Exception('Không nhận được appointment ID từ server');
+      }
+
+      print('Appointment created with ID: $appointmentId');
+
+      // BƯỚC 2: Tạo payment URL với appointmentId
       final depositInVnd =
           (widget.depositAmount * 1000).toInt(); // Convert to VND
       final orderId =
-          'APPT-${widget.lawyerId}-${DateTime.now().millisecondsSinceEpoch}';
+          'APPT-$appointmentId-${DateTime.now().millisecondsSinceEpoch}';
 
-      // Store booking data temporarily for callback
-      await _storeBookingData(orderId, currentUser.id);
+      // Store appointmentId for payment return verification
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+          'payment_appointment_id_$orderId', appointmentId.toString());
 
       // Use web-compatible return URL
       final returnUrl = Uri.base.origin + '/payment-return';
 
       final paymentData = {
-        'vnpAmount': depositInVnd,
+        'vendor': 'vnpay', // Lowercase như React app
         'orderId': orderId,
-        'lawyerId': widget.lawyerId,
-        'userId': currentUser.id,
-        'orderInformation': 'Thanh toán cho mã GD: $orderId',
+        'lawyerId': int.tryParse(widget.lawyerId) ?? 0,
+        'appointmentId': appointmentId, // Gửi appointmentId
+        'durationHours': 1, // Mặc định 1 giờ (hoặc tính từ slot)
+        'orderInfo':
+            'Dat lich ${widget.services.join(", ")} - ${widget.lawyerName} - ${widget.selectedDate.day}/${widget.selectedDate.month}/${widget.selectedDate.year}',
         'returnUrl': returnUrl,
-        'vendor': 'VNPay', // Required by API
+        'amount': depositInVnd, // Send amount in VND
       };
 
+      print('Creating payment URL with data: $paymentData');
       final paymentResp =
           await PaymentApiService.createVnpayPaymentUrl(paymentData);
 
-      if (paymentResp.statusCode == 200) {
-        final paymentUrl = paymentResp.data is String
-            ? paymentResp.data as String
-            : paymentResp.data['paymentUrl'] as String?;
+      if (paymentResp.statusCode == 200 || paymentResp.statusCode == 201) {
+        // Response có thể là String (URL) hoặc Map với paymentUrl
+        String? paymentUrl;
+        if (paymentResp.data is String) {
+          paymentUrl = paymentResp.data as String;
+        } else if (paymentResp.data is Map) {
+          paymentUrl = paymentResp.data['paymentUrl'] ??
+              paymentResp.data['PaymentUrl'] ??
+              paymentResp.data['payment_url'];
+        }
 
         if (paymentUrl != null && paymentUrl.isNotEmpty) {
+          print('Redirecting to payment URL: $paymentUrl');
           if (await canLaunchUrl(Uri.parse(paymentUrl))) {
             await launchUrl(Uri.parse(paymentUrl),
                 mode: LaunchMode.externalApplication);
           } else {
             if (!mounted) return;
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Không mở được trang thanh toán')),
+              const SnackBar(content: Text('Không mở được trang thanh toán')),
             );
           }
         } else {
@@ -146,6 +182,7 @@ class _AppointmentConfirmationPageState
         );
       }
     } catch (e) {
+      print('Error in payment process: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Lỗi: $e')),

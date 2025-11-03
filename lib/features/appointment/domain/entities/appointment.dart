@@ -1,3 +1,4 @@
+import 'dart:convert';
 import '../../../../core/utils/slot_mapper.dart';
 
 class Appointment {
@@ -6,7 +7,8 @@ class Appointment {
   final String date;
   final String time;
   final String dayOfWeek;
-  final String service;
+  final String service; // For backward compatibility - first service or spec
+  final List<String> services; // All services
   final AppointmentStatus status;
   final String? action;
 
@@ -17,6 +19,7 @@ class Appointment {
     required this.time,
     required this.dayOfWeek,
     required this.service,
+    required this.services,
     required this.status,
     this.action,
   });
@@ -62,11 +65,62 @@ class Appointment {
     ];
     final String dayOfWeek = days[scheduledDate.weekday % 7];
 
-    // Get service
-    String service = json['service']?.toString() ??
-        (json['services'] != null && (json['services'] as List).isNotEmpty
-            ? (json['services'] as List).first.toString()
-            : json['spec']?.toString() ?? '');
+    // Parse services - can be a List, JSON string, or comma-separated string
+    List<String> servicesList = [];
+    if (json['services'] != null) {
+      if (json['services'] is List) {
+        servicesList = (json['services'] as List)
+            .map((s) => s.toString())
+            .where((s) => s.isNotEmpty)
+            .toList();
+      } else if (json['services'] is String) {
+        // Try to parse as JSON string first
+        try {
+          final str = json['services'] as String;
+          if (str.trim().startsWith('[')) {
+            // It's a JSON array string, decode it
+            final decoded = jsonDecode(str) as List;
+            servicesList = decoded
+                .map((s) => s.toString())
+                .where((s) => s.isNotEmpty)
+                .toList();
+          } else {
+            // It's a comma-separated string
+            servicesList = str
+                .split(',')
+                .map((s) => s.trim())
+                .where((s) => s.isNotEmpty)
+                .toList();
+          }
+        } catch (e) {
+          // If JSON parsing fails, try as comma-separated
+          final str = json['services'].toString();
+          servicesList = str
+              .split(',')
+              .map((s) => s.trim())
+              .where((s) => s.isNotEmpty)
+              .toList();
+        }
+      }
+    }
+
+    // Fallback to spec if services is empty
+    if (servicesList.isEmpty && json['spec'] != null) {
+      final spec = json['spec'].toString();
+      servicesList = spec
+          .split(',')
+          .map((s) => s.trim())
+          .where((s) => s.isNotEmpty)
+          .toList();
+    }
+
+    // If still empty, try the 'service' field
+    if (servicesList.isEmpty && json['service'] != null) {
+      servicesList = [json['service'].toString()];
+    }
+
+    // Get first service for backward compatibility
+    String service = servicesList.isNotEmpty ? servicesList.first : '';
 
     // Parse status
     AppointmentStatus status;
@@ -101,6 +155,7 @@ class Appointment {
       time: time,
       dayOfWeek: dayOfWeek,
       service: service,
+      services: servicesList,
       status: status,
       action: json['action']?.toString(),
     );

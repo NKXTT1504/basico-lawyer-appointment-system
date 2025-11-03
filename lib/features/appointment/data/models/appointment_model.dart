@@ -8,18 +8,39 @@ class AppointmentModel extends Appointment {
     required super.time,
     required super.dayOfWeek,
     required super.service,
+    required super.services,
     required super.status,
     super.action,
   });
 
   factory AppointmentModel.fromJson(Map<String, dynamic> json) {
+    // Parse services
+    List<String> servicesList = [];
+    if (json['services'] != null) {
+      if (json['services'] is List) {
+        servicesList =
+            (json['services'] as List).map((s) => s.toString()).toList();
+      } else if (json['services'] is String) {
+        servicesList = (json['services'] as String)
+            .split(',')
+            .map((s) => s.trim())
+            .toList();
+      }
+    }
+    if (servicesList.isEmpty && json['service'] != null) {
+      servicesList = [json['service'] as String];
+    }
+
     return AppointmentModel(
       id: json['id'] as String,
       lawyerName: json['lawyerName'] as String,
       date: json['date'] as String,
       time: json['time'] as String,
       dayOfWeek: json['dayOfWeek'] as String,
-      service: json['service'] as String,
+      service: servicesList.isNotEmpty
+          ? servicesList.first
+          : (json['service'] as String? ?? ''),
+      services: servicesList,
       status: AppointmentStatus.values.firstWhere(
         (e) => e.name == json['status'],
         orElse: () => AppointmentStatus.pending,
@@ -49,6 +70,7 @@ class AppointmentModel extends Appointment {
       time: appointment.time,
       dayOfWeek: appointment.dayOfWeek,
       service: appointment.service,
+      services: appointment.services,
       status: appointment.status,
       action: appointment.action,
     );
