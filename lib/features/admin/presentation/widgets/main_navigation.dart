@@ -115,61 +115,102 @@ class _MainNavigationState extends State<MainNavigation> {
 
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // Mobile: use Drawer + AppBar
+    // Mobile: use BottomNavigationBar (mobile app style)
     if (screenWidth < 800) {
-      final String pageTitle = _getMobileTitle(widget.currentPath, role);
+      final navItems = _getBottomNavItems(role);
+      final currentIndex = _getCurrentBottomNavIndex(role);
       final bool isAdminSubPage = widget.currentPath == '/admin/appointments' ||
           widget.currentPath == '/admin/customers' ||
           widget.currentPath == '/admin/lawyers';
+
       return Scaffold(
         appBar: AppBar(
-          backgroundColor: Colors.blue[600],
-          foregroundColor: Colors.white,
+          backgroundColor: Colors.white,
+          foregroundColor: Colors.black87,
           elevation: 0,
+          automaticallyImplyLeading: false,
           leading: isAdminSubPage
               ? IconButton(
-                  icon: const Icon(Icons.arrow_back),
+                  icon: const Icon(Icons.arrow_back, color: Colors.black87),
                   onPressed: () => context.go('/admin/dashboard'),
                   tooltip: 'Về Dashboard',
                 )
-              : Builder(
-                  builder: (context) => Row(
-                    children: [
-                      IconButton(
-                        icon: const Icon(Icons.menu),
-                        tooltip: 'Menu',
-                        onPressed: () => Scaffold.of(context).openDrawer(),
+              : null,
+          title: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'WELCOME BACK',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[600],
+                        fontWeight: FontWeight.w500,
                       ),
-                      const Icon(Icons.gavel, size: 18, color: Colors.white),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      userName.length > 20
+                          ? '${userName.substring(0, 20)}...'
+                          : userName,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              CircleAvatar(
+                radius: 20,
+                backgroundColor: Colors.blue[100],
+                child: Icon(
+                  _getUserIcon(role),
+                  color: Colors.blue[600],
+                  size: 20,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert, color: Colors.black87),
+              onSelected: (value) {
+                if (value == 'refresh') {
+                  context.go(widget.currentPath);
+                } else if (value == 'logout') {
+                  _logout();
+                }
+              },
+              itemBuilder: (context) => [
+                if (role != UserRole.customer)
+                  const PopupMenuItem(
+                    value: 'refresh',
+                    child: Row(
+                      children: [
+                        Icon(Icons.refresh, size: 20),
+                        SizedBox(width: 8),
+                        Text('Làm mới'),
+                      ],
+                    ),
+                  ),
+                const PopupMenuItem(
+                  value: 'logout',
+                  child: Row(
+                    children: [
+                      Icon(Icons.logout, size: 20),
+                      SizedBox(width: 8),
+                      Text('Đăng xuất'),
                     ],
                   ),
                 ),
-          leadingWidth: isAdminSubPage ? null : 72,
-          centerTitle: true,
-          title: Text(pageTitle),
-          actions: role == UserRole.customer
-              ? const []
-              : [
-                  IconButton(
-                    icon: const Icon(Icons.refresh),
-                    onPressed: () => context.go(widget.currentPath),
-                    tooltip: 'Làm mới',
-                  ),
-                  PopupMenuButton<String>(
-                    onSelected: (value) {
-                      if (value == 'logout') {
-                        _logout();
-                      }
-                    },
-                    itemBuilder: (context) => const [
-                      PopupMenuItem(value: 'logout', child: Text('Đăng xuất')),
-                    ],
-                  ),
-                ],
-        ),
-        drawer: Drawer(
-          backgroundColor: Colors.white,
-          child: _buildDrawerContent(role, userName),
+              ],
+            ),
+          ],
         ),
         body: Stack(
           children: [
@@ -177,6 +218,49 @@ class _MainNavigationState extends State<MainNavigation> {
             // Hiển thị floating chat button cho customer
             if (role == UserRole.customer) const FloatingChatButton(),
           ],
+        ),
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: currentIndex,
+          onTap: (index) {
+            final item = navItems[index];
+            final path = item['path'] as String?;
+            if (path != null) {
+              context.go(path);
+            } else {
+              // Settings item - show popup menu
+              showModalBottomSheet(
+                context: context,
+                builder: (context) => Container(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.logout),
+                        title: const Text('Đăng xuất'),
+                        onTap: () {
+                          Navigator.pop(context);
+                          _logout();
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+          },
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: Colors.blue[600],
+          unselectedItemColor: Colors.grey[600],
+          selectedFontSize: 12,
+          unselectedFontSize: 12,
+          iconSize: 24,
+          items: navItems.map((item) {
+            return BottomNavigationBarItem(
+              icon: Icon(item['icon'] as IconData),
+              label: item['label'] as String,
+            );
+          }).toList(),
         ),
       );
     }
@@ -316,97 +400,6 @@ class _MainNavigationState extends State<MainNavigation> {
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-
-  // Drawer content for mobile
-  Widget _buildDrawerContent(UserRole role, String userName) {
-    return SafeArea(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Container(
-            color: Colors.blue[600],
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: 22,
-                  backgroundColor: Colors.white,
-                  child: Icon(_getUserIcon(role),
-                      color: Colors.blue[600], size: 22),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FutureBuilder<User?>(
-                    future: UserStorageService.getCurrentUser(),
-                    builder: (context, snapshot) {
-                      final displayName = snapshot.data?.name ?? userName;
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            displayName,
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          Text(_getRoleText(role),
-                              style: const TextStyle(
-                                  color: Colors.white70, fontSize: 12)),
-                        ],
-                      );
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView(
-              children: _buildNavigationItems(role).map((w) {
-                if (w is Container) {
-                  final listTile = (w.child as ListTile);
-                  final Icon? oldIcon = listTile.leading is Icon
-                      ? listTile.leading as Icon
-                      : null;
-                  final Text? oldTitle =
-                      listTile.title is Text ? listTile.title as Text : null;
-                  return ListTile(
-                    leading: oldIcon != null
-                        ? Icon(oldIcon.icon,
-                            color: Colors.black87, size: oldIcon.size)
-                        : listTile.leading,
-                    title: Text(
-                      oldTitle?.data ?? '',
-                      style: const TextStyle(
-                          color: Colors.black87,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500),
-                    ),
-                    onTap: () {
-                      Navigator.of(context).pop();
-                      listTile.onTap?.call();
-                    },
-                  );
-                }
-                return w;
-              }).toList(),
-            ),
-          ),
-          if (_currentUser != null)
-            ListTile(
-              leading: const Icon(Icons.logout, color: Colors.black87),
-              title: const Text('Đăng xuất',
-                  style: TextStyle(color: Colors.black87)),
-              onTap: () {
-                Navigator.of(context).pop();
-                _logout();
-              },
-            ),
         ],
       ),
     );
@@ -568,20 +561,129 @@ class _MainNavigationState extends State<MainNavigation> {
     }
   }
 
-  String _getMobileTitle(String currentPath, UserRole role) {
+  List<Map<String, dynamic>> _getBottomNavItems(UserRole role) {
     if (role == UserRole.admin) {
-      switch (currentPath) {
-        case '/admin/appointments':
-          return 'Quản lý đặt lịch';
-        case '/admin/customers':
-          return 'Quản lý khách hàng';
-        case '/admin/lawyers':
-          return 'Quản lý luật sư';
-        case '/admin/dashboard':
-          return 'Dashboard';
-      }
-      return 'Admin';
+      return [
+        {
+          'icon': Icons.dashboard,
+          'label': 'Dashboard',
+          'path': '/admin/dashboard',
+        },
+        {
+          'icon': Icons.calendar_today,
+          'label': 'Đặt lịch',
+          'path': '/admin/appointments',
+        },
+        {
+          'icon': Icons.people,
+          'label': 'Khách hàng',
+          'path': '/admin/customers',
+        },
+        {
+          'icon': Icons.gavel,
+          'label': 'Luật sư',
+          'path': '/admin/lawyers',
+        },
+        {
+          'icon': Icons.settings,
+          'label': 'Settings',
+          'path': null, // Will show settings menu
+        },
+      ];
+    } else if (role == UserRole.customer) {
+      return [
+        {
+          'icon': Icons.home,
+          'label': 'Home',
+          'path': '/home',
+        },
+        {
+          'icon': Icons.calendar_today,
+          'label': 'Đặt lịch',
+          'path': '/appointments',
+        },
+        {
+          'icon': Icons.gavel,
+          'label': 'Luật sư',
+          'path': '/lawyers',
+        },
+        {
+          'icon': Icons.person,
+          'label': 'Profile',
+          'path': '/profile',
+        },
+        {
+          'icon': Icons.chat,
+          'label': 'Chat',
+          'path': '/chat',
+        },
+      ];
+    } else if (role == UserRole.lawyer) {
+      return [
+        {
+          'icon': Icons.dashboard,
+          'label': 'Dashboard',
+          'path': '/lawyer/dashboard',
+        },
+        {
+          'icon': Icons.calendar_today,
+          'label': 'Lịch hẹn',
+          'path': '/lawyer/appointments',
+        },
+        {
+          'icon': Icons.person,
+          'label': 'Profile',
+          'path': '/lawyer/profile',
+        },
+        {
+          'icon': Icons.settings,
+          'label': 'Settings',
+          'path': null,
+        },
+      ];
     }
-    return _getRoleText(role);
+    return [];
+  }
+
+  int _getCurrentBottomNavIndex(UserRole role) {
+    final navItems = _getBottomNavItems(role);
+    final currentPath = widget.currentPath;
+
+    // Exact match first
+    for (int i = 0; i < navItems.length; i++) {
+      final path = navItems[i]['path'] as String?;
+      if (path != null && currentPath == path) {
+        return i;
+      }
+    }
+
+    // Prefix match for admin sub-pages
+    if (role == UserRole.admin) {
+      if (currentPath.startsWith('/admin/appointments') ||
+          currentPath.startsWith('/admin/customers') ||
+          currentPath.startsWith('/admin/lawyers')) {
+        for (int i = 0; i < navItems.length; i++) {
+          final path = navItems[i]['path'] as String?;
+          if (path != null && currentPath.startsWith(path)) {
+            return i;
+          }
+        }
+      }
+      if (currentPath.startsWith('/admin/')) {
+        return 0; // Dashboard
+      }
+    } else if (role == UserRole.customer) {
+      if (currentPath.startsWith('/appointments')) return 1;
+      if (currentPath.startsWith('/lawyers')) return 2;
+      if (currentPath.startsWith('/profile')) return 3;
+      if (currentPath.startsWith('/chat')) return 4;
+      if (currentPath.startsWith('/home')) return 0;
+    } else if (role == UserRole.lawyer) {
+      if (currentPath.startsWith('/lawyer/appointments')) return 1;
+      if (currentPath.startsWith('/lawyer/profile')) return 2;
+      if (currentPath.startsWith('/lawyer/')) return 0; // Dashboard
+    }
+
+    return 0; // Default to first item
   }
 }

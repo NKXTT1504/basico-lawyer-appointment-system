@@ -104,4 +104,13 @@ class AdminApiService {
   Future<Response> getAppointmentsByLawyer({required int lawyerId}) =>
       Api.appointments
           .get('/api/AppointmentWithUserLawyer/by-lawyer/$lawyerId');
+
+  // Dashboard statistics (Users API)
+  Future<Response> getDashboardStats({String? fromDate, String? toDate}) {
+    final params = <String, dynamic>{};
+    if (fromDate != null && fromDate.isNotEmpty) params['fromDate'] = fromDate;
+    if (toDate != null && toDate.isNotEmpty) params['toDate'] = toDate;
+    return Api.users.get('/api/Dashboard/statistics',
+        queryParameters: params.isEmpty ? null : params);
+  }
 }

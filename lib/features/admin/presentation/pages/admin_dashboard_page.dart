@@ -6,7 +6,7 @@ import '../../data/models/admin_user.dart';
 import '../../data/models/appointment.dart';
 import '../../data/models/customer.dart';
 import '../../data/models/lawyer.dart';
-import '../../../../core/services/admin_report_service.dart';
+// import '../../../../core/services/admin_report_service.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -36,6 +36,15 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
   late DateTime _monthStart;
   late DateTime _nextMonthStart;
   DateTime? _selectedMonth; // month anchor for monthlyMode
+  // Chart data (last 7 days)
+  // 1) Xu hướng Thanh Toán Hằng Ngày (số tiền)
+  List<double> _seriesPaymentAmount = [];
+  // 2) Xu hướng Lịch Hẹn Hằng Ngày (số lượng)
+  List<double> _seriesAppointmentCount = [];
+  // 3) Phân Phối Đánh Giá (1..5 sao)
+  List<double> _barRatings = [0, 0, 0, 0, 0];
+  // 4) Thanh Toán Theo Nhà Cung Cấp
+  List<_BarItem> _barProviders = [];
 
   @override
   void initState() {
@@ -142,7 +151,83 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         print(
             '✅ Successfully parsed: ${customers.length} customers, ${lawyers.length} lawyers, ${appointments.length} appointments');
 
-        // Calculate statistics
+        // Try DashboardStatisticsDto
+        try {
+          final statsResp = await adminApi.getDashboardStats();
+          if (statsResp.statusCode == 200) {
+            final body = statsResp.data;
+            final stats = (body is Map<String, dynamic>)
+                ? (body['result'] as Map<String, dynamic>? ?? body)
+                : <String, dynamic>{};
+            final payments = stats['payments'] as Map<String, dynamic>? ??
+                stats['Payments'] as Map<String, dynamic>? ??
+                <String, dynamic>{};
+            final appointmentsStat =
+                stats['appointments'] as Map<String, dynamic>? ??
+                    stats['Appointments'] as Map<String, dynamic>? ??
+                    <String, dynamic>{};
+            final reviews = stats['reviews'] as Map<String, dynamic>? ??
+                stats['Reviews'] as Map<String, dynamic>? ??
+                <String, dynamic>{};
+
+            // 1) Payments.DailyStatistics -> _seriesPaymentAmount
+            final dailyPay = payments['dailyStatistics'] as List? ??
+                payments['DailyStatistics'] as List? ??
+                const [];
+            final List<double> paySeries = [];
+            for (final d in dailyPay) {
+              if (d is Map) {
+                final amount = d['amount'] ?? d['Amount'] ?? 0;
+                paySeries.add((amount is num) ? amount.toDouble() : 0);
+              }
+            }
+            if (paySeries.isNotEmpty) {
+              _seriesPaymentAmount = paySeries;
+            }
+
+            // 2) Appointments.DailyStatistics -> _seriesAppointmentCount
+            final dailyApt = appointmentsStat['dailyStatistics'] as List? ??
+                appointmentsStat['DailyStatistics'] as List? ??
+                const [];
+            final List<double> aptSeries = [];
+            for (final d in dailyApt) {
+              if (d is Map) {
+                final count = d['count'] ?? d['Count'] ?? 0;
+                aptSeries.add((count is num) ? count.toDouble() : 0);
+              }
+            }
+            if (aptSeries.isNotEmpty) {
+              _seriesAppointmentCount = aptSeries;
+            }
+
+            // 3) Reviews.RatingDistribution -> _barRatings [1..5]
+            final ratingDist =
+                reviews['ratingDistribution'] ?? reviews['RatingDistribution'];
+            if (ratingDist is Map) {
+              final tmp = List<double>.filled(5, 0);
+              ratingDist.forEach((k, v) {
+                final key = int.tryParse(k.toString()) ?? 0;
+                if (key >= 1 && key <= 5) {
+                  tmp[key - 1] = (v is num) ? v.toDouble() : 0;
+                }
+              });
+              _barRatings = tmp;
+            }
+
+            // 4) Payments.CountByVendor -> _barProviders
+            final countByVendor =
+                payments['countByVendor'] ?? payments['CountByVendor'];
+            if (countByVendor is Map) {
+              _barProviders = [];
+              countByVendor.forEach((k, v) {
+                _barProviders
+                    .add(_BarItem(k.toString(), (v is num) ? v.toDouble() : 0));
+              });
+            }
+          }
+        } catch (_) {}
+
+        // Calculate statistics (fallback)
         final now = DateTime.now();
         _selectedMonth ??= DateTime(now.year, now.month);
         _monthStart = DateTime(_selectedMonth!.year, _selectedMonth!.month);
@@ -267,6 +352,36 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       } else {
         _totalRevenue = revenue;
       }
+    });
+
+    _computeSeries();
+  }
+
+  void _computeSeries() {
+    // Build 7-day series ending today
+    final now = DateTime.now();
+    List<double> paymentAmount = List.filled(7, 0);
+    List<double> apptCount = List.filled(7, 0);
+
+    bool _sameDay(DateTime a, DateTime b) =>
+        a.year == b.year && a.month == b.month && a.day == b.day;
+
+    for (int i = 0; i < 7; i++) {
+      final day = DateTime(now.year, now.month, now.day)
+          .subtract(Duration(days: 6 - i));
+      // appointments
+      final dayApts =
+          _allAppointments.where((a) => _sameDay(a.appointmentDate, day));
+      apptCount[i] = dayApts.length.toDouble();
+      paymentAmount[i] = dayApts
+          .where((a) => a.status == AppointmentStatus.completed)
+          .fold<double>(0, (sum, a) => sum + (a.fee.isFinite ? a.fee : 0));
+      // ratings / providers fallback left to zeros
+    }
+
+    setState(() {
+      _seriesPaymentAmount = paymentAmount;
+      _seriesAppointmentCount = apptCount;
     });
   }
 
@@ -555,8 +670,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
             SizedBox(height: isMobile ? 20 : 24),
 
-            // Revenue overview (moved to top KPIs)
-            const SizedBox.shrink(),
+            // Charts grid
+            _buildChartsGrid(isMobile),
 
             SizedBox(height: isMobile ? 20 : 24),
 
@@ -676,6 +791,127 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
+  // Charts
+  Widget _buildChartsGrid(bool isMobile) {
+    return LayoutBuilder(builder: (context, constraints) {
+      int cross = isMobile ? 2 : 4;
+      final cards = <Widget>[
+        _chartCard('Xu hướng thanh toán hằng ngày', _seriesPaymentAmount,
+            prefix: '₫'),
+        _chartCard('Xu hướng lịch hẹn hằng ngày', _seriesAppointmentCount,
+            prefix: ''),
+        _barChartCard('Phân phối đánh giá',
+            labels: const ['1 sao', '2 sao', '3 sao', '4 sao', '5 sao'],
+            values: _barRatings,
+            color: Colors.orange),
+        _barChartCard('Thanh toán theo nhà cung cấp',
+            labels: _barProviders.map((e) => e.label).toList(),
+            values: _barProviders.map((e) => e.value).toList(),
+            color: Colors.purple),
+      ];
+      return GridView.count(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisCount: cross,
+        crossAxisSpacing: isMobile ? 12 : 16,
+        mainAxisSpacing: isMobile ? 12 : 16,
+        childAspectRatio: isMobile ? 1.4 : 1.8,
+        children: cards,
+      );
+    });
+  }
+
+  Widget _chartCard(String title, List<double> series,
+      {String prefix = '', Color? color}) {
+    final theme = Theme.of(context);
+    final last = series.isNotEmpty ? series.last : 0;
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            '$prefix${last.toStringAsFixed(0)}',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: color ?? Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: MiniLineChart(
+              data: series,
+              strokeColor: (color ?? Colors.blue[600])!,
+              fillColor: (color ?? Colors.blue[200]!).withOpacity(0.25),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _barChartCard(String title,
+      {required List<String> labels,
+      required List<double> values,
+      required Color color}) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: theme.textTheme.titleSmall?.copyWith(
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Expanded(
+            child: MiniBarChart(
+              labels: labels,
+              values: values,
+              barColor: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // sparkline classes moved to bottom-level
+
   Widget _buildStatusCard(
       String title, String value, Color color, IconData icon) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -780,94 +1016,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     );
   }
 
-  Widget _buildRevenueSection(bool isMobile) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Tổng quan doanh thu',
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: Colors.blue[800],
-                fontSize: isMobile ? 18 : 20,
-              ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _buildRevenueCard(
-                'Tổng doanh thu',
-                '₫${_totalRevenue.toStringAsFixed(0)}',
-                Icons.trending_up,
-                Colors.green,
-                isMobile,
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildRevenueCard(
-                'Doanh thu tháng này',
-                '₫${_monthlyRevenue.toStringAsFixed(0)}',
-                Icons.calendar_month,
-                Colors.blue,
-                isMobile,
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
+  // (legacy) revenue section retained for future; not used in mobile layout
 
-  Widget _buildRevenueCard(
-      String title, String value, IconData icon, Color color, bool isMobile) {
-    return Container(
-      padding: EdgeInsets.all(isMobile ? 16 : 20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            spreadRadius: 1,
-            blurRadius: 4,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, color: color, size: isMobile ? 20 : 24),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: isMobile ? 12 : 14,
-                    color: Colors.grey[600],
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: isMobile ? 18 : 22,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // _buildRevenueCard kept for reference (no longer used)
 
   Widget _buildRecentActivitySection(bool isMobile) {
     return Column(
@@ -1100,4 +1251,135 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         return Colors.red;
     }
   }
+}
+
+// Lightweight sparkline chart (top-level)
+class MiniLineChart extends StatelessWidget {
+  final List<double> data;
+  final Color strokeColor;
+  final Color fillColor;
+  const MiniLineChart(
+      {super.key,
+      required this.data,
+      required this.strokeColor,
+      required this.fillColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _MiniLineChartPainter(data, strokeColor, fillColor),
+      size: Size.infinite,
+    );
+  }
+}
+
+class _MiniLineChartPainter extends CustomPainter {
+  final List<double> data;
+  final Color strokeColor;
+  final Color fillColor;
+  _MiniLineChartPainter(this.data, this.strokeColor, this.fillColor);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (data.isEmpty) return;
+    final maxV = data.reduce((a, b) => a > b ? a : b);
+    final minV = data.reduce((a, b) => a < b ? a : b);
+    final range = (maxV - minV).abs() < 1e-6 ? 1.0 : (maxV - minV);
+
+    final path = Path();
+    final fillPath = Path();
+    final dx = size.width / (data.length - 1);
+    for (int i = 0; i < data.length; i++) {
+      final x = i * dx;
+      final norm = (data[i] - minV) / range;
+      final y = size.height - norm * size.height;
+      if (i == 0) {
+        path.moveTo(x, y);
+        fillPath.moveTo(x, size.height);
+        fillPath.lineTo(x, y);
+      } else {
+        path.lineTo(x, y);
+        fillPath.lineTo(x, y);
+      }
+    }
+    fillPath.lineTo(size.width, size.height);
+    fillPath.close();
+
+    final fillPaint = Paint()
+      ..style = PaintingStyle.fill
+      ..color = fillColor;
+    final strokePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2
+      ..color = strokeColor
+      ..isAntiAlias = true;
+
+    canvas.drawPath(fillPath, fillPaint);
+    canvas.drawPath(path, strokePaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _MiniLineChartPainter oldDelegate) {
+    return oldDelegate.data != data ||
+        oldDelegate.strokeColor != strokeColor ||
+        oldDelegate.fillColor != fillColor;
+  }
+}
+
+// Lightweight vertical bar chart (top-level)
+class MiniBarChart extends StatelessWidget {
+  final List<String> labels;
+  final List<double> values;
+  final Color barColor;
+  const MiniBarChart(
+      {super.key,
+      required this.labels,
+      required this.values,
+      required this.barColor});
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, c) {
+      final maxV =
+          values.isEmpty ? 1.0 : values.reduce((a, b) => a > b ? a : b);
+      final barW = (c.maxWidth / (values.length * 2)).clamp(6.0, 24.0);
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: List.generate(values.length, (i) {
+          final h = maxV <= 0 ? 0.0 : (values[i] / maxV) * (c.maxHeight - 24);
+          return Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Container(
+                width: barW,
+                height: h,
+                decoration: BoxDecoration(
+                  color: barColor.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              const SizedBox(height: 6),
+              SizedBox(
+                width: barW * 2,
+                child: Text(
+                  labels.length > i ? labels[i] : '',
+                  style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                  textAlign: TextAlign.center,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          );
+        }),
+      );
+    });
+  }
+}
+
+class _BarItem {
+  final String label;
+  final double value;
+  _BarItem(this.label, this.value);
 }
