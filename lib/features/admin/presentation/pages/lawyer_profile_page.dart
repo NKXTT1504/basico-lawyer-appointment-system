@@ -4,6 +4,8 @@ import '../../data/services/user_storage_service.dart';
 import '../../data/models/admin_user.dart';
 import '../../data/models/lawyer.dart';
 import '../../data/models/appointment.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/page_header.dart';
 
 class LawyerProfilePage extends StatefulWidget {
   const LawyerProfilePage({super.key});
@@ -346,27 +348,18 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
     final isMobile = screenWidth < 600;
 
     return Scaffold(
-      backgroundColor: Colors.blue[50],
+      backgroundColor: AppColors.surfaceVariant,
       body: SingleChildScrollView(
         padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Page title row with edit
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Thông tin cá nhân',
-                    style: TextStyle(
-                      fontSize: isMobile ? 22 : 24,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
-                ),
+            PageHeader(
+              title: 'Thông tin cá nhân',
+              subtitle: _currentUser?.email ?? '',
+              actions: [
                 IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.black87),
+                  icon: const Icon(Icons.edit, color: AppColors.primary),
                   tooltip: 'Chỉnh sửa',
                   onPressed: _showEditDialog,
                 ),
@@ -379,12 +372,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
               width: double.infinity,
               padding: EdgeInsets.all(isMobile ? 20 : 24),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.blue[600]!,
-                    Colors.blue[400]!,
-                  ],
-                ),
+                color: AppColors.primary,
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Column(
@@ -395,14 +383,14 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                     child: Icon(
                       Icons.gavel,
                       size: isMobile ? 40 : 50,
-                      color: Colors.blue[600],
+                      color: AppColors.primary,
                     ),
                   ),
                   SizedBox(height: isMobile ? 12 : 16),
                   Text(
                     _currentUser?.name ?? 'Luật sư',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: AppColors.onPrimary,
                       fontSize: isMobile ? 20 : 24,
                       fontWeight: FontWeight.bold,
                     ),
@@ -411,7 +399,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                   Text(
                     _currentUser?.email ?? '',
                     style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
+                      color: AppColors.onPrimary.withOpacity(0.9),
                       fontSize: isMobile ? 14 : 16,
                     ),
                   ),
@@ -421,13 +409,13 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                         horizontal: isMobile ? 12 : 16,
                         vertical: isMobile ? 6 : 8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: AppColors.onPrimary.withOpacity(0.2),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Text(
                       'Luật sư',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: AppColors.onPrimary,
                         fontSize: isMobile ? 12 : 14,
                         fontWeight: FontWeight.w600,
                       ),
@@ -483,7 +471,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                     'Thông tin cá nhân',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue[800],
+                          color: AppColors.primary,
                           fontSize: isMobile ? 18 : 20,
                         ),
                   ),
@@ -519,7 +507,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                     'Thống kê nghề nghiệp',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: Colors.blue[800],
+                          color: AppColors.primary,
                           fontSize: isMobile ? 18 : 20,
                         ),
                   ),
@@ -643,11 +631,11 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                   icon: const Icon(Icons.lock),
                   label: const Text('Đổi mật khẩu'),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.blue[600],
-                    side: BorderSide(color: Colors.blue[600]!),
+                    foregroundColor: AppColors.primary,
+                    side: const BorderSide(color: AppColors.primary),
                     padding: const EdgeInsets.symmetric(vertical: 12),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
                 ),
@@ -663,11 +651,11 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                       icon: const Icon(Icons.edit),
                       label: const Text('Chỉnh sửa (trên thanh tiêu đề)'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue[600],
-                        foregroundColor: Colors.white,
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.onPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                     ),
@@ -679,11 +667,11 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                       icon: const Icon(Icons.lock),
                       label: const Text('Đổi mật khẩu'),
                       style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.blue[600],
-                        side: BorderSide(color: Colors.blue[600]!),
+                        foregroundColor: AppColors.primary,
+                        side: const BorderSide(color: AppColors.primary),
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                     ),
@@ -705,7 +693,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(
         children: [
-          Icon(icon, size: isMobile ? 18 : 20, color: Colors.blue[600]),
+          Icon(icon, size: isMobile ? 18 : 20, color: AppColors.primary),
           SizedBox(width: isMobile ? 8 : 12),
           Expanded(
             child: Column(

@@ -4,10 +4,14 @@ import '../../../../core/network/api_services.dart';
 
 class AdminApiService {
   // Users (admin): GET/POST/PUT basic CRUD
-  Future<Response> getUsers({bool includeInactive = true}) async {
-    return Api.users.get('/api/User', queryParameters: {
-      'includeInactive': includeInactive,
-    });
+  Future<Response> getUsers({bool includeInactive = true, String? role}) async {
+    final params = <String, dynamic>{'includeInactive': includeInactive};
+    if (role != null && role.isNotEmpty) params['role'] = role;
+    return Api.users.get('/api/User', queryParameters: params);
+  }
+
+  Future<Response> createUser(Map<String, dynamic> userData) async {
+    return Api.users.post('/api/User', data: json.encode(userData));
   }
 
   // Customer Management (through Users API)

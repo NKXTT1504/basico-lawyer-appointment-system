@@ -47,6 +47,47 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
         final lawyers = list
             .map((e) => Lawyer.fromJson(_mapLawyerProfileToLocal(e)))
             .toList();
+
+        // Enrich with Users API (email/phone) if missing in profile payload
+        try {
+          final usersResp =
+              await api.getUsers(includeInactive: true, role: 'Lawyer');
+          final uraw = usersResp.data;
+          final List users = uraw is List
+              ? uraw
+              : (uraw is Map<String, dynamic>
+                  ? (uraw['result'] ?? uraw['Result'] ?? []) as List
+                  : <dynamic>[]);
+          // Build maps by id and name for best-effort merging
+          final Map<String, Map<String, dynamic>> idMap = {};
+          final Map<String, Map<String, dynamic>> nameMap = {};
+          for (final u in users) {
+            if (u is Map<String, dynamic>) {
+              final id = (u['id'] ?? u['Id'] ?? '').toString();
+              final fullName =
+                  (u['fullName'] ?? u['FullName'] ?? u['name'] ?? '')
+                      .toString();
+              idMap[id] = u;
+              if (fullName.isNotEmpty) nameMap[fullName.toLowerCase()] = u;
+            }
+          }
+          for (var i = 0; i < lawyers.length; i++) {
+            final l = lawyers[i];
+            if (l.email.isEmpty || l.phone.isEmpty) {
+              Map<String, dynamic>? u;
+              // Try exact id match first (common when ids align)
+              u = idMap[l.id];
+              // Fallback: name match
+              u ??= nameMap[l.name.toLowerCase()];
+              if (u != null) {
+                lawyers[i] = l.copyWith(
+                  email: (u['email'] ?? u['Email'] ?? l.email).toString(),
+                  phone: (u['phoneNumber'] ?? u['phone'] ?? l.phone).toString(),
+                );
+              }
+            }
+          }
+        } catch (_) {}
         setState(() {
           _lawyers = lawyers;
           _applyFilters();
@@ -192,163 +233,112 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
   void _showAddLawyerDialog() {
     final nameController = TextEditingController();
     final emailController = TextEditingController();
-    final passwordController = TextEditingController();
+    // Remove password from edit UI
     final phoneController = TextEditingController();
     final addressController = TextEditingController();
     final specializationController = TextEditingController();
     final licenseNumberController = TextEditingController();
     final experienceController = TextEditingController();
     final hourlyRateController = TextEditingController();
-    final baseSalaryController = TextEditingController();
-    final commissionController = TextEditingController(text: '0.10');
-    final successRateController = TextEditingController(text: '0.70');
-    final bioController = TextEditingController();
-    final languagesController = TextEditingController();
-    final certificationsController = TextEditingController();
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Thêm luật sư mới'),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+        contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        title: const Text('Thêm luật sư mới',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
                 controller: nameController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Họ và tên',
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.person),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: emailController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Email',
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.email),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Mật khẩu',
-                  border: OutlineInputBorder(),
-                ),
-              ),
+              // Password is generated silently to avoid extra field in UI
               const SizedBox(height: 16),
               TextField(
                 controller: phoneController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Số điện thoại',
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.phone),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: addressController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Địa chỉ',
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.location_on),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 maxLines: 2,
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: specializationController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Chuyên môn',
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.gavel),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: licenseNumberController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Số chứng chỉ hành nghề',
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.workspace_premium),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: experienceController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Số năm kinh nghiệm',
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.timeline),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: hourlyRateController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Phí tư vấn/giờ (VNĐ)',
-                  border: OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.attach_money),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
                 keyboardType: TextInputType.number,
               ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: baseSalaryController,
-                decoration: const InputDecoration(
-                  labelText: 'Lương cứng/tháng (VNĐ)',
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.number,
-              ),
-              const SizedBox(height: 16),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: commissionController,
-                      decoration: const InputDecoration(
-                        labelText: 'Hoa hồng (%)',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: successRateController,
-                      decoration: const InputDecoration(
-                        labelText: 'Tỉ lệ thành công (%)',
-                        border: OutlineInputBorder(),
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: bioController,
-                decoration: const InputDecoration(
-                  labelText: 'Tiểu sử',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: languagesController,
-                decoration: const InputDecoration(
-                  labelText: 'Ngôn ngữ (cách nhau bởi dấu phẩy)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: certificationsController,
-                decoration: const InputDecoration(
-                  labelText: 'Chứng chỉ (cách nhau bởi dấu phẩy)',
-                  border: OutlineInputBorder(),
-                ),
-              ),
+              // Advanced, non-essential fields are hidden for consistency with backend
             ],
           ),
         ),
@@ -360,10 +350,12 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
           ElevatedButton(
             onPressed: () async {
               // Validate input
+              final generatedPassword =
+                  'Ls@' + DateTime.now().millisecondsSinceEpoch.toString();
               final validationResult = _validateLawyerInput(
                 nameController.text,
                 emailController.text,
-                passwordController.text,
+                generatedPassword,
                 phoneController.text,
                 addressController.text,
                 specializationController.text,
@@ -395,23 +387,14 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
                   _showErrorSnackBar('Số chứng chỉ hành nghề đã tồn tại');
                   return;
                 }
-                final languages = languagesController.text
-                    .split(',')
-                    .map((e) => e.trim())
-                    .where((e) => e.isNotEmpty)
-                    .toList();
-
-                final certifications = certificationsController.text
-                    .split(',')
-                    .map((e) => e.trim())
-                    .where((e) => e.isNotEmpty)
-                    .toList();
+                final languages = <String>[];
+                final certifications = <String>[];
 
                 // Create lawyer user account
                 final lawyerUser = User(
                   id: 'user_lawyer_${DateTime.now().millisecondsSinceEpoch}',
                   email: emailController.text.trim().toLowerCase(),
-                  password: passwordController.text,
+                  password: generatedPassword,
                   name: nameController.text.trim(),
                   role: UserRole.lawyer,
                   createdAt: DateTime.now(),
@@ -428,21 +411,30 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
                   licenseNumber: licenseNumberController.text.trim(),
                   experienceYears: int.tryParse(experienceController.text) ?? 0,
                   hourlyRate: double.tryParse(hourlyRateController.text) ?? 0,
-                  baseSalary: double.tryParse(baseSalaryController.text) ?? 0,
-                  commissionRate:
-                      (double.tryParse(commissionController.text) ?? 0.1),
-                  successRate:
-                      (double.tryParse(successRateController.text) ?? 0.7) /
-                          (successRateController.text.contains('%') ? 100 : 1),
-                  bio: bioController.text.trim(),
+                  baseSalary: 0,
+                  commissionRate: 0.1,
+                  successRate: 0.7,
+                  bio: '',
                   languages: languages,
                   certifications: certifications,
                   createdAt: DateTime.now(),
                 );
 
-                // Add both user account and lawyer profile
+                // Add both user account and lawyer profile (local)
                 await UserStorageService.addUser(lawyerUser);
                 await UserStorageService.addLawyer(newLawyer);
+
+                // Best-effort: create backend user (to supply email/phone via Users API)
+                try {
+                  await AdminApiService().createUser({
+                    'fullName': lawyerUser.name,
+                    'email': lawyerUser.email,
+                    'password': generatedPassword,
+                    'phoneNumber': phoneController.text.trim(),
+                    'role': 'Lawyer',
+                    'isActive': true,
+                  });
+                } catch (_) {}
                 await _loadLawyers();
                 Navigator.pop(context);
                 _showSuccessSnackBar(
@@ -451,6 +443,7 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
                 _showErrorSnackBar('Có lỗi xảy ra khi thêm luật sư: $e');
               }
             },
+            style: ElevatedButton.styleFrom(minimumSize: const Size(96, 44)),
             child: const Text('Thêm'),
           ),
         ],
@@ -463,7 +456,6 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
     final emailController = TextEditingController(text: lawyer.email);
     final originalEmail = lawyer.email;
     final phoneController = TextEditingController(text: lawyer.phone);
-    final passwordController = TextEditingController();
     final addressController = TextEditingController(text: lawyer.address);
     final specializationController =
         TextEditingController(text: lawyer.specialization);
@@ -473,136 +465,108 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
         TextEditingController(text: lawyer.experienceYears.toString());
     final hourlyRateController =
         TextEditingController(text: lawyer.hourlyRate.toStringAsFixed(0));
-    final baseSalaryController =
-        TextEditingController(text: lawyer.baseSalary.toStringAsFixed(0));
-    final commissionController = TextEditingController(
-        text: (lawyer.commissionRate * 100).toStringAsFixed(0));
-    final successRateController = TextEditingController(
-        text: (lawyer.successRate * 100).toStringAsFixed(0));
-    final bioController = TextEditingController(text: lawyer.bio);
-    final languagesController =
-        TextEditingController(text: lawyer.languages.join(', '));
-    final certificationsController =
-        TextEditingController(text: lawyer.certifications.join(', '));
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Chỉnh sửa thông tin luật sư'),
+        backgroundColor: Colors.white,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+        contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        title: const Text(
+          'Chỉnh sửa thông tin luật sư',
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+        ),
         content: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                      labelText: 'Họ và tên', border: OutlineInputBorder())),
-              const SizedBox(height: 12),
-              TextField(
-                  controller: emailController,
-                  decoration: const InputDecoration(
-                      labelText: 'Email', border: OutlineInputBorder())),
-              const SizedBox(height: 12),
-              TextField(
-                  controller: phoneController,
-                  decoration: const InputDecoration(
-                      labelText: 'Số điện thoại',
-                      border: OutlineInputBorder())),
-              const SizedBox(height: 12),
-              FutureBuilder<User?>(
-                future: UserStorageService.getUserByEmail(originalEmail),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const SizedBox.shrink();
-                  }
-                  if (snapshot.data != null &&
-                      passwordController.text.isEmpty) {
-                    passwordController.text = snapshot.data!.password;
-                  }
-                  return TextField(
-                    controller: passwordController,
-                    obscureText: true,
-                    decoration: const InputDecoration(
-                      labelText: 'Mật khẩu đăng nhập',
-                      border: OutlineInputBorder(),
-                    ),
-                  );
-                },
+                controller: nameController,
+                decoration: InputDecoration(
+                  labelText: 'Họ và tên',
+                  prefixIcon: const Icon(Icons.person),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
               ),
               const SizedBox(height: 12),
               TextField(
-                  controller: addressController,
-                  decoration: const InputDecoration(
-                      labelText: 'Địa chỉ', border: OutlineInputBorder()),
-                  maxLines: 2),
+                controller: emailController,
+                decoration: InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: const Icon(Icons.email),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
               const SizedBox(height: 12),
               TextField(
-                  controller: specializationController,
-                  decoration: const InputDecoration(
-                      labelText: 'Chuyên môn', border: OutlineInputBorder())),
+                controller: phoneController,
+                decoration: InputDecoration(
+                  labelText: 'Số điện thoại',
+                  prefixIcon: const Icon(Icons.phone),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Mật khẩu không hiển thị trong UI chỉnh sửa
               const SizedBox(height: 12),
               TextField(
-                  controller: licenseNumberController,
-                  decoration: const InputDecoration(
-                      labelText: 'Số chứng chỉ hành nghề',
-                      border: OutlineInputBorder())),
+                controller: addressController,
+                decoration: InputDecoration(
+                  labelText: 'Địa chỉ',
+                  prefixIcon: const Icon(Icons.location_on),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                maxLines: 2,
+              ),
               const SizedBox(height: 12),
               TextField(
-                  controller: experienceController,
-                  decoration: const InputDecoration(
-                      labelText: 'Số năm kinh nghiệm',
-                      border: OutlineInputBorder()),
-                  keyboardType: TextInputType.number),
+                controller: specializationController,
+                decoration: InputDecoration(
+                  labelText: 'Chuyên môn',
+                  prefixIcon: const Icon(Icons.gavel),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
               const SizedBox(height: 12),
               TextField(
-                  controller: hourlyRateController,
-                  decoration: const InputDecoration(
-                      labelText: 'Phí tư vấn/giờ (VNĐ)',
-                      border: OutlineInputBorder()),
-                  keyboardType: TextInputType.number),
+                controller: licenseNumberController,
+                decoration: InputDecoration(
+                  labelText: 'Số chứng chỉ hành nghề',
+                  prefixIcon: const Icon(Icons.workspace_premium),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
               const SizedBox(height: 12),
               TextField(
-                  controller: baseSalaryController,
-                  decoration: const InputDecoration(
-                      labelText: 'Lương cứng/tháng (VNĐ)',
-                      border: OutlineInputBorder()),
-                  keyboardType: TextInputType.number),
-              const SizedBox(height: 12),
-              Row(children: [
-                Expanded(
-                    child: TextField(
-                        controller: commissionController,
-                        decoration: const InputDecoration(
-                            labelText: 'Hoa hồng (%)',
-                            border: OutlineInputBorder()),
-                        keyboardType: TextInputType.number)),
-                const SizedBox(width: 12),
-                Expanded(
-                    child: TextField(
-                        controller: successRateController,
-                        decoration: const InputDecoration(
-                            labelText: 'Tỉ lệ thành công (%)',
-                            border: OutlineInputBorder()),
-                        keyboardType: TextInputType.number)),
-              ]),
+                controller: experienceController,
+                decoration: InputDecoration(
+                  labelText: 'Số năm kinh nghiệm',
+                  prefixIcon: const Icon(Icons.timeline),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                keyboardType: TextInputType.number,
+              ),
               const SizedBox(height: 12),
               TextField(
-                  controller: bioController,
-                  decoration: const InputDecoration(
-                      labelText: 'Tiểu sử', border: OutlineInputBorder()),
-                  maxLines: 3),
-              const SizedBox(height: 12),
-              TextField(
-                  controller: languagesController,
-                  decoration: const InputDecoration(
-                      labelText: 'Ngôn ngữ (cách nhau bởi dấu phẩy)',
-                      border: OutlineInputBorder())),
-              const SizedBox(height: 12),
-              TextField(
-                  controller: certificationsController,
-                  decoration: const InputDecoration(
-                      labelText: 'Chứng chỉ (cách nhau bởi dấu phẩy)',
-                      border: OutlineInputBorder())),
+                controller: hourlyRateController,
+                decoration: InputDecoration(
+                  labelText: 'Phí tư vấn/giờ (VNĐ)',
+                  prefixIcon: const Icon(Icons.attach_money),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                keyboardType: TextInputType.number,
+              ),
+              // Ẩn các trường nâng cao để khớp payload tối thiểu
             ],
           ),
         ),
@@ -624,35 +588,14 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
                       lawyer.experienceYears,
                   hourlyRate: double.tryParse(hourlyRateController.text) ??
                       lawyer.hourlyRate,
-                  baseSalary: double.tryParse(baseSalaryController.text) ??
-                      lawyer.baseSalary,
-                  commissionRate: (double.tryParse(commissionController.text) ??
-                          (lawyer.commissionRate * 100)) /
-                      (commissionController.text.contains('%') ? 100 : 100),
-                  successRate: (double.tryParse(successRateController.text) ??
-                          (lawyer.successRate * 100)) /
-                      (successRateController.text.contains('%') ? 100 : 100),
-                  bio: bioController.text.trim(),
-                  languages: languagesController.text
-                      .split(',')
-                      .map((e) => e.trim())
-                      .where((e) => e.isNotEmpty)
-                      .toList(),
-                  certifications: certificationsController.text
-                      .split(',')
-                      .map((e) => e.trim())
-                      .where((e) => e.isNotEmpty)
-                      .toList(),
                   updatedAt: DateTime.now(),
                 );
                 await UserStorageService.updateLawyer(updated);
-                // Sync associated user account (name/email/password)
+                // Sync associated user account (name/email). Password unchanged
                 await UserStorageService.syncLawyerUserAccount(
-                  oldEmail: originalEmail,
-                  name: updated.name,
-                  newEmail: updated.email,
-                  newPassword: passwordController.text,
-                );
+                    oldEmail: originalEmail,
+                    name: updated.name,
+                    newEmail: updated.email);
                 await _loadLawyers();
                 if (mounted) Navigator.pop(context);
                 _showSuccessSnackBar('Cập nhật luật sư thành công');

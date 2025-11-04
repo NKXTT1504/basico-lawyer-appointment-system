@@ -6,6 +6,7 @@ import '../../data/services/user_storage_service.dart';
 import '../../data/services/customer_api_service.dart';
 import '../../data/models/customer.dart';
 import '../../data/models/admin_user.dart';
+import '../../data/services/admin_api_service.dart'; // Added import for AdminApiService
 
 class AdminCustomersPage extends StatefulWidget {
   const AdminCustomersPage({super.key});
@@ -127,124 +128,66 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
   void _showAddCustomerDialog() {
     final nameController = TextEditingController();
     final emailController = TextEditingController();
+    final passwordController = TextEditingController();
     final phoneController = TextEditingController();
-    final addressController = TextEditingController();
-    final occupationController = TextEditingController();
-    final notesController = TextEditingController();
-    DateTime? selectedDate;
-    String selectedGender = 'Nam';
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Thêm khách hàng mới'),
+          backgroundColor: Colors.white,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+          contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          title: const Text(
+            'Thêm khách hàng mới',
+            style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
+          ),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: nameController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Họ và tên',
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.person),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: emailController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Email',
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.email),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    labelText: 'Mật khẩu',
+                    prefixIcon: const Icon(Icons.lock),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: phoneController,
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Số điện thoại',
-                    border: OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.phone),
+                    border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12)),
                   ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: addressController,
-                  decoration: const InputDecoration(
-                    labelText: 'Địa chỉ',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: occupationController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nghề nghiệp',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: selectedGender,
-                  decoration: const InputDecoration(
-                    labelText: 'Giới tính',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: ['Nam', 'Nữ', 'Khác'].map((String value) {
-                    return DropdownMenuItem<String>(
-                      value: value,
-                      child: Text(value),
-                    );
-                  }).toList(),
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      selectedGender = newValue!;
-                    });
-                  },
-                ),
-                const SizedBox(height: 16),
-                InkWell(
-                  onTap: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: DateTime.now()
-                          .subtract(const Duration(days: 365 * 25)),
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime.now(),
-                    );
-                    if (date != null) {
-                      setState(() {
-                        selectedDate = date;
-                      });
-                    }
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.calendar_today),
-                        const SizedBox(width: 8),
-                        Text(
-                          selectedDate != null
-                              ? '${selectedDate!.day}/${selectedDate!.month}/${selectedDate!.year}'
-                              : 'Chọn ngày sinh',
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: notesController,
-                  decoration: const InputDecoration(
-                    labelText: 'Ghi chú',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 2,
                 ),
               ],
             ),
@@ -261,9 +204,7 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                   nameController.text,
                   emailController.text,
                   phoneController.text,
-                  addressController.text,
-                  occupationController.text,
-                  selectedDate,
+                  passwordController.text,
                 );
 
                 if (validationResult.isNotEmpty) {
@@ -287,15 +228,27 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                     name: nameController.text.trim(),
                     email: emailController.text.trim().toLowerCase(),
                     phone: phoneController.text.trim(),
-                    address: addressController.text.trim(),
-                    dateOfBirth: selectedDate!,
-                    gender: selectedGender,
-                    occupation: occupationController.text.trim(),
-                    notes: notesController.text.trim(),
+                    address: '',
+                    dateOfBirth:
+                        DateTime.now().subtract(const Duration(days: 365 * 25)),
+                    gender: 'Không xác định',
+                    occupation: 'Không xác định',
+                    notes: '',
                     createdAt: DateTime.now(),
                   );
 
                   await UserStorageService.addCustomer(newCustomer);
+                  // Best-effort: create backend user (Users API)
+                  try {
+                    await AdminApiService().createUser({
+                      'fullName': newCustomer.name,
+                      'email': newCustomer.email,
+                      'password': passwordController.text,
+                      'phoneNumber': newCustomer.phone,
+                      'role': 'Customer',
+                      'isActive': true,
+                    });
+                  } catch (_) {}
                   await _loadCustomers();
                   Navigator.pop(context);
                   _showSuccessSnackBar('Thêm khách hàng thành công');
@@ -303,6 +256,7 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                   _showErrorSnackBar('Có lỗi xảy ra khi thêm khách hàng: $e');
                 }
               },
+              style: ElevatedButton.styleFrom(minimumSize: const Size(96, 44)),
               child: const Text('Thêm'),
             ),
           ],
@@ -315,97 +269,47 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
     final nameController = TextEditingController(text: customer.name);
     final emailController = TextEditingController(text: customer.email);
     final phoneController = TextEditingController(text: customer.phone);
-    final addressController = TextEditingController(text: customer.address);
-    final occupationController =
-        TextEditingController(text: customer.occupation);
-    final notesController = TextEditingController(text: customer.notes);
-    DateTime selectedDate = customer.dateOfBirth;
-    String selectedGender = customer.gender;
     final originalEmail = customer.email;
 
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) => AlertDialog(
-          title: const Text('Chỉnh sửa khách hàng'),
+          backgroundColor: Colors.white,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          titlePadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+          contentPadding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          title: const Text('Chỉnh sửa khách hàng',
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700)),
           content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                     controller: nameController,
-                    decoration: const InputDecoration(
-                        labelText: 'Họ và tên', border: OutlineInputBorder())),
+                    decoration: InputDecoration(
+                        labelText: 'Họ và tên',
+                        prefixIcon: const Icon(Icons.person),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)))),
                 const SizedBox(height: 16),
                 TextField(
                     controller: emailController,
-                    decoration: const InputDecoration(
-                        labelText: 'Email', border: OutlineInputBorder())),
+                    decoration: InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon: const Icon(Icons.email),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)))),
                 const SizedBox(height: 16),
                 TextField(
                     controller: phoneController,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                         labelText: 'Số điện thoại',
-                        border: OutlineInputBorder())),
-                const SizedBox(height: 16),
-                TextField(
-                    controller: addressController,
-                    decoration: const InputDecoration(
-                        labelText: 'Địa chỉ', border: OutlineInputBorder()),
-                    maxLines: 2),
-                const SizedBox(height: 16),
-                TextField(
-                    controller: occupationController,
-                    decoration: const InputDecoration(
-                        labelText: 'Nghề nghiệp',
-                        border: OutlineInputBorder())),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: selectedGender,
-                  decoration: const InputDecoration(
-                    labelText: 'Giới tính',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: const [
-                    DropdownMenuItem(value: 'Nam', child: Text('Nam')),
-                    DropdownMenuItem(value: 'Nữ', child: Text('Nữ')),
-                    DropdownMenuItem(value: 'Khác', child: Text('Khác')),
-                  ],
-                  onChanged: (v) => setState(() => selectedGender = v ?? 'Nam'),
-                ),
-                const SizedBox(height: 16),
-                InkWell(
-                  onTap: () async {
-                    final date = await showDatePicker(
-                      context: context,
-                      initialDate: selectedDate,
-                      firstDate: DateTime(1900),
-                      lastDate: DateTime.now(),
-                    );
-                    if (date != null) setState(() => selectedDate = date);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: Colors.grey),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(Icons.calendar_today),
-                        const SizedBox(width: 8),
-                        Text(
-                            '${selectedDate.day}/${selectedDate.month}/${selectedDate.year}'),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                    controller: notesController,
-                    decoration: const InputDecoration(
-                        labelText: 'Ghi chú', border: OutlineInputBorder()),
-                    maxLines: 2),
+                        prefixIcon: const Icon(Icons.phone),
+                        border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12)))),
               ],
             ),
           ),
@@ -420,10 +324,6 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                     name: nameController.text.trim(),
                     email: emailController.text.trim().toLowerCase(),
                     phone: phoneController.text.trim(),
-                    address: addressController.text.trim(),
-                    occupation: occupationController.text.trim(),
-                    gender: selectedGender,
-                    dateOfBirth: selectedDate,
                     updatedAt: DateTime.now(),
                   );
                   await UserStorageService.updateCustomer(updated);
@@ -564,7 +464,6 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
   }
 
   Widget _buildCustomerCard(Customer customer) {
-    final age = DateTime.now().year - customer.dateOfBirth.year;
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 600;
 
@@ -641,18 +540,9 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
 
             SizedBox(height: isMobile ? 12 : 16),
 
-            // Details
+            // Details (only fields available from backend: email & phone)
             _buildDetailRow(Icons.email, 'Email', customer.email),
             _buildDetailRow(Icons.phone, 'Số điện thoại', customer.phone),
-            _buildDetailRow(Icons.location_on, 'Địa chỉ', customer.address),
-            _buildDetailRow(Icons.person, 'Giới tính', customer.gender),
-            _buildDetailRow(Icons.cake, 'Tuổi', '$age tuổi'),
-            _buildDetailRow(Icons.work, 'Nghề nghiệp', customer.occupation),
-
-            if (customer.notes.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              _buildDetailRow(Icons.note, 'Ghi chú', customer.notes),
-            ],
 
             SizedBox(height: isMobile ? 12 : 16),
 
@@ -775,40 +665,20 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
     );
   }
 
-  String _validateCustomerInput(String name, String email, String phone,
-      String address, String occupation, DateTime? dateOfBirth) {
-    if (name.trim().isEmpty) {
-      return 'Vui lòng nhập họ và tên';
-    }
-    if (name.trim().length < 2) {
-      return 'Họ và tên phải có ít nhất 2 ký tự';
-    }
-    if (email.trim().isEmpty) {
-      return 'Vui lòng nhập email';
-    }
+  String _validateCustomerInput(
+      String name, String email, String phone, String password) {
+    if (name.trim().isEmpty) return 'Vui lòng nhập họ và tên';
+    if (name.trim().length < 2) return 'Họ và tên phải có ít nhất 2 ký tự';
+    if (email.trim().isEmpty) return 'Vui lòng nhập email';
     if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}\$').hasMatch(email.trim())) {
       return 'Email không hợp lệ';
     }
-    if (phone.trim().isEmpty) {
-      return 'Vui lòng nhập số điện thoại';
+    if (password.trim().isEmpty || password.trim().length < 6) {
+      return 'Mật khẩu phải có ít nhất 6 ký tự';
     }
+    if (phone.trim().isEmpty) return 'Vui lòng nhập số điện thoại';
     if (!RegExp(r'^[0-9]{10,11}\$').hasMatch(phone.trim())) {
       return 'Số điện thoại phải có 10-11 chữ số';
-    }
-    if (address.trim().isEmpty) {
-      return 'Vui lòng nhập địa chỉ';
-    }
-    if (occupation.trim().isEmpty) {
-      return 'Vui lòng nhập nghề nghiệp';
-    }
-    if (dateOfBirth == null) {
-      return 'Vui lòng chọn ngày sinh';
-    }
-    if (dateOfBirth.isAfter(DateTime.now())) {
-      return 'Ngày sinh không thể là tương lai';
-    }
-    if (DateTime.now().year - dateOfBirth.year < 16) {
-      return 'Khách hàng phải ít nhất 16 tuổi';
     }
     return '';
   }
