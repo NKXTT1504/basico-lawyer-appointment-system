@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/services/user_storage_service.dart';
 import '../../data/models/admin_user.dart';
 import '../../data/models/lawyer.dart';
+import '../../data/models/appointment.dart';
 
 class LawyerProfilePage extends StatefulWidget {
   const LawyerProfilePage({super.key});
@@ -15,6 +16,10 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
   User? _currentUser;
   bool _isLoading = true;
   Lawyer? _lawyerProfile;
+  int _totalAppointmentsCount = 0;
+  int _completedAppointmentsCount = 0;
+  int _pendingAppointmentsCount = 0;
+  double? _averageRating; // reserved for future backend value
 
   @override
   void initState() {
@@ -33,9 +38,29 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
           lawyer = lawyers.firstWhere(
               (l) => l.email.toLowerCase() == user.email.toLowerCase());
         } catch (_) {}
+        // Compute simple stats from local storage if available
+        int total = 0;
+        int completed = 0;
+        int pending = 0;
+        if (lawyer != null) {
+          try {
+            final appointments =
+                await UserStorageService.getLawyerAppointments(lawyer.id);
+            total = appointments.length;
+            completed = appointments
+                .where((a) => a.status == AppointmentStatus.completed)
+                .length;
+            pending = appointments
+                .where((a) => a.status == AppointmentStatus.pending)
+                .length;
+          } catch (_) {}
+        }
         setState(() {
           _currentUser = user;
           _lawyerProfile = lawyer;
+          _totalAppointmentsCount = total;
+          _completedAppointmentsCount = completed;
+          _pendingAppointmentsCount = pending;
           _isLoading = false;
         });
       } else {
@@ -322,23 +347,33 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
 
     return Scaffold(
       backgroundColor: Colors.blue[50],
-      appBar: AppBar(
-        title: const Text('Thông tin cá nhân'),
-        backgroundColor: Colors.blue[600],
-        foregroundColor: Colors.white,
-        elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit),
-            onPressed: _showEditDialog,
-          ),
-        ],
-      ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Page title row with edit
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Thông tin cá nhân',
+                    style: TextStyle(
+                      fontSize: isMobile ? 22 : 24,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.black87),
+                  tooltip: 'Chỉnh sửa',
+                  onPressed: _showEditDialog,
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+
             // Profile Header
             Container(
               width: double.infinity,
@@ -404,160 +439,197 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
 
             SizedBox(height: isMobile ? 20 : 24),
 
-            // Personal Information
-            Text(
-              'Thông tin cá nhân',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[800],
-                    fontSize: isMobile ? 18 : 20,
-                  ),
-            ),
-            const SizedBox(height: 16),
+            // Personal Information (render only non-empty fields)
+            Builder(builder: (context) {
+              final List<Widget> infoRows = [];
+              final String name = (_currentUser?.name ?? '').trim();
+              final String email = (_currentUser?.email ?? '').trim();
+              final String phone = (_lawyerProfile?.phone ?? '').trim();
+              final String address = (_lawyerProfile?.address ?? '').trim();
+              final String specialization =
+                  (_lawyerProfile?.specialization ?? '').trim();
+              final String bio = (_lawyerProfile?.bio ?? '').trim();
 
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: EdgeInsets.all(isMobile ? 12 : 16),
-                child: Column(
-                  children: [
-                    _buildInfoRow(
-                        Icons.person, 'Họ và tên', _currentUser?.name ?? ''),
-                    _buildInfoRow(
-                        Icons.email, 'Email', _currentUser?.email ?? ''),
-                    if ((_lawyerProfile?.phone ?? '').isNotEmpty)
-                      _buildInfoRow(
-                          Icons.phone, 'Số điện thoại', _lawyerProfile!.phone),
-                    if ((_lawyerProfile?.address ?? '').isNotEmpty)
-                      _buildInfoRow(Icons.location_on, 'Địa chỉ',
-                          _lawyerProfile!.address),
-                    if ((_lawyerProfile?.specialization ?? '').isNotEmpty)
-                      _buildInfoRow(Icons.work, 'Chuyên môn',
-                          _lawyerProfile!.specialization),
-                    if ((_lawyerProfile?.bio ?? '').isNotEmpty)
-                      _buildInfoRow(Icons.info, 'Tiểu sử', _lawyerProfile!.bio),
-                  ],
-                ),
-              ),
-            ),
+              if (name.isNotEmpty) {
+                infoRows.add(_buildInfoRow(Icons.person, 'Họ và tên', name));
+              }
+              if (email.isNotEmpty) {
+                infoRows.add(_buildInfoRow(Icons.email, 'Email', email));
+              }
+              if (phone.isNotEmpty) {
+                infoRows
+                    .add(_buildInfoRow(Icons.phone, 'Số điện thoại', phone));
+              }
+              if (address.isNotEmpty) {
+                infoRows
+                    .add(_buildInfoRow(Icons.location_on, 'Địa chỉ', address));
+              }
+              if (specialization.isNotEmpty) {
+                infoRows.add(
+                    _buildInfoRow(Icons.work, 'Chuyên môn', specialization));
+              }
+              if (bio.isNotEmpty) {
+                infoRows.add(_buildInfoRow(Icons.info, 'Tiểu sử', bio));
+              }
+
+              if (infoRows.isEmpty) {
+                return const SizedBox.shrink();
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Thông tin cá nhân',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue[800],
+                          fontSize: isMobile ? 18 : 20,
+                        ),
+                  ),
+                  const SizedBox(height: 16),
+                  Card(
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Padding(
+                      padding: EdgeInsets.all(isMobile ? 12 : 16),
+                      child: Column(children: infoRows),
+                    ),
+                  ),
+                ],
+              );
+            }),
 
             SizedBox(height: isMobile ? 20 : 24),
 
-            // Professional Statistics
-            Text(
-              'Thống kê nghề nghiệp',
-              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue[800],
-                    fontSize: isMobile ? 18 : 20,
-                  ),
-            ),
-            const SizedBox(height: 16),
+            // Professional Statistics (show only when there is real data)
+            Builder(builder: (context) {
+              final bool showStats = _totalAppointmentsCount > 0 ||
+                  _completedAppointmentsCount > 0 ||
+                  _pendingAppointmentsCount > 0 ||
+                  ((_averageRating ?? 0) > 0);
+              if (!showStats) return const SizedBox.shrink();
 
-            LayoutBuilder(
-              builder: (context, constraints) {
-                if (isMobile) {
-                  return Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildStatCard(
-                              'Tổng lịch hẹn',
-                              '0',
-                              Icons.calendar_today,
-                              Colors.blue,
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Thống kê nghề nghiệp',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blue[800],
+                          fontSize: isMobile ? 18 : 20,
+                        ),
+                  ),
+                  const SizedBox(height: 16),
+                  LayoutBuilder(
+                    builder: (context, constraints) {
+                      if (isMobile) {
+                        return Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildStatCard(
+                                    'Tổng lịch hẹn',
+                                    _totalAppointmentsCount.toString(),
+                                    Icons.calendar_today,
+                                    Colors.blue,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: _buildStatCard(
+                                    'Đã hoàn thành',
+                                    _completedAppointmentsCount.toString(),
+                                    Icons.check_circle,
+                                    Colors.green,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildStatCard(
-                              'Đã hoàn thành',
-                              '0',
-                              Icons.check_circle,
-                              Colors.green,
+                            const SizedBox(height: 12),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildStatCard(
+                                    'Đang chờ',
+                                    _pendingAppointmentsCount.toString(),
+                                    Icons.schedule,
+                                    Colors.amber,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                if ((_averageRating ?? 0) > 0)
+                                  Expanded(
+                                    child: _buildStatCard(
+                                      'Đánh giá TB',
+                                      (_averageRating ?? 0).toStringAsFixed(1),
+                                      Icons.star,
+                                      Colors.orange,
+                                    ),
+                                  ),
+                              ],
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildStatCard(
-                              'Đang chờ',
-                              '0',
-                              Icons.schedule,
-                              Colors.amber,
+                          ],
+                        );
+                      } else {
+                        return Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildStatCard(
+                                    'Tổng lịch hẹn',
+                                    _totalAppointmentsCount.toString(),
+                                    Icons.calendar_today,
+                                    Colors.blue,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: _buildStatCard(
+                                    'Đã hoàn thành',
+                                    _completedAppointmentsCount.toString(),
+                                    Icons.check_circle,
+                                    Colors.green,
+                                  ),
+                                ),
+                              ],
                             ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: _buildStatCard(
-                              'Đánh giá TB',
-                              '5.0',
-                              Icons.star,
-                              Colors.orange,
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _buildStatCard(
+                                    'Đang chờ',
+                                    _pendingAppointmentsCount.toString(),
+                                    Icons.schedule,
+                                    Colors.amber,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                if ((_averageRating ?? 0) > 0)
+                                  Expanded(
+                                    child: _buildStatCard(
+                                      'Đánh giá TB',
+                                      (_averageRating ?? 0).toStringAsFixed(1),
+                                      Icons.star,
+                                      Colors.orange,
+                                    ),
+                                  ),
+                              ],
                             ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  );
-                } else {
-                  return Column(
-                    children: [
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildStatCard(
-                              'Tổng lịch hẹn',
-                              '0',
-                              Icons.calendar_today,
-                              Colors.blue,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildStatCard(
-                              'Đã hoàn thành',
-                              '0',
-                              Icons.check_circle,
-                              Colors.green,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _buildStatCard(
-                              'Đang chờ',
-                              '0',
-                              Icons.schedule,
-                              Colors.amber,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: _buildStatCard(
-                              'Đánh giá TB',
-                              '5.0',
-                              Icons.star,
-                              Colors.orange,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  );
-                }
-              },
-            ),
+                          ],
+                        );
+                      }
+                    },
+                  ),
+                ],
+              );
+            }),
 
             SizedBox(height: isMobile ? 20 : 24),
 
