@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/models/chat_message.dart';
 import '../../data/services/chat_api_service.dart';
 import '../../../../features/admin/data/services/user_storage_service.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class ChatPage extends StatefulWidget {
   const ChatPage({super.key});
@@ -166,27 +167,60 @@ class _ChatPageState extends State<ChatPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isTablet = screenWidth > 600;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('AI Tư vấn pháp lý'),
-        backgroundColor: Colors.blue[50],
-        elevation: 0,
-        actions: [
-          IconButton(
-            onPressed: _clearError,
-            icon: const Icon(Icons.refresh),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: screenWidth *
+                (isTablet ? 0.08 : 0.04), // 8% for tablet, 4% for mobile
+            vertical: screenHeight * 0.02, // 2% of screen height
           ),
-        ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Page Title
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  _buildPageTitle(),
+                  IconButton(
+                    onPressed: _clearError,
+                    icon: const Icon(Icons.refresh),
+                    color: AppColors.onBackground,
+                  ),
+                ],
+              ),
+              SizedBox(height: screenHeight * 0.03), // 3% of screen height
+
+              // Messages list
+              Expanded(
+                child: _buildMessagesList(),
+              ),
+              // Input area
+              _buildInputArea(),
+            ],
+          ),
+        ),
       ),
-      body: Column(
-        children: [
-          // Messages list
-          Expanded(
-            child: _buildMessagesList(),
-          ),
-          // Input area
-          _buildInputArea(),
-        ],
+    );
+  }
+
+  Widget _buildPageTitle() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
+
+    return Text(
+      'AI TƯ VẤN PHÁP LÝ',
+      style: TextStyle(
+        fontSize: screenWidth *
+            (isTablet ? 0.07 : 0.06), // 7% for tablet, 6% for mobile
+        fontWeight: FontWeight.bold,
+        color: AppColors.onBackground,
       ),
     );
   }

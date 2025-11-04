@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../lawyer/data/services/lawyer_api_service.dart';
 import '../../data/models/service.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class ServiceFieldSelectionPage extends StatefulWidget {
   final ServiceModel? preselectedService;
@@ -118,16 +119,18 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chọn dịch vụ & lĩnh vực'),
-        backgroundColor: Colors.blue[50],
-        elevation: 0,
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: _buildBody(),
       ),
-      body: _buildBody(),
     );
   }
 
   Widget _buildBody() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isTablet = screenWidth > 600;
+
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
@@ -147,68 +150,89 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
         ),
       );
     }
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildProgressIndicator(),
-          const SizedBox(height: 32),
-          Card(
-            elevation: 2,
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Chọn dịch vụ & lĩnh vực',
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue[800])),
-                  const SizedBox(height: 24),
-                  _buildDropdown(
-                    label: 'Chọn lĩnh vực',
-                    hint: '-- Chọn lĩnh vực --',
-                    value: _selectedField,
-                    items: _fields,
-                    onChanged: (value) {
-                      setState(() {
-                        _selectedField = value;
-                      });
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  _buildServiceMultiSelect(),
-                  const SizedBox(height: 16),
-                  _buildSelectedServicesList(),
-                  const SizedBox(height: 32),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed:
-                          _selectedServices.isNotEmpty ? _continue : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue[600],
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
-                      ),
-                      child: const Text('Tiếp tục',
-                          style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w600)),
+
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: screenWidth *
+            (isTablet ? 0.08 : 0.04), // 8% for tablet, 4% for mobile
+        vertical: screenHeight * 0.02, // 2% of screen height
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Page Title
+            _buildPageTitle(),
+            SizedBox(height: screenHeight * 0.03), // 3% of screen height
+
+            // Progress Indicator
+            _buildProgressIndicator(),
+            SizedBox(height: screenHeight * 0.03), // 3% of screen height
+            Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildDropdown(
+                      label: 'Chọn lĩnh vực',
+                      hint: '-- Chọn lĩnh vực --',
+                      value: _selectedField,
+                      items: _fields,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedField = value;
+                        });
+                      },
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 20),
+                    _buildServiceMultiSelect(),
+                    const SizedBox(height: 16),
+                    _buildSelectedServicesList(),
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed:
+                            _selectedServices.isNotEmpty ? _continue : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blue[600],
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                        ),
+                        child: const Text('Tiếp tục',
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.w600)),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 24),
-          _buildBenefitsSection(),
-        ],
+            const SizedBox(height: 24),
+            _buildBenefitsSection(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPageTitle() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
+
+    return Text(
+      'CHỌN DỊCH VỤ & LĨNH VỰC',
+      style: TextStyle(
+        fontSize: screenWidth *
+            (isTablet ? 0.07 : 0.06), // 7% for tablet, 6% for mobile
+        fontWeight: FontWeight.bold,
+        color: AppColors.onBackground,
       ),
     );
   }

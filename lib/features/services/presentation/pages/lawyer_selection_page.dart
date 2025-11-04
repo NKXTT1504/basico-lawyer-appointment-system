@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../lawyer/data/services/lawyer_api_service.dart';
 import '../../../../core/network/api_services.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class LawyerSelectionPage extends StatefulWidget {
   final List<String> services;
@@ -153,17 +154,18 @@ class _LawyerSelectionPageState extends State<LawyerSelectionPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-            'Luật sư - ${widget.field ?? (widget.services.isNotEmpty ? widget.services.first : 'Dịch vụ')}'),
-        backgroundColor: Colors.blue[50],
-        elevation: 0,
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: _buildBody(),
       ),
-      body: _buildBody(),
     );
   }
 
   Widget _buildBody() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isTablet = screenWidth > 600;
+
     if (_isLoading) {
       return const Center(
         child: CircularProgressIndicator(),
@@ -225,13 +227,48 @@ class _LawyerSelectionPageState extends State<LawyerSelectionPage> {
       );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: _lawyers.length,
-      itemBuilder: (context, index) {
-        final lawyer = _lawyers[index];
-        return _buildLawyerCard(lawyer);
-      },
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: screenWidth *
+            (isTablet ? 0.08 : 0.04), // 8% for tablet, 4% for mobile
+        vertical: screenHeight * 0.02, // 2% of screen height
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Page Title
+          _buildPageTitle(),
+          SizedBox(height: screenHeight * 0.03), // 3% of screen height
+
+          // Content
+          Expanded(
+            child: ListView.builder(
+              itemCount: _lawyers.length,
+              itemBuilder: (context, index) {
+                final lawyer = _lawyers[index];
+                return _buildLawyerCard(lawyer);
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPageTitle() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
+
+    final title = widget.field ??
+        (widget.services.isNotEmpty ? widget.services.first : 'Dịch vụ');
+    return Text(
+      'LUẬT SƯ - ${title.toUpperCase()}',
+      style: TextStyle(
+        fontSize: screenWidth *
+            (isTablet ? 0.07 : 0.06), // 7% for tablet, 6% for mobile
+        fontWeight: FontWeight.bold,
+        color: AppColors.onBackground,
+      ),
     );
   }
 

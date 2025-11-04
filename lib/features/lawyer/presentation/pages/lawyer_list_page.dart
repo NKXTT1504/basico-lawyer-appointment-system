@@ -6,6 +6,7 @@ import '../../../admin/data/services/user_storage_service.dart';
 import '../../../admin/data/models/lawyer.dart' as model;
 import '../../data/services/lawyer_api_service.dart';
 import '../../../../core/network/api_services.dart';
+import '../../../../core/theme/app_colors.dart';
 
 // Removed mock class; now reading real lawyers from storage
 
@@ -163,101 +164,133 @@ class _LawyerListPageState extends State<LawyerListPage> {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+    final isTablet = screenWidth > 600;
+
     if (_loading) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: const Center(child: CircularProgressIndicator()),
+        ),
       );
     }
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Luật sư'),
-        backgroundColor: primaryColor,
-        foregroundColor: Colors.white,
-      ),
-      backgroundColor: const Color(0xFFF8F9FA),
-      body: Column(
-        children: <Widget>[
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Material(
-              color: Colors.white,
-              elevation: 2,
-              borderRadius: BorderRadius.circular(12),
-              child: InkWell(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: Padding(
+          padding: EdgeInsets.symmetric(
+            horizontal: screenWidth *
+                (isTablet ? 0.08 : 0.04), // 8% for tablet, 4% for mobile
+            vertical: screenHeight * 0.02, // 2% of screen height
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              // Page Title
+              _buildPageTitle(),
+              SizedBox(height: screenHeight * 0.03), // 3% of screen height
+
+              // Filter Section
+              Material(
+                color: Colors.white,
+                elevation: 2,
                 borderRadius: BorderRadius.circular(12),
-                onTap: () => setState(() => _showFilter = !_showFilter),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                  child: Row(
-                    children: <Widget>[
-                      Icon(Icons.filter_list, color: primaryColor),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _selectedCategory == 'Tất cả'
-                              ? 'Lọc theo dịch vụ'
-                              : 'Dịch vụ: $_selectedCategory',
-                          style: TextStyle(
-                              color: Colors.grey.shade800,
-                              fontWeight: FontWeight.w600),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(12),
+                  onTap: () => setState(() => _showFilter = !_showFilter),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 10),
+                    child: Row(
+                      children: <Widget>[
+                        Icon(Icons.filter_list, color: primaryColor),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _selectedCategory == 'Tất cả'
+                                ? 'Lọc theo dịch vụ'
+                                : 'Dịch vụ: $_selectedCategory',
+                            style: TextStyle(
+                                color: Colors.grey.shade800,
+                                fontWeight: FontWeight.w600),
+                          ),
                         ),
-                      ),
-                      Icon(_showFilter ? Icons.expand_less : Icons.expand_more,
-                          color: Colors.grey.shade600),
-                    ],
+                        Icon(
+                            _showFilter ? Icons.expand_less : Icons.expand_more,
+                            color: Colors.grey.shade600),
+                      ],
+                    ),
                   ),
                 ),
               ),
-            ),
-          ),
-          AnimatedCrossFade(
-            firstChild: const SizedBox.shrink(),
-            secondChild: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: categories.map((String c) {
-                  final bool selected = _selectedCategory == c;
-                  return ChoiceChip(
-                    label: Text(c),
-                    selected: selected,
-                    showCheckmark: false,
-                    selectedColor: Colors.white,
-                    labelStyle: TextStyle(
-                      color: selected ? primaryColor : Colors.grey.shade800,
-                      fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                    ),
-                    onSelected: (_) {
-                      _selectedCategory = c;
-                      _showFilter = false; // thu gọn sau khi chọn
-                      _applyFilter();
-                    },
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
-                      side: BorderSide(
-                          color:
-                              selected ? primaryColor : Colors.grey.shade300),
-                    ),
-                    backgroundColor: Colors.white,
-                  );
-                }).toList(),
+              AnimatedCrossFade(
+                firstChild: const SizedBox.shrink(),
+                secondChild: Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 8, 0, 0),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: categories.map((String c) {
+                      final bool selected = _selectedCategory == c;
+                      return ChoiceChip(
+                        label: Text(c),
+                        selected: selected,
+                        showCheckmark: false,
+                        selectedColor: Colors.white,
+                        labelStyle: TextStyle(
+                          color: selected ? primaryColor : Colors.grey.shade800,
+                          fontWeight:
+                              selected ? FontWeight.w700 : FontWeight.w500,
+                        ),
+                        onSelected: (_) {
+                          _selectedCategory = c;
+                          _showFilter = false; // thu gọn sau khi chọn
+                          _applyFilter();
+                        },
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                          side: BorderSide(
+                              color: selected
+                                  ? primaryColor
+                                  : Colors.grey.shade300),
+                        ),
+                        backgroundColor: Colors.white,
+                      );
+                    }).toList(),
+                  ),
+                ),
+                crossFadeState: _showFilter
+                    ? CrossFadeState.showSecond
+                    : CrossFadeState.showFirst,
+                duration: const Duration(milliseconds: 200),
               ),
-            ),
-            crossFadeState: _showFilter
-                ? CrossFadeState.showSecond
-                : CrossFadeState.showFirst,
-            duration: const Duration(milliseconds: 200),
+              const SizedBox(height: 8),
+              Expanded(
+                child: _LawyerGrid(
+                  lawyers: _filteredLawyers,
+                  primaryColor: primaryColor,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Expanded(
-            child: _LawyerGrid(
-              lawyers: _filteredLawyers,
-              primaryColor: primaryColor,
-            ),
-          ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPageTitle() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
+
+    return Text(
+      'LUẬT SƯ',
+      style: TextStyle(
+        fontSize: screenWidth *
+            (isTablet ? 0.07 : 0.06), // 7% for tablet, 6% for mobile
+        fontWeight: FontWeight.bold,
+        color: AppColors.onBackground,
       ),
     );
   }
