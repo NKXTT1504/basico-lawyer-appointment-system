@@ -12,52 +12,64 @@ class ServiceDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final width = MediaQuery.of(context).size.width;
+    final isTablet = width > 600;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Chi tiết dịch vụ'),
-        backgroundColor: Colors.blue[50],
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => context.pop(),
-        ),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Hero section
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.blue[800]!,
-                    Colors.blue[600]!,
-                  ],
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: const Color(0xFFF6F7FB),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(
+            horizontal: width * (isTablet ? 0.08 : 0.04),
+            vertical: 16,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Back button row
+              Row(
                 children: [
-                  Row(
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => context.pop(),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'CHI TIẾT DỊCH VỤ',
+                    style: TextStyle(
+                      fontSize: width * (isTablet ? 0.05 : 0.045),
+                      fontWeight: FontWeight.w800,
+                      color: Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+
+              // Header card
+              Card(
+                color: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  side: const BorderSide(color: Color(0xFFEAECEF)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
-                        padding: const EdgeInsets.all(12),
+                        width: isTablet ? 56 : 48,
+                        height: isTablet ? 56 : 48,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: const Color(0xFF1E3A8A).withOpacity(0.08),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(
-                          Icons.gavel,
-                          color: Colors.white,
-                          size: 32,
-                        ),
+                        child:
+                            const Icon(Icons.gavel, color: Color(0xFF1E3A8A)),
                       ),
-                      const SizedBox(width: 16),
+                      const SizedBox(width: 12),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,154 +77,138 @@ class ServiceDetailPage extends StatelessWidget {
                             Text(
                               service.name ?? 'Dịch vụ pháp lý',
                               style: const TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                fontSize: 20,
+                                fontWeight: FontWeight.w800,
                               ),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              service.specialization ?? 'Chuyên môn pháp lý',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.white.withOpacity(0.9),
+                            const SizedBox(height: 6),
+                            if (service.specialization != null)
+                              Text(
+                                service.specialization!,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade700,
+                                ),
                               ),
-                            ),
+                            if (service.description != null) ...[
+                              const SizedBox(height: 10),
+                              Text(
+                                service.description!,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade800,
+                                  height: 1.5,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 24),
-                  Text(
-                    service.description ??
-                        'Dịch vụ tư vấn pháp lý chuyên nghiệp',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.white.withOpacity(0.9),
-                      height: 1.5,
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
 
-            // Service details
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Service overview
-                  _buildSection(
-                    title: 'Tổng quan dịch vụ',
-                    content: _buildServiceOverview(),
-                  ),
+              const SizedBox(height: 20),
 
-                  const SizedBox(height: 32),
-
-                  // Process steps
-                  _buildSection(
-                    title: 'Quy trình của chúng tôi',
-                    content: _buildProcessSteps(),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Benefits
-                  _buildSection(
-                    title: 'Bạn sẽ nhận được gì',
-                    content: _buildBenefits(),
-                  ),
-                ],
+              // Sections
+              _buildSection(
+                title: 'Tổng quan dịch vụ',
+                content: _buildServiceOverview(),
               ),
-            ),
-
-            // CTA Section
-            Container(
-              margin: const EdgeInsets.all(24),
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.blue[200]!),
+              const SizedBox(height: 20),
+              _buildSection(
+                title: 'Quy trình của chúng tôi',
+                content: _buildProcessSteps(),
               ),
-              child: Column(
-                children: [
-                  Text(
-                    'Sẵn sàng bắt đầu?',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue[800],
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Đặt lịch tư vấn với luật sư chuyên môn để thảo luận nhu cầu cụ thể của bạn.',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[700],
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
+              const SizedBox(height: 20),
+              _buildSection(
+                title: 'Bạn sẽ nhận được gì',
+                content: _buildBenefits(),
+              ),
+
+              const SizedBox(height: 20),
+
+              // CTA card
+              Card(
+                color: Colors.white,
+                shape: RoundedRectangleBorder(
+                  side: const BorderSide(color: Color(0xFFEAECEF)),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
                     children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => _contactUs(context),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            side: BorderSide(color: Colors.blue[600]!),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text('Liên hệ với chúng tôi'),
-                        ),
+                      const Text(
+                        'Sẵn sàng bắt đầu?',
+                        style: TextStyle(
+                            fontSize: 18, fontWeight: FontWeight.w700),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: ElevatedButton(
-                          onPressed: () => _bookConsultation(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue[600],
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Đặt lịch tư vấn với luật sư chuyên môn để thảo luận nhu cầu cụ thể của bạn.',
+                        style: TextStyle(color: Colors.grey.shade700),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 14),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton(
+                              onPressed: () => _contactUs(context),
+                              child: const Text('Liên hệ với chúng tôi'),
                             ),
                           ),
-                          child: const Text('Đặt lịch tư vấn'),
-                        ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () => _bookConsultation(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF1E3A8A),
+                                foregroundColor: Colors.white,
+                              ),
+                              child: const Text('Đặt lịch tư vấn'),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildSection({required String title, required Widget content}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
+    return Card(
+      elevation: 0,
+      color: Colors.white,
+      shape: RoundedRectangleBorder(
+        side: const BorderSide(color: Color(0xFFEAECEF)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 12),
+            content,
+          ],
         ),
-        const SizedBox(height: 16),
-        content,
-      ],
+      ),
     );
   }
 
@@ -224,16 +220,16 @@ class ServiceDetailPage extends StatelessWidget {
           'Chúng tôi cung cấp dịch vụ tư vấn pháp lý chuyên nghiệp với đội ngũ luật sư giàu kinh nghiệm. Chúng tôi cam kết mang đến giải pháp pháp lý tối ưu nhất cho khách hàng.',
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey[700],
+            color: Colors.grey.shade700,
             height: 1.6,
           ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         Text(
           'Với nhiều năm kinh nghiệm trong lĩnh vực pháp lý, chúng tôi hiểu rõ những thách thức mà khách hàng gặp phải và luôn sẵn sàng hỗ trợ với tinh thần trách nhiệm cao nhất.',
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey[700],
+            color: Colors.grey.shade700,
             height: 1.6,
           ),
         ),
@@ -270,16 +266,16 @@ class ServiceDetailPage extends StatelessWidget {
         final index = entry.key;
         final step = entry.value;
         return Padding(
-          padding: const EdgeInsets.only(bottom: 20),
+          padding: const EdgeInsets.only(bottom: 16),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 32,
-                height: 32,
+                width: 28,
+                height: 28,
                 decoration: BoxDecoration(
-                  color: Colors.blue[600],
-                  borderRadius: BorderRadius.circular(16),
+                  color: const Color(0xFF1E3A8A),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Center(
                   child: Text(
@@ -291,7 +287,7 @@ class ServiceDetailPage extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -299,9 +295,8 @@ class ServiceDetailPage extends StatelessWidget {
                     Text(
                       step['title']!,
                       style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.black87,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -309,7 +304,7 @@ class ServiceDetailPage extends StatelessWidget {
                       step['description']!,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey[700],
+                        color: Colors.grey.shade700,
                         height: 1.4,
                       ),
                     ),
@@ -335,21 +330,18 @@ class ServiceDetailPage extends StatelessWidget {
     return Column(
       children: benefits
           .map((benefit) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
+                padding: const EdgeInsets.only(bottom: 10),
                 child: Row(
                   children: [
-                    Icon(
-                      Icons.check_circle,
-                      color: Colors.green[600],
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
+                    const Icon(Icons.check_circle,
+                        color: Colors.green, size: 18),
+                    const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         benefit,
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey[700],
+                          color: Colors.grey.shade800,
                         ),
                       ),
                     ),
@@ -376,52 +368,3 @@ class ServiceDetailPage extends StatelessWidget {
     });
   }
 }
-
-/* Service model moved to features/services/data/models/service.dart */
-/*
-class Service {
-  final String? id;
-  final String? name;
-  final String? description;
-  final String? specialization;
-
-  Service({
-    this.id,
-    this.name,
-    this.description,
-    this.specialization,
-  });
-
-  factory Service.fromJson(Map<String, dynamic> json) {
-    String? pickStr(List<String> keys) {
-      for (final k in keys) {
-        final v = json[k];
-        if (v != null && v.toString().isNotEmpty) return v.toString();
-      }
-      return null;
-    }
-
-    // Lấy specialization từ practiceArea nếu có
-    String? specialization;
-    if (json['practiceArea'] is Map<String, dynamic>) {
-      final practiceArea = json['practiceArea'] as Map<String, dynamic>;
-      specialization = practiceArea['name']?.toString();
-    }
-
-    return Service(
-      id: pickStr(['id', 'serviceId', 'serviceID', 'Id', 'ServiceId']),
-      name: pickStr(['name', 'serviceName', 'title', 'Name']),
-      description: pickStr(['description', 'desc', 'Description']),
-      specialization: specialization ??
-          pickStr([
-            'specialization',
-            'specializationName',
-            'category',
-            'field',
-            'domain',
-            'type'
-          ]),
-    );
-  }
-}
-*/
