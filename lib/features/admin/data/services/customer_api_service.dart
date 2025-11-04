@@ -165,24 +165,38 @@ class CustomerApiService {
     }
   }
 
-  /// Activate/Deactivate customer via API
+  /// Activate/Deactivate customer via API (Users API v1)
   Future<Customer> toggleCustomerStatusViaApi(
       String customerId, bool activate) async {
     try {
       final response = activate
-          ? await _adminApiService.activateCustomer(customerId)
-          : await _adminApiService.deactivateCustomer(customerId);
+          ? await _adminApiService.restoreUser(customerId)
+          : await _adminApiService.softDeleteUser(customerId);
 
       if (response.statusCode == 200) {
-        final apiCustomer = response.data;
-        final updatedCustomer = _convertApiUserToCustomer(apiCustomer);
-
-        // Update local storage
+        // Swagger shows text/plain with wrapper; response body may
+        // not contain the full user object. Update local state directly.
+        final customers = await UserStorageService.getCustomers();
+        final customer = customers.firstWhere((c) => c.id == customerId,
+            orElse: () => Customer(
+                  id: customerId,
+                  name: '',
+                  email: '',
+                  phone: '',
+                  address: '',
+                  dateOfBirth:
+                      DateTime.now().subtract(const Duration(days: 365 * 25)),
+                  gender: 'Nam',
+                  occupation: '',
+                  notes: '',
+                  createdAt: DateTime.now(),
+                ));
+        final updatedCustomer = customer.copyWith(isActive: activate);
         await UserStorageService.updateCustomer(updatedCustomer);
         return updatedCustomer;
       } else {
         throw Exception(
-            'Failed to ${activate ? 'activate' : 'deactivate'} customer: ${response.statusCode}');
+            'Failed to ${activate ? 'restore' : 'soft delete'} customer: ${response.statusCode}');
       }
     } catch (e) {
       print('Error toggling customer status via API: $e');

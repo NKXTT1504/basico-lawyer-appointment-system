@@ -209,23 +209,31 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
 
   Future<void> _toggleLawyerActive(Lawyer lawyer) async {
     try {
-      final updated = lawyer.copyWith(isActive: !lawyer.isActive);
-      // Update local storage immediately for responsiveness
+      final targetActive = !lawyer.isActive;
+      // Call Users API first
+      try {
+        if (targetActive) {
+          await AdminApiService().restoreUser(lawyer.id);
+        } else {
+          await AdminApiService().softDeleteUser(lawyer.id);
+        }
+      } catch (_) {
+        // Fallback: attempt to update simple profile flag
+        try {
+          await AdminApiService().updateLawyerSimple(
+              int.tryParse(lawyer.id) ?? 0, {'isActive': targetActive});
+        } catch (_) {}
+      }
+      // Update local storage
+      final updated = lawyer.copyWith(isActive: targetActive);
       await UserStorageService.updateLawyer(updated);
       setState(() {
         final idx = _lawyers.indexWhere((l) => l.id == lawyer.id);
         if (idx != -1) _lawyers[idx] = updated;
         _applyFilters();
       });
-      // Try to sync to API (best-effort)
-      try {
-        await AdminApiService().updateLawyerSimple(
-          int.tryParse(lawyer.id) ?? 0,
-          {'isActive': updated.isActive},
-        );
-      } catch (_) {}
       _showSuccessSnackBar(
-          updated.isActive ? 'Đã bật hoạt động' : 'Đã tắt hoạt động');
+          targetActive ? 'Đã bật hoạt động' : 'Đã tắt hoạt động');
     } catch (e) {
       _showErrorSnackBar('Lỗi khi cập nhật trạng thái: $e');
     }

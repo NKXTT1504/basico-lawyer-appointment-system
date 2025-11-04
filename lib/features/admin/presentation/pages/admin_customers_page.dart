@@ -473,7 +473,8 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                     backgroundColor: Theme.of(context).primaryColor,
                     radius: isMobile ? 20 : 24,
                     child: Text(
-                      customer.name[0].toUpperCase(),
+                      (customer.name.isNotEmpty ? customer.name[0] : '?')
+                          .toUpperCase(),
                       style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,

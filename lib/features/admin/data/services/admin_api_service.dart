@@ -39,12 +39,15 @@ class AdminApiService {
     return Api.users.delete('/api/User/$id');
   }
 
-  Future<Response> deactivateCustomer(String id) async {
-    return Api.users.put('/api/User/$id/deactivate');
+  // Users API: soft delete and restore (toggle active)
+  Future<Response> softDeleteUser(String id) async {
+    // DELETE /api/User/soft/{id}
+    return Api.users.delete('/api/User/soft/$id');
   }
 
-  Future<Response> activateCustomer(String id) async {
-    return Api.users.put('/api/User/$id/activate');
+  Future<Response> restoreUser(String id) async {
+    // POST /api/User/restore/{id}
+    return Api.users.post('/api/User/restore/$id');
   }
 
   // Forms CRUD
