@@ -85,6 +85,10 @@ class AdminApiService {
   // Appointments
   Future<Response> createAppointment(Map<String, dynamic> dto) =>
       Api.appointments.post('/api/Appointment/CREATE', data: json.encode(dto));
+  Future<Response> confirmAppointment(int id) =>
+      Api.appointments.put('/api/Appointment/$id/confirm');
+  Future<Response> cancelAppointment(int id) =>
+      Api.appointments.put('/api/Appointment/$id/cancel');
   Future<Response> completeAppointment(int id) =>
       Api.appointments.put('/api/Appointment/$id/complete');
   Future<Response> deleteAppointment(int id) =>

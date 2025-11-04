@@ -108,38 +108,20 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
     );
   }
 
-  Future<void> _deleteCustomer(String id) async {
+  Future<void> _toggleActive(Customer customer) async {
     try {
-      await UserStorageService.deleteCustomer(id);
-      await _loadCustomers();
-      _showSuccessSnackBar('Xóa khách hàng thành công');
+      final updated = await _customerApiService.toggleCustomerStatusViaApi(
+          customer.id, !customer.isActive);
+      setState(() {
+        final idx = _customers.indexWhere((c) => c.id == customer.id);
+        if (idx != -1) _customers[idx] = updated;
+        _applyFilters();
+      });
+      _showSuccessSnackBar(
+          updated.isActive ? 'Đã bật hoạt động' : 'Đã tắt hoạt động');
     } catch (e) {
-      _showErrorSnackBar('Có lỗi xảy ra: $e');
+      _showErrorSnackBar('Lỗi cập nhật trạng thái: $e');
     }
-  }
-
-  void _showDeleteDialog(Customer customer) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Xác nhận xóa'),
-        content: Text('Bạn có chắc chắn muốn xóa khách hàng ${customer.name}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _deleteCustomer(customer.id);
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Xóa'),
-          ),
-        ],
-      ),
-    );
   }
 
   void _showAddCustomerDialog() {
@@ -351,45 +333,32 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
-                  controller: nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Họ và tên',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
+                    controller: nameController,
+                    decoration: const InputDecoration(
+                        labelText: 'Họ và tên', border: OutlineInputBorder())),
                 const SizedBox(height: 16),
                 TextField(
-                  controller: emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'Email',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
+                    controller: emailController,
+                    decoration: const InputDecoration(
+                        labelText: 'Email', border: OutlineInputBorder())),
                 const SizedBox(height: 16),
                 TextField(
-                  controller: phoneController,
-                  decoration: const InputDecoration(
-                    labelText: 'Số điện thoại',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
+                    controller: phoneController,
+                    decoration: const InputDecoration(
+                        labelText: 'Số điện thoại',
+                        border: OutlineInputBorder())),
                 const SizedBox(height: 16),
                 TextField(
-                  controller: addressController,
-                  decoration: const InputDecoration(
-                    labelText: 'Địa chỉ',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 2,
-                ),
+                    controller: addressController,
+                    decoration: const InputDecoration(
+                        labelText: 'Địa chỉ', border: OutlineInputBorder()),
+                    maxLines: 2),
                 const SizedBox(height: 16),
                 TextField(
-                  controller: occupationController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nghề nghiệp',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
+                    controller: occupationController,
+                    decoration: const InputDecoration(
+                        labelText: 'Nghề nghiệp',
+                        border: OutlineInputBorder())),
                 const SizedBox(height: 16),
                 DropdownButtonFormField<String>(
                   value: selectedGender,
@@ -433,13 +402,10 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                 ),
                 const SizedBox(height: 16),
                 TextField(
-                  controller: notesController,
-                  decoration: const InputDecoration(
-                    labelText: 'Ghi chú',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 2,
-                ),
+                    controller: notesController,
+                    decoration: const InputDecoration(
+                        labelText: 'Ghi chú', border: OutlineInputBorder()),
+                    maxLines: 2),
               ],
             ),
           ),
@@ -690,9 +656,8 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
 
             SizedBox(height: isMobile ? 12 : 16),
 
-            // Actions
+            // Actions (no delete; toggle active instead)
             if (isMobile) ...[
-              // Mobile layout - stacked buttons
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton.icon(
@@ -710,17 +675,26 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
-                  onPressed: () => _showDeleteDialog(customer),
-                  icon: const Icon(Icons.delete, color: Colors.red),
-                  label: const Text('Xóa', style: TextStyle(color: Colors.red)),
+                  onPressed: () => _toggleActive(customer),
+                  icon: Icon(
+                    customer.isActive ? Icons.visibility_off : Icons.visibility,
+                    color: customer.isActive ? Colors.red : Colors.green,
+                  ),
+                  label: Text(
+                    customer.isActive ? 'Tắt hoạt động' : 'Bật hoạt động',
+                    style: TextStyle(
+                      color: customer.isActive ? Colors.red : Colors.green,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                   style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: Colors.red),
+                    side: BorderSide(
+                        color: customer.isActive ? Colors.red : Colors.green),
                     padding: const EdgeInsets.symmetric(vertical: 8),
                   ),
                 ),
               ),
             ] else ...[
-              // Desktop layout - inline buttons
               Row(
                 children: [
                   Expanded(
@@ -736,9 +710,29 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                     ),
                   ),
                   const SizedBox(width: 8),
-                  IconButton(
-                    onPressed: () => _showDeleteDialog(customer),
-                    icon: const Icon(Icons.delete, color: Colors.red),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _toggleActive(customer),
+                      icon: Icon(
+                        customer.isActive
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                        color: customer.isActive ? Colors.red : Colors.green,
+                      ),
+                      label: Text(
+                        customer.isActive ? 'Tắt hoạt động' : 'Bật hoạt động',
+                        style: TextStyle(
+                          color: customer.isActive ? Colors.red : Colors.green,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(
+                            color:
+                                customer.isActive ? Colors.red : Colors.green),
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -792,13 +786,13 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
     if (email.trim().isEmpty) {
       return 'Vui lòng nhập email';
     }
-    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email.trim())) {
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}\$').hasMatch(email.trim())) {
       return 'Email không hợp lệ';
     }
     if (phone.trim().isEmpty) {
       return 'Vui lòng nhập số điện thoại';
     }
-    if (!RegExp(r'^[0-9]{10,11}$').hasMatch(phone.trim())) {
+    if (!RegExp(r'^[0-9]{10,11}\$').hasMatch(phone.trim())) {
       return 'Số điện thoại phải có 10-11 chữ số';
     }
     if (address.trim().isEmpty) {

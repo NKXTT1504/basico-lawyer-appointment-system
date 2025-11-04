@@ -428,30 +428,17 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                         Icons.person, 'Họ và tên', _currentUser?.name ?? ''),
                     _buildInfoRow(
                         Icons.email, 'Email', _currentUser?.email ?? ''),
-                    _buildInfoRow(
-                        Icons.phone,
-                        'Số điện thoại',
-                        (_lawyerProfile?.phone ?? '').isNotEmpty
-                            ? _lawyerProfile!.phone
-                            : 'Chưa cập nhật'),
-                    _buildInfoRow(
-                        Icons.location_on,
-                        'Địa chỉ',
-                        (_lawyerProfile?.address ?? '').isNotEmpty
-                            ? _lawyerProfile!.address
-                            : 'Chưa cập nhật'),
-                    _buildInfoRow(
-                        Icons.work,
-                        'Chuyên môn',
-                        (_lawyerProfile?.specialization ?? '').isNotEmpty
-                            ? _lawyerProfile!.specialization
-                            : 'Chưa cập nhật'),
-                    _buildInfoRow(
-                        Icons.info,
-                        'Tiểu sử',
-                        (_lawyerProfile?.bio ?? '').isNotEmpty
-                            ? _lawyerProfile!.bio
-                            : 'Chưa cập nhật'),
+                    if ((_lawyerProfile?.phone ?? '').isNotEmpty)
+                      _buildInfoRow(
+                          Icons.phone, 'Số điện thoại', _lawyerProfile!.phone),
+                    if ((_lawyerProfile?.address ?? '').isNotEmpty)
+                      _buildInfoRow(Icons.location_on, 'Địa chỉ',
+                          _lawyerProfile!.address),
+                    if ((_lawyerProfile?.specialization ?? '').isNotEmpty)
+                      _buildInfoRow(Icons.work, 'Chuyên môn',
+                          _lawyerProfile!.specialization),
+                    if ((_lawyerProfile?.bio ?? '').isNotEmpty)
+                      _buildInfoRow(Icons.info, 'Tiểu sử', _lawyerProfile!.bio),
                   ],
                 ),
               ),

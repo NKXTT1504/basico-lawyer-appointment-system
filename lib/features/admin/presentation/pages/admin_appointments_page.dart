@@ -181,156 +181,13 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
     );
   }
 
-  void _showSuccessSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
+  // Admin chỉ xem: giữ lại snackbar lỗi để thông báo sự cố tải dữ liệu
 
-  Future<void> _updateAppointmentStatus(
-      Appointment appointment, AppointmentStatus newStatus) async {
-    try {
-      // Validation logic for status transitions
-      if (!_isValidStatusTransition(appointment.status, newStatus)) {
-        _showErrorSnackBar(
-            'Không thể chuyển từ ${_getStatusText(appointment.status)} sang ${_getStatusText(newStatus)}');
-        return;
-      }
+  // Admin không có quyền thay đổi trạng thái; giữ method cũ đã loại bỏ
 
-      // Show confirmation dialog for critical status changes
-      if (newStatus == AppointmentStatus.cancelled) {
-        final confirmed = await _showStatusChangeConfirmation(
-          'Xác nhận hủy lịch hẹn',
-          'Bạn có chắc chắn muốn hủy lịch hẹn của ${appointment.customerName}?',
-          'Hủy lịch hẹn',
-        );
-        if (!confirmed) return;
-      } else if (newStatus == AppointmentStatus.completed) {
-        final confirmed = await _showStatusChangeConfirmation(
-          'Xác nhận hoàn thành',
-          'Đánh dấu lịch hẹn của ${appointment.customerName} là hoàn thành?',
-          'Hoàn thành',
-        );
-        if (!confirmed) return;
-      }
+  // Admin không thay đổi trạng thái nên bỏ kiểm tra chuyển đổi
 
-      // Update via API
-      print('🔄 Updating appointment status via API...');
-      if (newStatus == AppointmentStatus.completed) {
-        await _adminApiService.completeAppointment(int.parse(appointment.id));
-      } else {
-        // For other status updates, use the update endpoint
-        final updateData = {
-          'status': _getStatusInt(newStatus),
-        };
-        await _adminApiService.updateAppointment(
-            int.parse(appointment.id), updateData);
-      }
-
-      // Update local storage
-      final updatedAppointment = appointment.copyWith(
-        status: newStatus,
-        updatedAt: DateTime.now(),
-      );
-      await UserStorageService.updateAppointment(updatedAppointment);
-      await _loadAppointments();
-
-      // Show success message with specific status
-      _showSuccessSnackBar('${_getStatusText(newStatus)} lịch hẹn thành công');
-    } catch (e, stackTrace) {
-      print('❌ Error updating appointment status: $e');
-      print('Stack trace: $stackTrace');
-      _showErrorSnackBar('Có lỗi xảy ra khi cập nhật: $e');
-    }
-  }
-
-  bool _isValidStatusTransition(
-      AppointmentStatus currentStatus, AppointmentStatus newStatus) {
-    // Define valid status transitions
-    switch (currentStatus) {
-      case AppointmentStatus.pending:
-        return newStatus == AppointmentStatus.confirmed ||
-            newStatus == AppointmentStatus.cancelled;
-      case AppointmentStatus.confirmed:
-        return newStatus == AppointmentStatus.completed ||
-            newStatus == AppointmentStatus.cancelled;
-      case AppointmentStatus.completed:
-        return false; // Cannot change from completed
-      case AppointmentStatus.cancelled:
-        return false; // Cannot change from cancelled
-    }
-  }
-
-  Future<bool> _showStatusChangeConfirmation(
-      String title, String message, String actionText) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(title),
-        content: Text(message),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor:
-                  actionText == 'Hủy lịch hẹn' ? Colors.red : Colors.green,
-              foregroundColor: Colors.white,
-            ),
-            child: Text(actionText),
-          ),
-        ],
-      ),
-    );
-    return result ?? false;
-  }
-
-  Future<void> _deleteAppointment(String id) async {
-    try {
-      print('🔄 Deleting appointment via API...');
-      await _adminApiService.deleteAppointment(int.parse(id));
-
-      // Update local storage
-      await UserStorageService.deleteAppointment(id);
-      await _loadAppointments();
-      _showSuccessSnackBar('Xóa đặt lịch thành công');
-    } catch (e, stackTrace) {
-      print('❌ Error deleting appointment: $e');
-      print('Stack trace: $stackTrace');
-      _showErrorSnackBar('Có lỗi xảy ra: $e');
-    }
-  }
-
-  void _showDeleteDialog(Appointment appointment) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Xác nhận xóa'),
-        content: Text(
-            'Bạn có chắc chắn muốn xóa đặt lịch của ${appointment.customerName}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _deleteAppointment(appointment.id);
-            },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Xóa'),
-          ),
-        ],
-      ),
-    );
-  }
+  // Admin không thao tác nên không cần confirm dialog
 
   List<String> get _uniqueLawyers {
     return _appointments.map((apt) => apt.lawyerName).toSet().toList()..sort();
@@ -378,18 +235,7 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
     }
   }
 
-  int _getStatusInt(AppointmentStatus status) {
-    switch (status) {
-      case AppointmentStatus.pending:
-        return 0;
-      case AppointmentStatus.confirmed:
-        return 1;
-      case AppointmentStatus.completed:
-        return 2;
-      case AppointmentStatus.cancelled:
-        return 3;
-    }
-  }
+  // Không cần map status -> int đối với admin
 
   @override
   Widget build(BuildContext context) {
@@ -883,132 +729,18 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
 
             SizedBox(height: isMobile ? 12 : 16),
 
-            // Actions
-            if (isMobile) ...[
-              // Mobile layout - stacked buttons
-              if (appointment.status == AppointmentStatus.pending) ...[
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () => _updateAppointmentStatus(
-                        appointment, AppointmentStatus.confirmed),
-                    icon: const Icon(Icons.check, size: 16),
-                    label: const Text('Xác nhận'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.info,
-                      foregroundColor: AppColors.onInfo,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
-                  ),
-                ),
-              ],
-              if (appointment.status == AppointmentStatus.confirmed) ...[
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () => _updateAppointmentStatus(
-                        appointment, AppointmentStatus.completed),
-                    icon: const Icon(Icons.done, size: 16),
-                    label: const Text('Hoàn thành'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.success,
-                      foregroundColor: AppColors.onSuccess,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
-                  ),
-                ),
-              ],
-              if (appointment.status != AppointmentStatus.completed &&
-                  appointment.status != AppointmentStatus.cancelled) ...[
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: () => _updateAppointmentStatus(
-                        appointment, AppointmentStatus.cancelled),
-                    icon: const Icon(Icons.cancel, size: 16),
-                    label: const Text('Hủy'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.error,
-                      foregroundColor: AppColors.onError,
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                    ),
-                  ),
-                ),
-              ],
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () => _showDeleteDialog(appointment),
-                  icon: const Icon(Icons.delete, color: AppColors.error),
-                  label: const Text('Xóa',
-                      style: TextStyle(color: AppColors.error)),
-                  style: OutlinedButton.styleFrom(
-                    side: const BorderSide(color: AppColors.error),
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                  ),
+            // Actions: Admin chỉ có quyền xem, không thao tác trạng thái
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                'Chỉ xem',
+                style: TextStyle(
+                  color: AppColors.onSurfaceVariant,
+                  fontSize: isMobile ? 12 : 13,
+                  fontStyle: FontStyle.italic,
                 ),
               ),
-            ] else ...[
-              // Desktop layout - inline buttons
-              Row(
-                children: [
-                  if (appointment.status == AppointmentStatus.pending) ...[
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _updateAppointmentStatus(
-                            appointment, AppointmentStatus.confirmed),
-                        icon: const Icon(Icons.check, size: 16),
-                        label: const Text('Xác nhận'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.info,
-                          foregroundColor: AppColors.onInfo,
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  if (appointment.status == AppointmentStatus.confirmed) ...[
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _updateAppointmentStatus(
-                            appointment, AppointmentStatus.completed),
-                        icon: const Icon(Icons.done, size: 16),
-                        label: const Text('Hoàn thành'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.success,
-                          foregroundColor: AppColors.onSuccess,
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  if (appointment.status != AppointmentStatus.completed &&
-                      appointment.status != AppointmentStatus.cancelled) ...[
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () => _updateAppointmentStatus(
-                            appointment, AppointmentStatus.cancelled),
-                        icon: const Icon(Icons.cancel, size: 16),
-                        label: const Text('Hủy'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.error,
-                          foregroundColor: AppColors.onError,
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                  ],
-                  IconButton(
-                    onPressed: () => _showDeleteDialog(appointment),
-                    icon: const Icon(Icons.delete, color: AppColors.error),
-                  ),
-                ],
-              ),
-            ],
+            ),
           ],
         ),
       ),

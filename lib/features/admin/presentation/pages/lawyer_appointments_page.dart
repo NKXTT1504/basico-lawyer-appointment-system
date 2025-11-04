@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dio/dio.dart';
 import '../../data/services/user_storage_service.dart';
 import '../../data/models/admin_user.dart';
 import '../../data/models/appointment.dart';
@@ -16,6 +17,9 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
   List<Appointment> _myAppointments = [];
   bool _isLoading = true;
   String _selectedStatus = 'all';
+  // Keep services (as joined string) by appointment id to satisfy backend update requirements
+  final Map<String, String> _servicesByAppointmentId = <String, String>{};
+  final AdminApiService _adminApiService = AdminApiService();
 
   @override
   void initState() {
@@ -100,8 +104,18 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
             final Map<String, dynamic> e = Map<String, dynamic>.from(raw);
             final Map<String, dynamic> userJson =
                 Map<String, dynamic>.from((e['user'] ?? {}) as Map);
+            // Cache services for later update
+            final List<dynamic> servicesList =
+                (e['services'] is List) ? (e['services'] as List) : <dynamic>[];
+            final String servicesJoined = servicesList
+                .map((s) => s.toString())
+                .where((s) => s.trim().isNotEmpty)
+                .join(', ');
+            final String aptId =
+                (e['id'] ?? e['appointmentId'] ?? '').toString();
+            _servicesByAppointmentId[aptId] = servicesJoined;
             return Appointment(
-              id: (e['id'] ?? e['appointmentId'] ?? '').toString(),
+              id: aptId,
               customerId: (e['userId'] ?? '').toString(),
               customerName: (userJson['fullName'] ?? '').toString(),
               lawyerId: (e['lawyerId'] ?? '').toString(),
@@ -200,17 +214,51 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
   Future<void> _updateAppointmentStatus(
       Appointment appointment, AppointmentStatus newStatus) async {
     try {
-      final updatedAppointment = appointment.copyWith(
-        status: newStatus,
-        updatedAt: DateTime.now(),
-      );
-      await UserStorageService.updateAppointment(updatedAppointment);
+      final int id = int.parse(appointment.id);
+      if (newStatus == AppointmentStatus.confirmed) {
+        await _adminApiService.confirmAppointment(id);
+      } else if (newStatus == AppointmentStatus.cancelled) {
+        await _adminApiService.cancelAppointment(id);
+      } else if (newStatus == AppointmentStatus.completed) {
+        try {
+          await _adminApiService.completeAppointment(id);
+        } on DioException catch (e) {
+          // Ghi log chi tiết để debug
+          // ignore: avoid_print
+          print('⚠️ completeAppointment failed: status=' +
+              (e.response?.statusCode?.toString() ?? 'null') +
+              ' data=' +
+              (e.response?.data?.toString() ?? 'null'));
+
+          // Fallback: dùng UpdateAppointment với các trường bắt buộc
+          final servicesStr = _servicesByAppointmentId[appointment.id] ?? '';
+          final services = servicesStr.isEmpty
+              ? <String>[]
+              : servicesStr
+                  .split(',')
+                  .map((s) => s.trim())
+                  .where((s) => s.isNotEmpty)
+                  .toList();
+          final updateData = {
+            'status': 2,
+            'Slot': appointment.timeSlot,
+            'Spec': appointment.type,
+            'Services': services,
+          };
+          await _adminApiService.updateAppointment(id, updateData);
+        }
+      } else {
+        return;
+      }
+
       await _loadData();
       _showSuccessSnackBar('Cập nhật trạng thái thành công');
     } catch (e) {
       _showErrorSnackBar('Có lỗi xảy ra: $e');
     }
   }
+
+  // Removed status-int helper (no longer needed with dedicated endpoints)
 
   Color _getStatusColor(AppointmentStatus status) {
     switch (status) {
