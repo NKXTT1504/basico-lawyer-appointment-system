@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/firebase/storage_image.dart';
 
 class LawyerDetailPage extends StatefulWidget {
   final String lawyerId;
@@ -94,10 +97,72 @@ class _LawyerDetailPageState extends State<LawyerDetailPage> {
     return {'average': 0, 'count': 0};
   }
 
+  Widget _buildAvatar(String? avatar) {
+    if (avatar == null || avatar.isEmpty) {
+      return const CircleAvatar(
+        radius: 48,
+        child: Icon(Icons.person, size: 60),
+      );
+    }
+    if (avatar.startsWith('http')) {
+      return CircleAvatar(
+        radius: 48,
+        backgroundImage: NetworkImage(avatar),
+      );
+    }
+    return CircleAvatar(
+      radius: 48,
+      backgroundColor: AppColors.primary.withOpacity(0.08),
+      child: ClipOval(
+        child: StorageImage(
+            path: avatar, width: 96, height: 96, fit: BoxFit.cover),
+      ),
+    );
+  }
+
+  Widget _infoChip(IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 18, color: AppColors.onBackground),
+          const SizedBox(width: 8),
+          Text(label, style: const TextStyle(fontWeight: FontWeight.w600)),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Chi tiết luật sư')),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0.5,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.black87),
+        titleTextStyle: const TextStyle(
+          color: Colors.black,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+        ),
+        systemOverlayStyle: SystemUiOverlayStyle.dark,
+        title: const Text('Chi tiết luật sư'),
+      ),
+      backgroundColor: const Color(0xFFF6F7FB),
       body: FutureBuilder<Map<String, dynamic>>(
         future: _profileFuture,
         builder: (context, snapshot) {
@@ -127,84 +192,115 @@ class _LawyerDetailPageState extends State<LawyerDetailPage> {
               ? fullNameFromUser!
               : (l['name'] ?? l['fullName'] ?? 'Luật sư')?.toString() ??
                   'Luật sư';
-          final city = l['description'] ?? (l['address'] ?? '');
+          final city = l['address'] ?? '';
           final years = (l['expYears'] ?? l['experienceYears'] ?? 0).toString();
           final avatar = (l['img'] ?? l['imageUrl'] ?? '').isNotEmpty
               ? (l['img'] ?? l['imageUrl'])
               : null;
-          final spec = l['specialization'] ?? l['spect'] ?? '';
-          final bio = l['bio'] ?? '';
+          final spec = (l['specialization'] ?? l['spect'] ?? '').toString();
+          final bio = (l['bio'] ?? '').toString();
 
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                CircleAvatar(
-                  radius: 48,
-                  backgroundImage:
-                      (avatar != null) ? NetworkImage(avatar) : null,
-                  child: avatar == null
-                      ? const Icon(Icons.person, size: 60)
-                      : null,
-                ),
-                const SizedBox(height: 12),
-                Text(name,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 22)),
-                const SizedBox(height: 8),
-                FutureBuilder<Map<String, dynamic>>(
-                  future: _ratingFuture,
-                  builder: (context, rshot) {
-                    if (rshot.connectionState == ConnectionState.waiting) {
-                      return const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2));
-                    } else if (rshot.hasError) {
-                      return const Text('-');
-                    }
-                    final avg = (rshot.data?['average'] ?? 0);
-                    final cnt = (rshot.data?['count'] ?? 0).toString();
-                    return Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(Icons.star, color: Colors.amber, size: 20),
-                        Text('${avg is num ? avg.toStringAsFixed(1) : avg}',
-                            style:
-                                const TextStyle(fontWeight: FontWeight.bold)),
-                        const SizedBox(width: 4),
-                        Text('($cnt đánh giá)',
-                            style: const TextStyle(color: Colors.grey)),
-                      ],
-                    );
-                  },
-                ),
-                const SizedBox(height: 8),
-                Text('$spec', style: const TextStyle(fontSize: 16)),
-                const SizedBox(height: 6),
-                Text('$city', style: const TextStyle(color: Colors.grey)),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.badge, size: 20),
-                    const SizedBox(width: 6),
-                    Text('Kinh nghiệm: $years năm'),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                if (bio.isNotEmpty)
-                  Card(
-                    elevation: 0,
-                    color: Colors.blue[50],
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Text(bio),
+                // Header
+                Container(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 16),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    border: Border(
+                      bottom: BorderSide(color: Color(0xFFEAECEF)),
                     ),
                   ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      _buildAvatar(avatar),
+                      const SizedBox(height: 12),
+                      Text(name,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w800, fontSize: 22)),
+                      const SizedBox(height: 6),
+                      FutureBuilder<Map<String, dynamic>>(
+                        future: _ratingFuture,
+                        builder: (context, rshot) {
+                          if (rshot.connectionState ==
+                              ConnectionState.waiting) {
+                            return const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2));
+                          }
+                          final avg = (rshot.data?['average'] ?? 0);
+                          final cnt = (rshot.data?['count'] ?? 0).toString();
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.star,
+                                  color: Color(0xFFFFB300), size: 20),
+                              const SizedBox(width: 4),
+                              Text(
+                                  '${avg is num ? avg.toStringAsFixed(1) : avg}',
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w700)),
+                              const SizedBox(width: 6),
+                              Text('($cnt đánh giá)',
+                                  style: const TextStyle(color: Colors.grey)),
+                            ],
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          if (spec.isNotEmpty) _infoChip(Icons.gavel, spec),
+                          if (city.toString().isNotEmpty)
+                            _infoChip(
+                                Icons.location_on_outlined, city.toString()),
+                          _infoChip(Icons.badge, 'Kinh nghiệm: $years năm'),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Bio section
+                if (bio.isNotEmpty) ...[
+                  const SizedBox(height: 12),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Card(
+                      elevation: 0,
+                      color: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          side: const BorderSide(color: Color(0xFFEAECEF))),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Giới thiệu',
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.w700)),
+                            const SizedBox(height: 8),
+                            Text(bio,
+                                style: TextStyle(
+                                    color: Colors.grey.shade800, height: 1.45)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 20),
               ],
             ),
           );

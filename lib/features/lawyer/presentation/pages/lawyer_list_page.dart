@@ -6,7 +6,7 @@ import '../../../admin/data/services/user_storage_service.dart';
 import '../../../admin/data/models/lawyer.dart' as model;
 import '../../data/services/lawyer_api_service.dart';
 import '../../../../core/network/api_services.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/firebase/storage_image.dart';
 
 // Removed mock class; now reading real lawyers from storage
 
@@ -170,14 +170,15 @@ class _LawyerListPageState extends State<LawyerListPage> {
 
     if (_loading) {
       return Scaffold(
-        backgroundColor: AppColors.background,
+        backgroundColor: const Color(0xFFF8F9FA),
         body: SafeArea(
           child: const Center(child: CircularProgressIndicator()),
         ),
       );
     }
     return Scaffold(
-      backgroundColor: AppColors.background,
+      // Removed AppBar to avoid duplicate title
+      backgroundColor: const Color(0xFFF8F9FA),
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(
@@ -290,7 +291,7 @@ class _LawyerListPageState extends State<LawyerListPage> {
         fontSize: screenWidth *
             (isTablet ? 0.07 : 0.06), // 7% for tablet, 6% for mobile
         fontWeight: FontWeight.bold,
-        color: AppColors.onBackground,
+        color: const Color(0xFF1E3A8A),
       ),
     );
   }
@@ -358,6 +359,10 @@ class _LawyerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final String img = lawyer.imageUrl;
+    final bool hasNetwork = img.isNotEmpty && img.startsWith('http');
+    final bool hasStoragePath = img.isNotEmpty && !hasNetwork;
+
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -385,7 +390,12 @@ class _LawyerCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 clipBehavior: Clip.antiAlias,
-                child: Icon(Icons.person, color: primaryColor, size: 28),
+                child: hasNetwork
+                    ? Image.network(img, fit: BoxFit.cover)
+                    : hasStoragePath
+                        ? StorageImage(
+                            path: img, width: 56, height: 56, fit: BoxFit.cover)
+                        : Icon(Icons.person, color: primaryColor, size: 28),
               ),
               const SizedBox(width: 12),
               Expanded(
