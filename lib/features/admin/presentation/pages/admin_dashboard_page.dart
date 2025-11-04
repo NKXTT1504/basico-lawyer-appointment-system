@@ -308,7 +308,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: AppColors.error,
       ),
     );
   }
@@ -508,7 +508,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       'Khách hàng',
                       _totalCustomers.toString(),
                       Icons.person,
-                      Colors.green,
+                      AppColors.success,
                     ),
                     _buildStatCard(
                       'Luật sư',
@@ -561,14 +561,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                       _buildStatusCard(
                         'Đã xác nhận',
                         _confirmedAppointments.toString(),
-                        Colors.blue,
+                        AppColors.primary,
                         Icons.check_circle,
                       ),
                       const SizedBox(height: 12),
                       _buildStatusCard(
                         'Hoàn thành',
                         _completedAppointments.toString(),
-                        Colors.green,
+                        AppColors.success,
                         Icons.done_all,
                       ),
                       const SizedBox(height: 12),
@@ -579,7 +579,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                                 _confirmedAppointments -
                                 _completedAppointments)
                             .toString(),
-                        Colors.red,
+                        AppColors.error,
                         Icons.cancel,
                       ),
                     ],
@@ -602,7 +602,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                             child: _buildStatusCard(
                               'Đã xác nhận',
                               _confirmedAppointments.toString(),
-                              Colors.blue,
+                              AppColors.primary,
                               Icons.check_circle,
                             ),
                           ),
@@ -615,7 +615,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                             child: _buildStatusCard(
                               'Hoàn thành',
                               _completedAppointments.toString(),
-                              Colors.green,
+                              AppColors.success,
                               Icons.done_all,
                             ),
                           ),
@@ -628,7 +628,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                                       _confirmedAppointments -
                                       _completedAppointments)
                                   .toString(),
-                              Colors.red,
+                              AppColors.error,
                               Icons.cancel,
                             ),
                           ),
@@ -685,7 +685,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                     _buildActionCard(
                       'Quản lý đặt lịch',
                       Icons.calendar_today,
-                      Colors.blue,
+                      AppColors.primary,
                       () => context.go('/admin/appointments'),
                     ),
                     _buildActionCard(
@@ -832,8 +832,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           Expanded(
             child: MiniLineChart(
               data: series,
-              strokeColor: (color ?? Colors.blue[600])!,
-              fillColor: (color ?? Colors.blue[200]!).withOpacity(0.25),
+              strokeColor: (color ?? AppColors.primary),
+              fillColor:
+                  (color ?? AppColors.primaryContainer).withOpacity(0.25),
             ),
           ),
         ],
@@ -1000,7 +1001,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           'Hoạt động gần đây',
           style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                 fontWeight: FontWeight.bold,
-                color: Colors.blue[800],
+                color: AppColors.primary,
                 fontSize: isMobile ? 18 : 20,
               ),
         ),
@@ -1044,14 +1045,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           Row(
             children: [
               Icon(Icons.calendar_today,
-                  color: Colors.blue, size: isMobile ? 16 : 20),
+                  color: AppColors.primary, size: isMobile ? 16 : 20),
               const SizedBox(width: 8),
               Text(
                 'Đặt lịch gần đây',
                 style: TextStyle(
                   fontSize: isMobile ? 14 : 16,
                   fontWeight: FontWeight.bold,
-                  color: Colors.blue[800],
+                  color: AppColors.primary,
                 ),
               ),
             ],
@@ -1216,11 +1217,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
       case AppointmentStatus.pending:
         return Colors.amber;
       case AppointmentStatus.confirmed:
-        return Colors.blue;
+        return AppColors.primary;
       case AppointmentStatus.completed:
-        return Colors.green;
+        return AppColors.success;
       case AppointmentStatus.cancelled:
-        return Colors.red;
+        return AppColors.error;
     }
   }
 }

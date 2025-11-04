@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/responsive_helper.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/user_profile.dart';
 import '../bloc/profile_bloc.dart';
 
@@ -21,7 +22,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
   final _oldPasswordController = TextEditingController();
   final _newPasswordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  
+
   bool _obscureOldPassword = true;
   bool _obscureNewPassword = true;
   bool _obscureConfirmPassword = true;
@@ -37,11 +38,11 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
   void _changePassword() {
     if (_formKey.currentState?.validate() ?? false) {
       context.read<ProfileBloc>().add(
-        ChangePasswordRequested(
-          oldPassword: _oldPasswordController.text.trim(),
-          newPassword: _newPasswordController.text.trim(),
-        ),
-      );
+            ChangePasswordRequested(
+              oldPassword: _oldPasswordController.text.trim(),
+              newPassword: _newPasswordController.text.trim(),
+            ),
+          );
     }
   }
 
@@ -49,7 +50,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
   Widget build(BuildContext context) {
     final isTablet = ResponsiveHelper.isTablet(context);
     final screenWidth = MediaQuery.of(context).size.width;
-    
+
     return Dialog(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
@@ -66,7 +67,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                 Icon(
                   Icons.lock_outline,
                   size: isTablet ? 32 : 28,
-                  color: const Color(0xFF1E3A8A),
+                  color: AppColors.primary,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -75,7 +76,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                     style: TextStyle(
                       fontSize: isTablet ? 24 : 20,
                       fontWeight: FontWeight.bold,
-                      color: const Color(0xFF1E3A8A),
+                      color: AppColors.primary,
                     ),
                   ),
                 ),
@@ -85,9 +86,9 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                 ),
               ],
             ),
-            
+
             const SizedBox(height: 24),
-            
+
             // Form
             Form(
               key: _formKey,
@@ -103,9 +104,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                       });
                     },
                   ),
-                  
                   const SizedBox(height: 16),
-                  
                   _buildPasswordField(
                     label: 'Mật khẩu mới',
                     controller: _newPasswordController,
@@ -116,9 +115,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                       });
                     },
                   ),
-                  
                   const SizedBox(height: 16),
-                  
                   _buildPasswordField(
                     label: 'Xác nhận mật khẩu mới',
                     controller: _confirmPasswordController,
@@ -132,9 +129,9 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 32),
-            
+
             // Buttons
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
@@ -145,19 +142,18 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                     'Hủy',
                     style: TextStyle(
                       fontSize: isTablet ? 16 : 14,
-                      color: Colors.grey.shade600,
+                      color: AppColors.onSurfaceVariant,
                     ),
                   ),
                 ),
                 const SizedBox(width: 12),
-                
                 BlocConsumer<ProfileBloc, ProfileState>(
                   listener: (context, state) {
                     if (state is PasswordChangeSuccess) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(state.message),
-                          backgroundColor: Colors.green,
+                          backgroundColor: AppColors.success,
                         ),
                       );
                       Navigator.of(context).pop();
@@ -165,7 +161,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(state.message),
-                          backgroundColor: Colors.red,
+                          backgroundColor: AppColors.error,
                         ),
                       );
                     }
@@ -175,7 +171,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                     return ElevatedButton(
                       onPressed: isLoading ? null : _changePassword,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E3A8A),
+                        backgroundColor: AppColors.primary,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -187,7 +183,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
                                 valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
+                                  AppColors.onPrimary,
                                 ),
                               ),
                             )
@@ -195,7 +191,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
                               'Đổi mật khẩu',
                               style: TextStyle(
                                 fontSize: isTablet ? 16 : 14,
-                                color: Colors.white,
+                                color: AppColors.onPrimary,
                               ),
                             ),
                     );
@@ -223,7 +219,7 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
           style: TextStyle(
             fontSize: ResponsiveHelper.isTablet(context) ? 16 : 14,
             fontWeight: FontWeight.w600,
-            color: Colors.grey.shade700,
+            color: AppColors.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 8),
@@ -234,17 +230,17 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
             hintText: 'Nhập $label',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+              borderSide: BorderSide(color: AppColors.outline),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF1E3A8A)),
+              borderSide: const BorderSide(color: AppColors.primary),
             ),
             suffixIcon: IconButton(
               onPressed: onToggleObscure,
               icon: Icon(
                 obscureText ? Icons.visibility : Icons.visibility_off,
-                color: Colors.grey.shade600,
+                color: AppColors.onSurfaceVariant,
               ),
             ),
             contentPadding: EdgeInsets.symmetric(
@@ -256,17 +252,17 @@ class _ChangePasswordDialogState extends State<ChangePasswordDialog> {
             if (value?.isEmpty ?? true) {
               return 'Vui lòng nhập $label';
             }
-            
+
             if (label.contains('Mật khẩu mới') && (value?.length ?? 0) < 6) {
               return 'Mật khẩu phải có ít nhất 6 ký tự';
             }
-            
+
             if (label == 'Xác nhận mật khẩu mới') {
               if (value != _newPasswordController.text) {
                 return 'Mật khẩu xác nhận không khớp';
               }
             }
-            
+
             return null;
           },
         ),

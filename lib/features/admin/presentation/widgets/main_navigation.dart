@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../data/services/user_storage_service.dart';
 import '../../data/models/admin_user.dart';
 import '../../../chat/presentation/widgets/floating_chat_button.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class MainNavigation extends StatefulWidget {
   final Widget child;
@@ -73,7 +74,7 @@ class _MainNavigationState extends State<MainNavigation> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error, size: 64, color: Colors.red),
+              Icon(Icons.error, size: 64, color: AppColors.error),
               const SizedBox(height: 16),
               const Text('Chưa đăng nhập'),
               const SizedBox(height: 16),
@@ -146,7 +147,7 @@ class _MainNavigationState extends State<MainNavigation> {
                       'WELCOME BACK',
                       style: TextStyle(
                         fontSize: 12,
-                        color: Colors.grey[600],
+                        color: Colors.black54,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -167,10 +168,10 @@ class _MainNavigationState extends State<MainNavigation> {
               ),
               CircleAvatar(
                 radius: 20,
-                backgroundColor: Colors.blue[100],
+                backgroundColor: AppColors.primaryContainer,
                 child: Icon(
                   _getUserIcon(role),
-                  color: Colors.blue[600],
+                  color: AppColors.primary,
                   size: 20,
                 ),
               ),
@@ -250,8 +251,8 @@ class _MainNavigationState extends State<MainNavigation> {
             }
           },
           type: BottomNavigationBarType.fixed,
-          selectedItemColor: Colors.blue[600],
-          unselectedItemColor: Colors.grey[600],
+          selectedItemColor: AppColors.primary,
+          unselectedItemColor: Colors.black54,
           selectedFontSize: 12,
           unselectedFontSize: 12,
           iconSize: 24,
@@ -274,7 +275,7 @@ class _MainNavigationState extends State<MainNavigation> {
             width: sidebarWidth,
             height: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.blue[600],
+              color: AppColors.primary,
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.1),
@@ -295,7 +296,7 @@ class _MainNavigationState extends State<MainNavigation> {
                         child: Icon(
                           _getUserIcon(role),
                           size: 22,
-                          color: Colors.blue[600],
+                          color: AppColors.primary,
                         ),
                       ),
                       if (!_isCollapsed) ...[
@@ -323,7 +324,7 @@ class _MainNavigationState extends State<MainNavigation> {
                                     padding: const EdgeInsets.symmetric(
                                         horizontal: 8, vertical: 2),
                                     decoration: BoxDecoration(
-                                      color: Colors.blue[400],
+                                      color: AppColors.secondary,
                                       borderRadius: BorderRadius.circular(10),
                                     ),
                                     child: Text(

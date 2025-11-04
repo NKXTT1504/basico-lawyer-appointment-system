@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'testimonial_model.dart';
 import 'testimonials_data.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class TestimonialsSection extends StatelessWidget {
   const TestimonialsSection({super.key});
@@ -48,9 +49,9 @@ class _TestimonialCard extends StatelessWidget {
       width: cardWidth,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: AppColors.outline),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -78,7 +79,7 @@ class _TestimonialCard extends StatelessWidget {
                             fontWeight: FontWeight.w700, fontSize: 16)),
                     Text(item.position,
                         style: TextStyle(
-                            color: Colors.grey.shade600, fontSize: 12)),
+                            color: AppColors.onSurfaceVariant, fontSize: 12)),
                   ],
                 ),
               ),
@@ -91,7 +92,7 @@ class _TestimonialCard extends StatelessWidget {
               item.content,
               maxLines: 5,
               overflow: TextOverflow.ellipsis,
-              style: TextStyle(color: Colors.grey.shade800),
+              style: TextStyle(color: AppColors.onSurface),
             ),
           ),
         ],
@@ -112,7 +113,7 @@ class _Stars extends StatelessWidget {
         final filled = i < rating;
         return Icon(
           filled ? Icons.star : Icons.star_border,
-          color: const Color(0xFFFFC107),
+          color: AppColors.warning,
           size: 18,
         );
       }),

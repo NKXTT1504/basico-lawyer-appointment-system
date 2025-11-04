@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/service.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class ServiceDetailPage extends StatelessWidget {
   final ServiceModel service;
@@ -16,7 +17,7 @@ class ServiceDetailPage extends StatelessWidget {
     final isTablet = width > 600;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7FB),
+      backgroundColor: AppColors.surfaceVariant,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: EdgeInsets.symmetric(
@@ -39,7 +40,7 @@ class ServiceDetailPage extends StatelessWidget {
                     style: TextStyle(
                       fontSize: width * (isTablet ? 0.05 : 0.045),
                       fontWeight: FontWeight.w800,
-                      color: Colors.black,
+                      color: AppColors.onSurface,
                     ),
                   ),
                 ],
@@ -48,10 +49,10 @@ class ServiceDetailPage extends StatelessWidget {
 
               // Header card
               Card(
-                color: Colors.white,
+                color: AppColors.surface,
                 elevation: 0,
                 shape: RoundedRectangleBorder(
-                  side: const BorderSide(color: Color(0xFFEAECEF)),
+                  side: BorderSide(color: AppColors.outline),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Padding(
@@ -63,11 +64,10 @@ class ServiceDetailPage extends StatelessWidget {
                         width: isTablet ? 56 : 48,
                         height: isTablet ? 56 : 48,
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E3A8A).withOpacity(0.08),
+                          color: AppColors.primary.withOpacity(0.08),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child:
-                            const Icon(Icons.gavel, color: Color(0xFF1E3A8A)),
+                        child: Icon(Icons.gavel, color: AppColors.primary),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -87,7 +87,7 @@ class ServiceDetailPage extends StatelessWidget {
                                 service.specialization!,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey.shade700,
+                                  color: AppColors.onSurfaceVariant,
                                 ),
                               ),
                             if (service.description != null) ...[
@@ -96,7 +96,7 @@ class ServiceDetailPage extends StatelessWidget {
                                 service.description!,
                                 style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey.shade800,
+                                  color: AppColors.onSurface,
                                   height: 1.5,
                                 ),
                               ),
@@ -131,9 +131,9 @@ class ServiceDetailPage extends StatelessWidget {
 
               // CTA card
               Card(
-                color: Colors.white,
+                color: AppColors.surface,
                 shape: RoundedRectangleBorder(
-                  side: const BorderSide(color: Color(0xFFEAECEF)),
+                  side: BorderSide(color: AppColors.outline),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Padding(
@@ -148,7 +148,7 @@ class ServiceDetailPage extends StatelessWidget {
                       const SizedBox(height: 10),
                       Text(
                         'Đặt lịch tư vấn với luật sư chuyên môn để thảo luận nhu cầu cụ thể của bạn.',
-                        style: TextStyle(color: Colors.grey.shade700),
+                        style: TextStyle(color: AppColors.onSurfaceVariant),
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 14),
@@ -165,8 +165,8 @@ class ServiceDetailPage extends StatelessWidget {
                             child: ElevatedButton(
                               onPressed: () => _bookConsultation(context),
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF1E3A8A),
-                                foregroundColor: Colors.white,
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: AppColors.onPrimary,
                               ),
                               child: const Text('Đặt lịch tư vấn'),
                             ),
@@ -187,9 +187,9 @@ class ServiceDetailPage extends StatelessWidget {
   Widget _buildSection({required String title, required Widget content}) {
     return Card(
       elevation: 0,
-      color: Colors.white,
+      color: AppColors.surface,
       shape: RoundedRectangleBorder(
-        side: const BorderSide(color: Color(0xFFEAECEF)),
+        side: BorderSide(color: AppColors.outline),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Padding(
@@ -220,7 +220,7 @@ class ServiceDetailPage extends StatelessWidget {
           'Chúng tôi cung cấp dịch vụ tư vấn pháp lý chuyên nghiệp với đội ngũ luật sư giàu kinh nghiệm. Chúng tôi cam kết mang đến giải pháp pháp lý tối ưu nhất cho khách hàng.',
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey.shade700,
+            color: AppColors.onSurfaceVariant,
             height: 1.6,
           ),
         ),
@@ -229,7 +229,7 @@ class ServiceDetailPage extends StatelessWidget {
           'Với nhiều năm kinh nghiệm trong lĩnh vực pháp lý, chúng tôi hiểu rõ những thách thức mà khách hàng gặp phải và luôn sẵn sàng hỗ trợ với tinh thần trách nhiệm cao nhất.',
           style: TextStyle(
             fontSize: 14,
-            color: Colors.grey.shade700,
+            color: AppColors.onSurfaceVariant,
             height: 1.6,
           ),
         ),
@@ -274,14 +274,14 @@ class ServiceDetailPage extends StatelessWidget {
                 width: 28,
                 height: 28,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E3A8A),
+                  color: AppColors.primary,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Center(
                   child: Text(
                     '${index + 1}',
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: AppColors.onPrimary,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -304,7 +304,7 @@ class ServiceDetailPage extends StatelessWidget {
                       step['description']!,
                       style: TextStyle(
                         fontSize: 14,
-                        color: Colors.grey.shade700,
+                        color: AppColors.onSurfaceVariant,
                         height: 1.4,
                       ),
                     ),
@@ -333,8 +333,8 @@ class ServiceDetailPage extends StatelessWidget {
                 padding: const EdgeInsets.only(bottom: 10),
                 child: Row(
                   children: [
-                    const Icon(Icons.check_circle,
-                        color: Colors.green, size: 18),
+                    Icon(Icons.check_circle,
+                        color: AppColors.success, size: 18),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(

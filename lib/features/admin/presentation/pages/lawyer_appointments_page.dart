@@ -199,7 +199,7 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: AppColors.error,
       ),
     );
   }
@@ -208,7 +208,7 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.success,
       ),
     );
   }
@@ -265,13 +265,13 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
   Color _getStatusColor(AppointmentStatus status) {
     switch (status) {
       case AppointmentStatus.pending:
-        return Colors.amber;
+        return AppColors.warning;
       case AppointmentStatus.confirmed:
-        return Colors.blue;
+        return AppColors.primary;
       case AppointmentStatus.completed:
-        return Colors.green;
+        return AppColors.success;
       case AppointmentStatus.cancelled:
-        return Colors.red;
+        return AppColors.error;
     }
   }
 
@@ -423,8 +423,8 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
           _selectedStatus = value;
         });
       },
-      selectedColor: Colors.blue[600]!.withOpacity(0.2),
-      checkmarkColor: Colors.blue[600],
+      selectedColor: AppColors.primary.withOpacity(0.2),
+      checkmarkColor: AppColors.primary,
     );
   }
 
@@ -591,7 +591,7 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
                     icon: const Icon(Icons.check, size: 16),
                     label: const Text('Chấp nhận'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
+                      backgroundColor: AppColors.success,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 8),
                     ),
@@ -606,7 +606,7 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
                     icon: const Icon(Icons.cancel, size: 16),
                     label: const Text('Từ chối'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
+                      backgroundColor: AppColors.error,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 8),
                     ),
@@ -623,7 +623,7 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
                         icon: const Icon(Icons.check, size: 16),
                         label: const Text('Chấp nhận'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
+                          backgroundColor: AppColors.success,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 8),
                         ),
@@ -637,7 +637,7 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
                         icon: const Icon(Icons.cancel, size: 16),
                         label: const Text('Từ chối'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
+                          backgroundColor: AppColors.error,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 8),
                         ),
@@ -657,7 +657,7 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
                   icon: const Icon(Icons.done, size: 16),
                   label: const Text('Hoàn thành'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 8),
                   ),

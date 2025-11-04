@@ -5,6 +5,7 @@ import '../widgets/feature_cards.dart';
 import '../widgets/testimonials_section.dart';
 import '../../../appointment/domain/entities/appointment.dart';
 import '../../../appointment/data/datasources/appointment_local_data_source.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -24,6 +25,7 @@ class _HomeTab extends StatelessWidget {
     final screenHeight = MediaQuery.of(context).size.height;
 
     return Scaffold(
+      backgroundColor: AppColors.surfaceVariant,
       appBar: null,
       body: SafeArea(
         child: SingleChildScrollView(
@@ -42,7 +44,7 @@ class _HomeTab extends StatelessWidget {
                   horizontal: screenWidth * 0.05, // 5% of screen width
                   vertical: screenHeight * 0.03, // 3% of screen height
                 ),
-                color: const Color(0xFF1E3A8A),
+                color: AppColors.primary,
                 child: Column(
                   children: [
                     Text(
@@ -50,7 +52,7 @@ class _HomeTab extends StatelessWidget {
                       style: TextStyle(
                         fontSize: screenWidth * 0.045, // 4.5% of screen width
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: AppColors.onPrimary,
                       ),
                     ),
                     SizedBox(
@@ -59,7 +61,7 @@ class _HomeTab extends StatelessWidget {
                       'Giải pháp pháp lý chuyên nghiệp cho mọi nhu cầu',
                       style: TextStyle(
                         fontSize: screenWidth * 0.03, // 3% of screen width
-                        color: Colors.white70,
+                        color: AppColors.onPrimary.withOpacity(0.7),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -69,7 +71,7 @@ class _HomeTab extends StatelessWidget {
                       '© 2025 Basico Law Firm. Tất cả quyền được bảo lưu.',
                       style: TextStyle(
                         fontSize: screenWidth * 0.025, // 2.5% of screen width
-                        color: Colors.white60,
+                        color: AppColors.onPrimary.withOpacity(0.6),
                       ),
                       textAlign: TextAlign.center,
                     ),
@@ -154,7 +156,7 @@ class _CTASection extends StatelessWidget {
           EdgeInsets.symmetric(horizontal: screenWidth * 0.05, vertical: 24),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1E3A8A),
+        color: AppColors.primary,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
@@ -162,22 +164,22 @@ class _CTASection extends StatelessWidget {
         children: [
           const Text('Cần hỗ trợ ngay?',
               style: TextStyle(
-                  color: Colors.white,
+                  color: AppColors.onPrimary,
                   fontSize: 18,
                   fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           const Text(
               'Liên hệ đội ngũ của chúng tôi để được tư vấn nhanh chóng.',
-              style: TextStyle(color: Colors.white70)),
+              style: TextStyle(color: AppColors.onPrimary)),
           const SizedBox(height: 12),
           Align(
             alignment: Alignment.centerRight,
             child: OutlinedButton(
               onPressed: () => Navigator.of(context).pushNamed('/services'),
               style: OutlinedButton.styleFrom(
-                  side: const BorderSide(color: Colors.white)),
+                  side: const BorderSide(color: AppColors.onPrimary)),
               child: const Text('Khám phá dịch vụ',
-                  style: TextStyle(color: Colors.white)),
+                  style: TextStyle(color: AppColors.onPrimary)),
             ),
           ),
         ],
@@ -286,7 +288,7 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
         fontSize: screenWidth *
             (isTablet ? 0.07 : 0.06), // 7% for tablet, 6% for mobile
         fontWeight: FontWeight.bold,
-        color: const Color(0xFF1C1B1F),
+        color: AppColors.onSurface,
       ),
     );
   }
@@ -336,9 +338,9 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
           vertical: screenHeight * 0.015, // 1.5% of screen height
         ),
         decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFF1E3A8A) : Colors.white,
+          color: isSelected ? AppColors.primary : AppColors.surface,
           border: Border.all(
-            color: isSelected ? const Color(0xFF1E3A8A) : Colors.grey.shade300,
+            color: isSelected ? AppColors.primary : AppColors.outline,
             width: 1,
           ),
           borderRadius: BorderRadius.circular(8),
@@ -348,7 +350,7 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
           style: TextStyle(
             fontSize: screenWidth *
                 (isTablet ? 0.04 : 0.035), // 4% for tablet, 3.5% for mobile
-            color: isSelected ? Colors.white : const Color(0xFF1C1B1F),
+            color: isSelected ? AppColors.onPrimary : AppColors.onSurface,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -364,7 +366,7 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
 
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -401,7 +403,7 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
     return Container(
       padding: EdgeInsets.all(screenWidth * 0.04), // 4% of screen width
       decoration: const BoxDecoration(
-        color: Color(0xFF1E3A8A), // Dark blue
+        color: AppColors.primary, // Dark blue
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(12),
           topRight: Radius.circular(12),
@@ -441,7 +443,7 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
       text,
       style: TextStyle(
         fontSize: screenWidth * 0.028, // 2.8% of screen width
-        color: Colors.white,
+        color: AppColors.onPrimary,
         fontWeight: FontWeight.bold,
       ),
       textAlign: TextAlign.center,
@@ -454,10 +456,10 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
     return Container(
       padding: EdgeInsets.all(16.w),
       decoration: BoxDecoration(
-        color: isEven ? Colors.white : Colors.grey.shade50,
+        color: isEven ? AppColors.surface : AppColors.surfaceVariant,
         border: Border(
           bottom: BorderSide(
-            color: Colors.grey.shade200,
+            color: AppColors.outline,
             width: 1,
           ),
         ),
@@ -496,7 +498,7 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
       text,
       style: TextStyle(
         fontSize: 12.sp,
-        color: const Color(0xFF1C1B1F),
+        color: AppColors.onSurface,
       ),
       textAlign: TextAlign.center,
     );
@@ -506,16 +508,16 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
     Color statusColor;
     switch (status) {
       case AppointmentStatus.completed:
-        statusColor = const Color(0xFF4CAF50); // Green
+        statusColor = AppColors.success; // Green
         break;
       case AppointmentStatus.cancelled:
-        statusColor = const Color(0xFFF44336); // Red
+        statusColor = AppColors.error; // Red
         break;
       case AppointmentStatus.confirmed:
-        statusColor = const Color(0xFF2196F3); // Blue
+        statusColor = AppColors.info; // Blue
         break;
       case AppointmentStatus.pending:
-        statusColor = const Color(0xFFFFA726); // Orange
+        statusColor = AppColors.warning; // Orange
         break;
     }
 
@@ -555,9 +557,9 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
       margin: EdgeInsets.all(screenWidth * 0.02), // 2% of screen width
       padding: EdgeInsets.all(screenWidth * 0.04), // 4% of screen width
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade200),
+        border: Border.all(color: AppColors.outline),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
@@ -577,7 +579,7 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
                   style: TextStyle(
                     fontSize: screenWidth * 0.04, // 4% of screen width
                     fontWeight: FontWeight.bold,
-                    color: const Color(0xFF1C1B1F),
+                    color: AppColors.onSurface,
                   ),
                 ),
               ),
@@ -589,14 +591,14 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
             'Thời gian: ${appointment.time}',
             style: TextStyle(
               fontSize: screenWidth * 0.035, // 3.5% of screen width
-              color: Colors.grey[600],
+              color: AppColors.onSurfaceVariant,
             ),
           ),
           Text(
             'Ngày: ${appointment.dayOfWeek}, ${appointment.date}',
             style: TextStyle(
               fontSize: screenWidth * 0.035, // 3.5% of screen width
-              color: Colors.grey[600],
+              color: AppColors.onSurfaceVariant,
             ),
           ),
           SizedBox(height: screenHeight * 0.01), // 1% of screen height
@@ -604,7 +606,7 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
             'Dịch vụ: ${appointment.service}',
             style: TextStyle(
               fontSize: screenWidth * 0.035, // 3.5% of screen width
-              color: Colors.grey[600],
+              color: AppColors.onSurfaceVariant,
             ),
           ),
           if (appointment.action != null) ...[
@@ -613,7 +615,7 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
               'Thao tác: ${appointment.action}',
               style: TextStyle(
                 fontSize: screenWidth * 0.035, // 3.5% of screen width
-                color: Colors.grey[600],
+                color: AppColors.onSurfaceVariant,
               ),
             ),
           ],
@@ -623,7 +625,7 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
   }
 
   Widget _buildEmptyState() {
-    return const Center(
+    return Center(
       child: Padding(
         padding: EdgeInsets.all(32.0),
         child: Column(
@@ -632,14 +634,14 @@ class _AppointmentsTabState extends State<_AppointmentsTab> {
             Icon(
               Icons.event_note_outlined,
               size: 64,
-              color: Colors.grey,
+              color: AppColors.onSurfaceVariant,
             ),
             SizedBox(height: 16),
             Text(
               'Không có dữ liệu',
               style: TextStyle(
                 fontSize: 16,
-                color: Colors.grey,
+                color: AppColors.onSurfaceVariant,
                 fontWeight: FontWeight.w500,
               ),
             ),

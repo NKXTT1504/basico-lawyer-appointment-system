@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/services/user_storage_service.dart';
 import '../../data/services/admin_api_service.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../../data/models/lawyer.dart';
 import '../../data/models/admin_user.dart';
 import 'package:go_router/go_router.dart';
@@ -192,7 +193,7 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: AppColors.error,
       ),
     );
   }
@@ -201,7 +202,7 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.success,
       ),
     );
   }
@@ -857,17 +858,17 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 10, vertical: 6),
                             decoration: BoxDecoration(
-                              color: (lawyer.isActive
-                                  ? const Color(0xFFE7F6EC)
-                                  : const Color(0xFFFCE8E8)),
+                              color: lawyer.isActive
+                                  ? AppColors.successContainer
+                                  : AppColors.errorContainer,
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
                               lawyer.isActive ? 'Hoạt động' : 'Không hoạt động',
                               style: TextStyle(
                                 color: lawyer.isActive
-                                    ? const Color(0xFF1B5E20)
-                                    : const Color(0xFFB71C1C),
+                                    ? AppColors.onSuccessContainer
+                                    : AppColors.onErrorContainer,
                                 fontSize: isTablet ? 12 : 11,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -949,19 +950,24 @@ class _AdminLawyersPageState extends State<AdminLawyersPage> {
                     icon: Icon(
                       lawyer.isActive ? Icons.visibility_off : Icons.visibility,
                       size: isTablet ? 18 : 16,
-                      color: lawyer.isActive ? Colors.red : Colors.green,
+                      color:
+                          lawyer.isActive ? AppColors.error : AppColors.success,
                     ),
                     label: Text(
                       lawyer.isActive ? 'Tắt hoạt động' : 'Bật hoạt động',
                       style: TextStyle(
-                        color: lawyer.isActive ? Colors.red : Colors.green,
+                        color: lawyer.isActive
+                            ? AppColors.error
+                            : AppColors.success,
                         fontSize: isTablet ? 14 : 13,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
-                        color: lawyer.isActive ? Colors.red : Colors.green,
+                        color: lawyer.isActive
+                            ? AppColors.error
+                            : AppColors.success,
                       ),
                       padding: const EdgeInsets.symmetric(vertical: 10),
                       shape: RoundedRectangleBorder(

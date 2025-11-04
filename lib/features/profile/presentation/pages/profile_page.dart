@@ -7,6 +7,8 @@ import '../bloc/profile_bloc.dart';
 import '../../../admin/data/models/customer.dart' as admin_customer;
 import '../../../admin/data/services/user_storage_service.dart' as storage;
 import '../widgets/profile_form.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/page_header.dart';
 
 class ProfilePage extends StatefulWidget {
   final bool readOnly;
@@ -28,7 +30,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final isTablet = ResponsiveHelper.isTablet(context);
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
+      backgroundColor: AppColors.surfaceVariant,
       body: SafeArea(
         child: BlocConsumer<ProfileBloc, ProfileState>(
           listener: (context, state) {
@@ -36,14 +38,14 @@ class _ProfilePageState extends State<ProfilePage> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
-                  backgroundColor: Colors.red,
+                  backgroundColor: AppColors.error,
                 ),
               );
             } else if (state is ProfileUpdateSuccess) {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(state.message),
-                  backgroundColor: Colors.green,
+                  backgroundColor: AppColors.success,
                 ),
               );
             }
@@ -66,7 +68,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       'Đang cập nhật thông tin...',
                       style: TextStyle(
                         fontSize: isTablet ? 18 : 16,
-                        color: Colors.grey.shade600,
+                        color: AppColors.onSurfaceVariant,
                       ),
                     ),
                   ],
@@ -111,7 +113,7 @@ class _ProfilePageState extends State<ProfilePage> {
                         'Đang thay đổi mật khẩu...',
                         style: TextStyle(
                           fontSize: isTablet ? 18 : 16,
-                          color: Colors.grey.shade600,
+                          color: AppColors.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 40),
@@ -138,14 +140,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   Icon(
                     Icons.person_outline,
                     size: isTablet ? 80 : 60,
-                    color: Colors.grey.shade400,
+                    color: AppColors.onSurfaceVariant.withOpacity(0.4),
                   ),
                   const SizedBox(height: 16),
                   Text(
                     'Không thể tải thông tin',
                     style: TextStyle(
                       fontSize: isTablet ? 20 : 18,
-                      color: Colors.grey.shade600,
+                      color: AppColors.onSurfaceVariant,
                     ),
                   ),
                   const SizedBox(height: 8),
@@ -178,30 +180,28 @@ class _ProfileView extends StatelessWidget {
       future: storage.UserStorageService.getCurrentCustomerProfile(),
       builder: (context, snap) {
         return Scaffold(
-          backgroundColor: const Color(0xFFF6F7FB),
-          appBar: AppBar(
-            backgroundColor: Colors.white,
-            foregroundColor: Colors.black,
-            elevation: 0.5,
-            title: const Text('Thông tin cá nhân',
-                style: TextStyle(color: Colors.black)),
-            actions: [
-              IconButton(
-                tooltip: 'Chỉnh sửa',
-                onPressed: () => context.go('/profile/edit'),
-                icon: const Icon(Icons.edit),
-                color: const Color(0xFF1E3A8A),
-              ),
-            ],
-          ),
+          backgroundColor: AppColors.surfaceVariant,
           body: SingleChildScrollView(
             padding: EdgeInsets.all(isTablet ? 24 : 16),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                PageHeader(
+                  title: 'Thông tin cá nhân',
+                  actions: [
+                    IconButton(
+                      tooltip: 'Chỉnh sửa',
+                      onPressed: () => context.go('/profile/edit'),
+                      icon: const Icon(Icons.edit),
+                      color: AppColors.primary,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
                 Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
@@ -216,10 +216,8 @@ class _ProfileView extends StatelessWidget {
                     children: [
                       CircleAvatar(
                         radius: isTablet ? 30 : 26,
-                        backgroundColor:
-                            const Color(0xFF1E3A8A).withOpacity(0.1),
-                        child:
-                            const Icon(Icons.person, color: Color(0xFF1E3A8A)),
+                        backgroundColor: AppColors.primary.withOpacity(0.1),
+                        child: Icon(Icons.person, color: AppColors.primary),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -230,10 +228,11 @@ class _ProfileView extends StatelessWidget {
                                 style: TextStyle(
                                     fontSize: isTablet ? 18 : 16,
                                     fontWeight: FontWeight.w700,
-                                    color: const Color(0xFF1E3A8A))),
+                                    color: AppColors.primary)),
                             const SizedBox(height: 4),
                             Text(profile.email,
-                                style: TextStyle(color: Colors.grey[700])),
+                                style: TextStyle(
+                                    color: AppColors.onSurfaceVariant)),
                           ],
                         ),
                       ),
@@ -244,7 +243,7 @@ class _ProfileView extends StatelessWidget {
                 Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: AppColors.surface,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
@@ -278,7 +277,7 @@ class _ProfileView extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Icon(icon, color: Colors.grey[700]),
+        Icon(icon, color: AppColors.onSurfaceVariant),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -286,7 +285,8 @@ class _ProfileView extends StatelessWidget {
             children: [
               Text(label,
                   style: TextStyle(
-                      color: Colors.grey[700], fontWeight: FontWeight.w600)),
+                      color: AppColors.onSurfaceVariant,
+                      fontWeight: FontWeight.w600)),
               const SizedBox(height: 4),
               Text(value, style: const TextStyle(fontSize: 16)),
             ],

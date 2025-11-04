@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/utils/responsive_helper.dart';
 import '../../../lawyer/data/services/lawyer_api_service.dart';
 import '../../data/models/service.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class ServicesPage extends StatefulWidget {
   const ServicesPage({super.key});
@@ -88,12 +89,12 @@ class _ServicesPageState extends State<ServicesPage> {
     final isTablet = ResponsiveHelper.isTablet(context);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7FB),
+      backgroundColor: AppColors.surfaceVariant,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1E3A8A),
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.onPrimary,
         elevation: 0.5,
-        title: const Text('Dịch vụ', style: TextStyle(color: Colors.black)),
+        title: const Text('Dịch vụ'),
       ),
       body: _buildBody(isTablet),
     );
@@ -114,7 +115,7 @@ class _ServicesPageState extends State<ServicesPage> {
             Icon(
               Icons.error_outline,
               size: 64,
-              color: Colors.red[300],
+              color: AppColors.error,
             ),
             const SizedBox(height: 16),
             Text(
@@ -142,13 +143,13 @@ class _ServicesPageState extends State<ServicesPage> {
             style: TextStyle(
               fontSize: isTablet ? 26 : 22,
               fontWeight: FontWeight.bold,
-              color: Colors.black,
+              color: AppColors.onSurface,
             ),
           ),
           const SizedBox(height: 8),
           Text(
             'Chọn dịch vụ phù hợp, xem mô tả chi tiết và đặt lịch với luật sư chỉ trong vài bước.',
-            style: TextStyle(color: Colors.grey[700]),
+            style: TextStyle(color: AppColors.onSurfaceVariant),
           ),
           const SizedBox(height: 20),
 
@@ -177,7 +178,7 @@ class _ServicesPageState extends State<ServicesPage> {
       BuildContext context, ServiceModel service, bool isTablet) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
@@ -199,12 +200,12 @@ class _ServicesPageState extends State<ServicesPage> {
                   width: isTablet ? 50 : 40,
                   height: isTablet ? 50 : 40,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E3A8A).withOpacity(0.08),
+                    color: AppColors.primary.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Icon(
                     Icons.gavel,
-                    color: const Color(0xFF1E3A8A),
+                    color: AppColors.primary,
                     size: isTablet ? 24 : 20,
                   ),
                 ),
@@ -218,7 +219,7 @@ class _ServicesPageState extends State<ServicesPage> {
                         style: TextStyle(
                           fontSize: isTablet ? 16 : 14,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1E3A8A),
+                          color: AppColors.primary,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
@@ -229,7 +230,7 @@ class _ServicesPageState extends State<ServicesPage> {
                           service.specialization!,
                           style: TextStyle(
                             fontSize: isTablet ? 12 : 11,
-                            color: Colors.grey[600],
+                            color: AppColors.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -248,7 +249,7 @@ class _ServicesPageState extends State<ServicesPage> {
                 service.description!,
                 style: TextStyle(
                   fontSize: isTablet ? 13 : 12,
-                  color: Colors.grey[700],
+                  color: AppColors.onSurfaceVariant,
                   height: 1.4,
                 ),
                 maxLines: 3,
@@ -271,14 +272,14 @@ class _ServicesPageState extends State<ServicesPage> {
                         'Giá: 500k-800k',
                         style: TextStyle(
                           fontSize: isTablet ? 12 : 11,
-                          color: Colors.grey[600],
+                          color: AppColors.onSurfaceVariant,
                         ),
                       ),
                       Text(
                         'Thời lượng: 90 phút',
                         style: TextStyle(
                           fontSize: isTablet ? 12 : 11,
-                          color: Colors.grey[600],
+                          color: AppColors.onSurfaceVariant,
                         ),
                       ),
                     ],

@@ -180,7 +180,7 @@ class _LawyerSelectionPageState extends State<LawyerSelectionPage> {
             Icon(
               Icons.error_outline,
               size: 64,
-              color: Colors.red[300],
+              color: AppColors.error,
             ),
             const SizedBox(height: 16),
             Text(
@@ -206,7 +206,7 @@ class _LawyerSelectionPageState extends State<LawyerSelectionPage> {
             Icon(
               Icons.person_off,
               size: 64,
-              color: Colors.grey[400],
+              color: AppColors.onSurfaceVariant,
             ),
             const SizedBox(height: 16),
             Text(
@@ -318,7 +318,7 @@ class _LawyerSelectionPageState extends State<LawyerSelectionPage> {
               children: [
                 CircleAvatar(
                   radius: 30,
-                  backgroundColor: Colors.blue[100],
+                  backgroundColor: AppColors.primaryContainer,
                   backgroundImage: lawyer.avatarUrl != null
                       ? NetworkImage(lawyer.avatarUrl!)
                       : null,
@@ -326,7 +326,7 @@ class _LawyerSelectionPageState extends State<LawyerSelectionPage> {
                       ? Icon(
                           Icons.person,
                           size: 30,
-                          color: Colors.blue[600],
+                          color: AppColors.primary,
                         )
                       : null,
                 ),
@@ -348,7 +348,7 @@ class _LawyerSelectionPageState extends State<LawyerSelectionPage> {
                           lawyer.specialization!,
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.blue[600],
+                            color: AppColors.primary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -359,7 +359,7 @@ class _LawyerSelectionPageState extends State<LawyerSelectionPage> {
                           '${lawyer.experience} năm kinh nghiệm',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: AppColors.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -371,7 +371,7 @@ class _LawyerSelectionPageState extends State<LawyerSelectionPage> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.orange[100],
+                      color: AppColors.warningContainer,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
@@ -380,7 +380,7 @@ class _LawyerSelectionPageState extends State<LawyerSelectionPage> {
                         Icon(
                           Icons.star,
                           size: 16,
-                          color: Colors.orange[600],
+                          color: AppColors.warning,
                         ),
                         const SizedBox(width: 4),
                         Text(
@@ -388,7 +388,7 @@ class _LawyerSelectionPageState extends State<LawyerSelectionPage> {
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: Colors.orange[600],
+                            color: AppColors.warning,
                           ),
                         ),
                       ],
@@ -432,8 +432,8 @@ class _LawyerSelectionPageState extends State<LawyerSelectionPage> {
                     icon: const Icon(Icons.schedule),
                     label: const Text('Đặt lịch'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue[600],
-                      foregroundColor: Colors.white,
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: AppColors.onPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),

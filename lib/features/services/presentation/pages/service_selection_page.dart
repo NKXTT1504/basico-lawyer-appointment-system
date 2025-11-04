@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../lawyer/data/services/lawyer_api_service.dart';
 import '../../data/models/service.dart';
+import '../../../../core/theme/app_colors.dart';
 // import removed: booking happens after viewing details
 
 class ServiceSelectionPage extends StatefulWidget {
@@ -93,7 +94,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
     final isTablet = width > 600;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF6F7FB),
+      backgroundColor: AppColors.surfaceVariant,
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
@@ -132,7 +133,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
       style: TextStyle(
         fontSize: width * (isTablet ? 0.07 : 0.06),
         fontWeight: FontWeight.bold,
-        color: Colors.black,
+        color: AppColors.onSurface,
       ),
     );
   }
@@ -142,7 +143,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+          Icon(Icons.error_outline, size: 64, color: AppColors.error),
           const SizedBox(height: 16),
           Text(_error!, style: const TextStyle(fontSize: 16)),
           const SizedBox(height: 16),
@@ -170,12 +171,12 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF1E3A8A).withOpacity(0.08),
+                    color: AppColors.primary.withOpacity(0.08),
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.gavel,
-                    color: Color(0xFF1E3A8A),
+                    color: AppColors.primary,
                     size: 24,
                   ),
                 ),
@@ -197,7 +198,7 @@ class _ServiceSelectionPageState extends State<ServiceSelectionPage> {
                           service.description!,
                           style: TextStyle(
                             fontSize: 14,
-                            color: Colors.grey[600],
+                            color: AppColors.onSurfaceVariant,
                           ),
                         ),
                       ],

@@ -433,8 +433,8 @@ class _UnifiedBookingPageState extends State<UnifiedBookingPage> {
                     child: ElevatedButton(
                       onPressed: _proceedToConfirmation,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF1E3A8A),
-                        foregroundColor: Colors.white,
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: AppColors.onPrimary,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -484,7 +484,7 @@ class _UnifiedBookingPageState extends State<UnifiedBookingPage> {
         Expanded(
           child: Container(
             height: 2,
-            color: step1Complete ? const Color(0xFF1E3A8A) : Colors.grey[300],
+            color: step1Complete ? AppColors.primary : AppColors.outline,
             margin: const EdgeInsets.symmetric(horizontal: 8),
           ),
         ),
@@ -497,7 +497,7 @@ class _UnifiedBookingPageState extends State<UnifiedBookingPage> {
         Expanded(
           child: Container(
             height: 2,
-            color: step2Complete ? const Color(0xFF1E3A8A) : Colors.grey[300],
+            color: step2Complete ? AppColors.primary : AppColors.outline,
             margin: const EdgeInsets.symmetric(horizontal: 8),
           ),
         ),
@@ -524,15 +524,17 @@ class _UnifiedBookingPageState extends State<UnifiedBookingPage> {
           height: 32,
           decoration: BoxDecoration(
             color: isComplete
-                ? const Color(0xFF1E3A8A)
-                : (isActive ? const Color(0xFF1E3A8A) : Colors.grey[300]),
+                ? AppColors.primary
+                : (isActive ? AppColors.primary : AppColors.outline),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Center(
             child: Text(
               '$number',
               style: TextStyle(
-                color: isActive || isComplete ? Colors.white : Colors.grey[600],
+                color: isActive || isComplete
+                    ? AppColors.onPrimary
+                    : AppColors.onSurfaceVariant,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -544,8 +546,8 @@ class _UnifiedBookingPageState extends State<UnifiedBookingPage> {
           style: TextStyle(
             fontSize: 12,
             color: isActive || isComplete
-                ? const Color(0xFF1E3A8A)
-                : Colors.grey[600],
+                ? AppColors.primary
+                : AppColors.onSurfaceVariant,
             fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
           ),
           textAlign: TextAlign.center,
@@ -563,7 +565,7 @@ class _UnifiedBookingPageState extends State<UnifiedBookingPage> {
       return Center(
         child: Column(
           children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+            Icon(Icons.error_outline, size: 64, color: AppColors.error),
             const SizedBox(height: 16),
             Text(_error!, textAlign: TextAlign.center),
             const SizedBox(height: 16),
@@ -580,7 +582,7 @@ class _UnifiedBookingPageState extends State<UnifiedBookingPage> {
       return Center(
         child: Column(
           children: [
-            Icon(Icons.person_off, size: 64, color: Colors.grey[400]),
+            Icon(Icons.person_off, size: 64, color: AppColors.onSurfaceVariant),
             const SizedBox(height: 16),
             const Text(
               'Không tìm thấy luật sư phù hợp',
@@ -613,7 +615,7 @@ class _UnifiedBookingPageState extends State<UnifiedBookingPage> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
         side: BorderSide(
-          color: isSelected ? const Color(0xFF1E3A8A) : Colors.transparent,
+          color: isSelected ? AppColors.primary : Colors.transparent,
           width: 2,
         ),
       ),
@@ -628,17 +630,17 @@ class _UnifiedBookingPageState extends State<UnifiedBookingPage> {
                     lawyer.avatarUrl!.startsWith('http'))
                   CircleAvatar(
                     radius: 30,
-                    backgroundColor: Colors.blue[100],
+                    backgroundColor: AppColors.primaryContainer,
                     backgroundImage: NetworkImage(lawyer.avatarUrl!),
                   )
                 else
                   CircleAvatar(
                     radius: 30,
-                    backgroundColor: Colors.blue[100],
+                    backgroundColor: AppColors.primaryContainer,
                     child: Icon(
                       Icons.person,
                       size: 30,
-                      color: Colors.blue[600],
+                      color: AppColors.primary,
                     ),
                   ),
                 const SizedBox(width: 12),
@@ -659,7 +661,7 @@ class _UnifiedBookingPageState extends State<UnifiedBookingPage> {
                           lawyer.specialization!,
                           style: TextStyle(
                             fontSize: 14,
-                            color: const Color(0xFF1E3A8A),
+                            color: AppColors.primary,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
@@ -670,7 +672,7 @@ class _UnifiedBookingPageState extends State<UnifiedBookingPage> {
                           '${lawyer.experience} năm kinh nghiệm',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: AppColors.onSurfaceVariant,
                           ),
                         ),
                       ],
@@ -682,20 +684,20 @@ class _UnifiedBookingPageState extends State<UnifiedBookingPage> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.orange[100],
+                      color: AppColors.warningContainer,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.star, size: 16, color: Colors.orange[600]),
+                        Icon(Icons.star, size: 16, color: AppColors.warning),
                         const SizedBox(width: 4),
                         Text(
                           lawyer.rating!.toStringAsFixed(1),
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
-                            color: Colors.orange[600],
+                            color: AppColors.warning,
                           ),
                         ),
                       ],
@@ -746,10 +748,9 @@ class _UnifiedBookingPageState extends State<UnifiedBookingPage> {
                     icon: const Icon(Icons.schedule),
                     label: Text(isSelected ? 'Đã chọn' : 'Chọn luật sư'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: isSelected
-                          ? Colors.green[600]
-                          : const Color(0xFF1E3A8A),
-                      foregroundColor: Colors.white,
+                      backgroundColor:
+                          isSelected ? AppColors.success : AppColors.primary,
+                      foregroundColor: AppColors.onPrimary,
                       padding: const EdgeInsets.symmetric(vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
@@ -799,13 +800,14 @@ class _UnifiedBookingPageState extends State<UnifiedBookingPage> {
                 child: Center(
                   child: Column(
                     children: [
-                      Icon(Icons.event_busy, size: 48, color: Colors.grey[400]),
+                      Icon(Icons.event_busy,
+                          size: 48, color: AppColors.onSurfaceVariant),
                       const SizedBox(height: 8),
                       Text(
                         'Luật sư này không có khung giờ trống trong 7 ngày tới',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey[700],
+                          color: AppColors.onSurfaceVariant,
                           fontWeight: FontWeight.w600,
                         ),
                         textAlign: TextAlign.center,
@@ -815,7 +817,7 @@ class _UnifiedBookingPageState extends State<UnifiedBookingPage> {
                         'Vui lòng chọn luật sư khác',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.grey[600],
+                          color: AppColors.onSurfaceVariant,
                         ),
                         textAlign: TextAlign.center,
                       ),
@@ -836,11 +838,12 @@ class _UnifiedBookingPageState extends State<UnifiedBookingPage> {
                         child: Column(
                           children: [
                             Icon(Icons.schedule,
-                                size: 48, color: Colors.grey[400]),
+                                size: 48, color: AppColors.onSurfaceVariant),
                             const SizedBox(height: 8),
                             Text(
                               'Luật sư không có khung giờ làm việc trong ngày này',
-                              style: TextStyle(color: Colors.grey[600]),
+                              style:
+                                  TextStyle(color: AppColors.onSurfaceVariant),
                               textAlign: TextAlign.center,
                             ),
                           ],
@@ -859,11 +862,13 @@ class _UnifiedBookingPageState extends State<UnifiedBookingPage> {
                           onSelected: disabled
                               ? null
                               : (_) => setState(() => _selectedSlot = s),
-                          selectedColor: const Color(0xFF1E3A8A),
+                          selectedColor: AppColors.primary,
                           labelStyle: TextStyle(
-                            color: selected ? Colors.white : Colors.black87,
+                            color: selected
+                                ? AppColors.onPrimary
+                                : AppColors.onSurface,
                           ),
-                          disabledColor: Colors.grey.shade300,
+                          disabledColor: AppColors.outline,
                         );
                       }).toList(),
                     ),

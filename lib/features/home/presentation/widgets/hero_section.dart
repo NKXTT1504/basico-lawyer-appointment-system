@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/utils/responsive_helper.dart';
+import '../../../../core/theme/app_colors.dart';
 
 class HeroSection extends StatelessWidget {
   const HeroSection({super.key});
@@ -114,7 +115,7 @@ class HeroSection extends StatelessWidget {
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,
-                                  foregroundColor: const Color(0xFF1E3A8A),
+                                  foregroundColor: AppColors.primary,
                                   padding: EdgeInsets.symmetric(
                                     horizontal: screenWidth *
                                         0.06, // 6% of screen width
@@ -145,9 +146,9 @@ class HeroSection extends StatelessWidget {
                                   context.go('/service-selection');
                                 },
                                 style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.white,
+                                  foregroundColor: AppColors.onPrimary,
                                   side: const BorderSide(
-                                      color: Colors.white, width: 2),
+                                      color: AppColors.onPrimary, width: 2),
                                   padding: EdgeInsets.symmetric(
                                     horizontal: screenWidth *
                                         0.06, // 6% of screen width
@@ -190,7 +191,7 @@ class HeroSection extends StatelessWidget {
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,
-                                foregroundColor: const Color(0xFF1E3A8A),
+                                foregroundColor: AppColors.primary,
                                 padding: EdgeInsets.symmetric(
                                   horizontal:
                                       screenWidth * 0.06, // 6% of screen width
@@ -219,9 +220,9 @@ class HeroSection extends StatelessWidget {
                                 context.go('/service-selection');
                               },
                               style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.white,
+                                foregroundColor: AppColors.onPrimary,
                                 side: const BorderSide(
-                                    color: Colors.white, width: 2),
+                                    color: AppColors.onPrimary, width: 2),
                                 padding: EdgeInsets.symmetric(
                                   horizontal:
                                       screenWidth * 0.06, // 6% of screen width

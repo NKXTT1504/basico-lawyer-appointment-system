@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/utils/responsive_helper.dart';
+import '../../../../core/theme/app_colors.dart';
 
 import '../../domain/entities/user_profile.dart';
 import '../bloc/profile_bloc.dart';
@@ -87,11 +88,11 @@ class _ProfileFormState extends State<ProfileForm> {
     return Container(
       width: isTablet ? screenWidth * 0.8 : screenWidth * 0.95,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.surface,
         borderRadius: const BorderRadius.all(Radius.circular(12)),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.black.withOpacity(0.08),
             spreadRadius: 2,
             blurRadius: 10,
             offset: const Offset(0, 2),
@@ -104,7 +105,7 @@ class _ProfileFormState extends State<ProfileForm> {
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: AppColors.surface,
               borderRadius: const BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
@@ -122,8 +123,8 @@ class _ProfileFormState extends State<ProfileForm> {
               children: [
                 CircleAvatar(
                   radius: isTablet ? 28 : 24,
-                  backgroundColor: const Color(0xFF1E3A8A).withOpacity(0.1),
-                  child: const Icon(Icons.person, color: Color(0xFF1E3A8A)),
+                  backgroundColor: AppColors.primary.withOpacity(0.1),
+                  child: Icon(Icons.person, color: AppColors.primary),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -135,19 +136,20 @@ class _ProfileFormState extends State<ProfileForm> {
                         style: TextStyle(
                           fontSize: isTablet ? 18 : 16,
                           fontWeight: FontWeight.w700,
-                          color: const Color(0xFF1E3A8A),
+                          color: AppColors.primary,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         widget.profile.email,
-                        style: TextStyle(color: Colors.grey.shade700),
+                        style: TextStyle(color: AppColors.onSurfaceVariant),
                       ),
                     ],
                   ),
                 ),
                 Icon(Icons.edit,
-                    size: isTablet ? 20 : 18, color: Colors.grey.shade500),
+                    size: isTablet ? 20 : 18,
+                    color: AppColors.onSurfaceVariant),
               ],
             ),
           ),
@@ -199,7 +201,7 @@ class _ProfileFormState extends State<ProfileForm> {
                             horizontal: isTablet ? 24 : 20,
                             vertical: isTablet ? 12 : 10,
                           ),
-                          side: BorderSide(color: Colors.grey.shade400),
+                          side: BorderSide(color: AppColors.outline),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(8),
                           ),
@@ -207,14 +209,14 @@ class _ProfileFormState extends State<ProfileForm> {
                         child: Text('Đổi mật khẩu',
                             style: TextStyle(
                               fontSize: isTablet ? 16 : 14,
-                              color: Colors.grey.shade700,
+                              color: AppColors.onSurfaceVariant,
                             )),
                       ),
                       const SizedBox(width: 16),
                       ElevatedButton(
                         onPressed: _saveChanges,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF1E3A8A),
+                          backgroundColor: AppColors.primary,
                           padding: EdgeInsets.symmetric(
                             horizontal: isTablet ? 28 : 24,
                             vertical: isTablet ? 12 : 10,
@@ -226,7 +228,7 @@ class _ProfileFormState extends State<ProfileForm> {
                           'Lưu thay đổi',
                           style: TextStyle(
                             fontSize: isTablet ? 16 : 14,
-                            color: Colors.white,
+                            color: AppColors.onPrimary,
                           ),
                         ),
                       ),
@@ -257,7 +259,7 @@ class _ProfileFormState extends State<ProfileForm> {
           style: TextStyle(
             fontSize: ResponsiveHelper.isTablet(context) ? 16 : 14,
             fontWeight: FontWeight.w600,
-            color: Colors.grey.shade700,
+            color: AppColors.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 8),
@@ -266,26 +268,26 @@ class _ProfileFormState extends State<ProfileForm> {
           enabled: enabled,
           keyboardType: keyboardType,
           decoration: InputDecoration(
-            prefixIcon: Icon(icon, color: Colors.grey.shade600),
+            prefixIcon: Icon(icon, color: AppColors.onSurfaceVariant),
             hintText: 'Nhập $label',
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+              borderSide: BorderSide(color: AppColors.outline),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+              borderSide: BorderSide(color: AppColors.outline),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: const BorderSide(color: Color(0xFF1E3A8A)),
+              borderSide: const BorderSide(color: AppColors.primary),
             ),
             disabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+              borderSide: BorderSide(color: AppColors.outline),
             ),
             filled: !enabled,
-            fillColor: enabled ? Colors.white : Colors.grey.shade50,
+            fillColor: enabled ? AppColors.surface : AppColors.surfaceVariant,
             contentPadding: EdgeInsets.symmetric(
               horizontal: ResponsiveHelper.isTablet(context) ? 16 : 12,
               vertical: ResponsiveHelper.isTablet(context) ? 16 : 12,
@@ -313,7 +315,7 @@ class _ProfileFormState extends State<ProfileForm> {
             helperText,
             style: TextStyle(
               fontSize: ResponsiveHelper.isTablet(context) ? 12 : 10,
-              color: Colors.grey.shade600,
+              color: AppColors.onSurfaceVariant,
             ),
           ),
         ],

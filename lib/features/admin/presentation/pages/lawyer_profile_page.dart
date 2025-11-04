@@ -234,7 +234,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                       content: Text('Lỗi khi cập nhật: $e'),
-                      backgroundColor: Colors.red),
+                      backgroundColor: AppColors.error),
                 );
               }
             },
@@ -287,7 +287,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                         content: Text('Mật khẩu hiện tại không đúng'),
-                        backgroundColor: Colors.red),
+                        backgroundColor: AppColors.error),
                   );
                   return;
                 }
@@ -295,7 +295,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
                         content: Text('Mật khẩu mới phải ≥ 6 ký tự'),
-                        backgroundColor: Colors.red),
+                        backgroundColor: AppColors.error),
                   );
                   return;
                 }
@@ -314,7 +314,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                       content: Text('Đổi mật khẩu thất bại: $e'),
-                      backgroundColor: Colors.red),
+                      backgroundColor: AppColors.error),
                 );
               }
             },
@@ -329,7 +329,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.success,
       ),
     );
   }
@@ -524,7 +524,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                                     'Tổng lịch hẹn',
                                     _totalAppointmentsCount.toString(),
                                     Icons.calendar_today,
-                                    Colors.blue,
+                                    AppColors.primary,
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -533,7 +533,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                                     'Đã hoàn thành',
                                     _completedAppointmentsCount.toString(),
                                     Icons.check_circle,
-                                    Colors.green,
+                                    AppColors.success,
                                   ),
                                 ),
                               ],
@@ -573,7 +573,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                                     'Tổng lịch hẹn',
                                     _totalAppointmentsCount.toString(),
                                     Icons.calendar_today,
-                                    Colors.blue,
+                                    AppColors.primary,
                                   ),
                                 ),
                                 const SizedBox(width: 16),
@@ -582,7 +582,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                                     'Đã hoàn thành',
                                     _completedAppointmentsCount.toString(),
                                     Icons.check_circle,
-                                    Colors.green,
+                                    AppColors.success,
                                   ),
                                 ),
                               ],
@@ -703,7 +703,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
                   label,
                   style: TextStyle(
                     fontSize: isMobile ? 11 : 12,
-                    color: Colors.grey[600],
+                    color: Colors.black54,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
@@ -735,7 +735,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
+            color: Colors.black12,
             spreadRadius: 1,
             blurRadius: 4,
             offset: const Offset(0, 2),
@@ -759,7 +759,7 @@ class _LawyerProfilePageState extends State<LawyerProfilePage> {
             title,
             style: TextStyle(
               fontSize: isMobile ? 11 : 12,
-              color: Colors.grey[600],
+              color: Colors.black54,
             ),
             textAlign: TextAlign.center,
           ),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
+import '../../../../core/theme/app_colors.dart';
 // AppBar is managed globally in MainNavigation for mobile
 import '../../data/services/user_storage_service.dart';
 import '../../data/services/customer_api_service.dart';
@@ -95,7 +96,7 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: AppColors.error,
       ),
     );
   }
@@ -104,7 +105,7 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.green,
+        backgroundColor: AppColors.success,
       ),
     );
   }
@@ -363,7 +364,7 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
     return Scaffold(
       body: Column(
         children: [
-          // Search and filters
+          // Search
           Container(
             padding: EdgeInsets.all(isMobile ? 12 : 16),
             color: Colors.grey[50],
@@ -399,22 +400,7 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                   ),
                 ),
 
-                const SizedBox(height: 12),
-
-                // Filter row (responsive)
-                if (isMobile) ...[
-                  _buildGenderFilter(),
-                  const SizedBox(height: 12),
-                  _buildOccupationFilter(),
-                ] else ...[
-                  Row(
-                    children: [
-                      Expanded(child: _buildGenderFilter()),
-                      const SizedBox(width: 12),
-                      Expanded(child: _buildOccupationFilter()),
-                    ],
-                  ),
-                ],
+                const SizedBox(height: 4),
               ],
             ),
           ),
@@ -555,7 +541,7 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                   icon: const Icon(Icons.edit, size: 16),
                   label: const Text('Chỉnh sửa'),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
+                    backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 8),
                   ),
@@ -568,18 +554,23 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                   onPressed: () => _toggleActive(customer),
                   icon: Icon(
                     customer.isActive ? Icons.visibility_off : Icons.visibility,
-                    color: customer.isActive ? Colors.red : Colors.green,
+                    color:
+                        customer.isActive ? AppColors.error : AppColors.success,
                   ),
                   label: Text(
                     customer.isActive ? 'Tắt hoạt động' : 'Bật hoạt động',
                     style: TextStyle(
-                      color: customer.isActive ? Colors.red : Colors.green,
+                      color: customer.isActive
+                          ? AppColors.error
+                          : AppColors.success,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                   style: OutlinedButton.styleFrom(
                     side: BorderSide(
-                        color: customer.isActive ? Colors.red : Colors.green),
+                        color: customer.isActive
+                            ? AppColors.error
+                            : AppColors.success),
                     padding: const EdgeInsets.symmetric(vertical: 8),
                   ),
                 ),
@@ -593,7 +584,7 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                       icon: const Icon(Icons.edit, size: 16),
                       label: const Text('Chỉnh sửa'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
                         padding: const EdgeInsets.symmetric(vertical: 8),
                       ),
@@ -607,19 +598,24 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
                         customer.isActive
                             ? Icons.visibility_off
                             : Icons.visibility,
-                        color: customer.isActive ? Colors.red : Colors.green,
+                        color: customer.isActive
+                            ? AppColors.error
+                            : AppColors.success,
                       ),
                       label: Text(
                         customer.isActive ? 'Tắt hoạt động' : 'Bật hoạt động',
                         style: TextStyle(
-                          color: customer.isActive ? Colors.red : Colors.green,
+                          color: customer.isActive
+                              ? AppColors.error
+                              : AppColors.success,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
                       style: OutlinedButton.styleFrom(
                         side: BorderSide(
-                            color:
-                                customer.isActive ? Colors.red : Colors.green),
+                            color: customer.isActive
+                                ? AppColors.error
+                                : AppColors.success),
                         padding: const EdgeInsets.symmetric(vertical: 8),
                       ),
                     ),
@@ -683,62 +679,5 @@ class _AdminCustomersPageState extends State<AdminCustomersPage> {
     return '';
   }
 
-  Widget _buildGenderFilter() {
-    return DropdownButtonFormField<String>(
-      value: _selectedGender,
-      decoration: InputDecoration(
-        labelText: 'Giới tính',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        isDense: true,
-      ),
-      items: const [
-        DropdownMenuItem(value: 'all', child: Text('Tất cả')),
-        DropdownMenuItem(value: 'Nam', child: Text('Nam')),
-        DropdownMenuItem(value: 'Nữ', child: Text('Nữ')),
-        DropdownMenuItem(value: 'Khác', child: Text('Khác')),
-      ],
-      onChanged: (value) {
-        setState(() {
-          _selectedGender = value ?? 'all';
-          _applyFilters();
-        });
-      },
-    );
-  }
-
-  Widget _buildOccupationFilter() {
-    final uniqueOccupations = _customers
-        .map((customer) => customer.occupation)
-        .toSet()
-        .toList()
-      ..sort();
-
-    return DropdownButtonFormField<String>(
-      value: _selectedOccupation,
-      decoration: InputDecoration(
-        labelText: 'Nghề nghiệp',
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(8),
-        ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        isDense: true,
-      ),
-      items: [
-        const DropdownMenuItem(value: 'all', child: Text('Tất cả nghề nghiệp')),
-        ...uniqueOccupations.map((occupation) => DropdownMenuItem(
-              value: occupation,
-              child: Text(occupation),
-            )),
-      ],
-      onChanged: (value) {
-        setState(() {
-          _selectedOccupation = value ?? 'all';
-          _applyFilters();
-        });
-      },
-    );
-  }
+  // Filters removed to match backend fields
 }

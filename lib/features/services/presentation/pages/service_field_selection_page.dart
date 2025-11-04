@@ -139,7 +139,7 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.error_outline, size: 64, color: Colors.red[300]),
+            Icon(Icons.error_outline, size: 64, color: AppColors.error),
             const SizedBox(height: 16),
             Text(_error!,
                 style: const TextStyle(fontSize: 16),
@@ -199,8 +199,8 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
                         onPressed:
                             _selectedServices.isNotEmpty ? _continue : null,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue[600],
-                          foregroundColor: Colors.white,
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: AppColors.onPrimary,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8)),
@@ -248,7 +248,7 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
         Expanded(
           child: Container(
             height: 2,
-            color: Colors.grey[300],
+            color: AppColors.outline,
             margin: const EdgeInsets.symmetric(horizontal: 8),
           ),
         ),
@@ -260,7 +260,7 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
         Expanded(
           child: Container(
             height: 2,
-            color: Colors.grey[300],
+            color: AppColors.outline,
             margin: const EdgeInsets.symmetric(horizontal: 8),
           ),
         ),
@@ -284,14 +284,15 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
           width: 32,
           height: 32,
           decoration: BoxDecoration(
-            color: isActive ? Colors.blue[600] : Colors.grey[300],
+            color: isActive ? AppColors.primary : AppColors.outline,
             borderRadius: BorderRadius.circular(16),
           ),
           child: Center(
             child: Text(
               '$number',
               style: TextStyle(
-                color: isActive ? Colors.white : Colors.grey[600],
+                color:
+                    isActive ? AppColors.onPrimary : AppColors.onSurfaceVariant,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -302,7 +303,7 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
           title,
           style: TextStyle(
             fontSize: 12,
-            color: isActive ? Colors.blue[600] : Colors.grey[600],
+            color: isActive ? AppColors.primary : AppColors.onSurfaceVariant,
             fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
           ),
           textAlign: TextAlign.center,
@@ -376,7 +377,7 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.blue[800],
+                color: AppColors.primary,
               ),
             ),
             const SizedBox(height: 16),
@@ -391,14 +392,14 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
                       width: 24,
                       height: 24,
                       decoration: BoxDecoration(
-                        color: Colors.blue[600],
+                        color: AppColors.primary,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Center(
                         child: Text(
                           '${index + 1}',
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: AppColors.onPrimary,
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
                           ),
@@ -607,7 +608,7 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
   Widget _buildSelectedServicesList() {
     if (_selectedServices.isEmpty) {
       return Text('Chưa chọn dịch vụ',
-          style: TextStyle(color: Colors.grey[700]));
+          style: TextStyle(color: AppColors.onSurfaceVariant));
     }
     // Gom nhóm dịch vụ đã chọn theo lĩnh vực
     final Map<String, List<String>> grouped = {};
