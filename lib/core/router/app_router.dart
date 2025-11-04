@@ -6,6 +6,7 @@ import '../../features/auth/presentation/pages/forgot_password_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 import '../../features/appointment/presentation/pages/appointment_list_page.dart';
 import '../../features/appointment/presentation/pages/appointment_detail_page.dart';
+import '../../features/appointment/presentation/pages/appointment_confirmation_page.dart';
 import '../../features/lawyer/presentation/pages/lawyer_list_page.dart';
 import '../../features/lawyer/presentation/pages/lawyer_detail_page.dart';
 import '../../features/lawyer/presentation/pages/lawyer_service_selection_page.dart';
@@ -18,6 +19,7 @@ import '../../features/services/presentation/pages/service_selection_page.dart';
 import '../../features/services/presentation/pages/lawyer_selection_page.dart';
 import '../../features/services/presentation/pages/service_detail_page.dart';
 import '../../features/services/presentation/pages/service_field_selection_page.dart';
+import '../../features/services/presentation/pages/unified_booking_page.dart';
 import '../../features/chat/presentation/pages/chat_page.dart';
 import '../../features/appointment/presentation/pages/payment_return_page.dart';
 import '../../features/admin/data/services/user_storage_service.dart';
@@ -350,6 +352,39 @@ class AppRouter {
         },
       ),
       GoRoute(
+        path: '/unified-booking',
+        redirect: (context, state) async {
+          final loggedIn = await UserStorageService.isLoggedIn();
+          if (!loggedIn) return '/login';
+          return null;
+        },
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>?;
+          if (data == null ||
+              (data['services'] == null && data['service'] == null)) {
+            return MainNavigation(
+              currentPath: '/service-selection',
+              child: const ServiceSelectionPage(),
+            );
+          }
+          // Backward compatibility: allow single 'service' or new 'services'
+          final services = (data['services'] as List<String>?) ??
+              (data['service'] != null
+                  ? <String>[data['service'].name ?? data['service'].toString()]
+                  : <String>[]);
+          final field = data['field'] as String?;
+          final preselectedService = data['preselectedService'];
+          return MainNavigation(
+            currentPath: '/unified-booking',
+            child: UnifiedBookingPage(
+              services: services,
+              field: field,
+              preselectedService: preselectedService,
+            ),
+          );
+        },
+      ),
+      GoRoute(
         path: '/lawyer-selection',
         redirect: (context, state) async {
           final loggedIn = await UserStorageService.isLoggedIn();
@@ -432,6 +467,47 @@ class AppRouter {
         },
       ),
 
+      // Appointment Confirmation
+      GoRoute(
+        path: '/appointment-confirmation',
+        redirect: (context, state) async {
+          final loggedIn = await UserStorageService.isLoggedIn();
+          if (!loggedIn) return '/login';
+          return null;
+        },
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          if (extra == null) {
+            return MainNavigation(
+              currentPath: '/appointments',
+              child: const AppointmentListPage(),
+            );
+          }
+          final lawyerId = extra['lawyerId'] as String? ?? '';
+          final lawyerName = extra['lawyerName'] as String? ?? 'Luật sư';
+          final services =
+              (extra['services'] as List?)?.cast<String>() ?? <String>[];
+          final selectedDate =
+              extra['selectedDate'] as DateTime? ?? DateTime.now();
+          final selectedSlot = extra['selectedSlot'] as String? ?? '';
+          final depositAmount =
+              (extra['depositAmount'] as num?)?.toDouble() ?? 0.0;
+          final hourlyRate = (extra['hourlyRate'] as num?)?.toDouble() ?? 0.0;
+
+          return MainNavigation(
+            currentPath: '/appointment-confirmation',
+            child: AppointmentConfirmationPage(
+              lawyerId: lawyerId,
+              lawyerName: lawyerName,
+              services: services,
+              selectedDate: selectedDate,
+              selectedSlot: selectedSlot,
+              depositAmount: depositAmount,
+              hourlyRate: hourlyRate,
+            ),
+          );
+        },
+      ),
       // Test Pages (Development)
       GoRoute(
         path: '/responsive-test',

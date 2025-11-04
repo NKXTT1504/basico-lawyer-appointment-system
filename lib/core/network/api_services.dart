@@ -82,6 +82,13 @@ class ApiServices {
         queryParameters: queryParameters, options: options);
   }
 
+  // WorkSlotAPI - không nằm trong /api/lawyers, gọi trực tiếp
+  static Future<Response> workSlotGet(String path,
+      {Map<String, dynamic>? queryParameters, Options? options}) {
+    return _apiClient.get('${API_URLS['LAWYERS']}$path',
+        queryParameters: queryParameters, options: options);
+  }
+
   static Future<Response> lawyersPost(String path,
       {dynamic data, Map<String, dynamic>? queryParameters, Options? options}) {
     return _apiClient.post('${API_URLS['LAWYERS']}/api/lawyers$path',

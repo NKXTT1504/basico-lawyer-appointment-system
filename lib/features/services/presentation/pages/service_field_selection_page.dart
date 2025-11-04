@@ -555,9 +555,10 @@ class _ServiceFieldSelectionPageState extends State<ServiceFieldSelectionPage> {
   }
 
   void _navigateToLawyerSelection() {
-    context.push('/lawyer-selection', extra: {
+    context.push('/unified-booking', extra: {
       'services': _selectedServices.entries.map((e) => e.key).toList(),
       'field': _selectedField,
+      'preselectedService': widget.preselectedService,
     });
   }
 
