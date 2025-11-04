@@ -5,6 +5,8 @@ import '../../data/services/user_storage_service.dart';
 import '../../data/models/admin_user.dart';
 import '../../data/models/appointment.dart';
 import '../../data/services/admin_api_service.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/page_header.dart';
 
 class LawyerAppointmentsPage extends StatefulWidget {
   const LawyerAppointmentsPage({super.key});
@@ -309,69 +311,44 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
     final isMobile = screenWidth < 600;
 
     return Scaffold(
-      backgroundColor: Colors.blue[50],
+      backgroundColor: AppColors.surfaceVariant,
       body: Column(
         children: [
-          // Statistics Header
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(isMobile ? 16 : 20),
-            margin: EdgeInsets.all(isMobile ? 12 : 16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Colors.blue[600]!,
-                  Colors.blue[400]!,
-                ],
-              ),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              children: [
-                Text(
-                  'Thống kê lịch hẹn',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: isMobile ? 16 : 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+          PageHeader(
+            title: 'Lịch hẹn của tôi',
+            subtitle: 'Quản lý và cập nhật trạng thái các cuộc hẹn',
+            actions: [
+              Container(
+                padding: EdgeInsets.symmetric(
+                    horizontal: isMobile ? 10 : 12, vertical: isMobile ? 6 : 8),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 6,
+                      offset: const Offset(0, 2),
+                    )
+                  ],
                 ),
-                const SizedBox(height: 16),
-                Row(
+                child: Row(
                   children: [
-                    Expanded(
-                      child: _buildStatItem(
-                        'Tổng',
-                        _myAppointments.length.toString(),
-                        Icons.calendar_today,
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildStatItem(
-                        'Chờ xác nhận',
-                        _myAppointments
-                            .where((apt) =>
-                                apt.status == AppointmentStatus.pending)
-                            .length
-                            .toString(),
-                        Icons.schedule,
-                      ),
-                    ),
-                    Expanded(
-                      child: _buildStatItem(
-                        'Hoàn thành',
-                        _myAppointments
-                            .where((apt) =>
-                                apt.status == AppointmentStatus.completed)
-                            .length
-                            .toString(),
-                        Icons.check_circle,
+                    const Icon(Icons.calendar_month,
+                        size: 16, color: AppColors.primary),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Tổng: ${_myAppointments.length}',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.primary,
                       ),
                     ),
                   ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
 
           // Filter chips
@@ -434,32 +411,7 @@ class _LawyerAppointmentsPageState extends State<LawyerAppointmentsPage> {
     );
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isMobile = screenWidth < 600;
-
-    return Column(
-      children: [
-        Icon(icon, color: Colors.white, size: isMobile ? 20 : 24),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: isMobile ? 18 : 20,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.9),
-            fontSize: isMobile ? 10 : 12,
-          ),
-        ),
-      ],
-    );
-  }
+  // removed old stat item (header replaced by PageHeader)
 
   Widget _buildFilterChip(String label, String value) {
     final isSelected = _selectedStatus == value;

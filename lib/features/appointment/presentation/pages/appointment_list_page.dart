@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 // import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/page_header.dart';
 import '../../domain/entities/appointment.dart';
 // import '../../data/datasources/appointment_local_data_source.dart';
 import '../../../../core/services/appointment_sync_service.dart';
@@ -522,20 +523,21 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
     final isTablet = screenWidth > 600;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.surfaceVariant,
       body: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(
-            horizontal: screenWidth *
-                (isTablet ? 0.08 : 0.04), // 8% for tablet, 4% for mobile
-            vertical: screenHeight * 0.02, // 2% of screen height
+            horizontal: screenWidth * (isTablet ? 0.06 : 0.04),
+            vertical: screenHeight * 0.02,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Page Title
-              _buildPageTitle(),
-              SizedBox(height: screenHeight * 0.03), // 3% of screen height
+              PageHeader(
+                title: 'Lịch hẹn của bạn',
+                subtitle: 'Xem lịch sắp tới và lịch sử',
+              ),
+              SizedBox(height: screenHeight * 0.02),
 
               // Tabs
               AppointmentTabs(
@@ -577,20 +579,7 @@ class _AppointmentListPageState extends State<AppointmentListPage> {
     );
   }
 
-  Widget _buildPageTitle() {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final isTablet = screenWidth > 600;
-
-    return Text(
-      'LỊCH HẸN CỦA BẠN',
-      style: TextStyle(
-        fontSize: screenWidth *
-            (isTablet ? 0.07 : 0.06), // 7% for tablet, 6% for mobile
-        fontWeight: FontWeight.bold,
-        color: AppColors.onBackground,
-      ),
-    );
-  }
+  // removed custom page title (replaced by PageHeader)
 }
 
 // ======================= PaymentSuccessPage =========================

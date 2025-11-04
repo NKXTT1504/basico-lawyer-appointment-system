@@ -8,18 +8,17 @@ class FeatureCards extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = ResponsiveHelper.getScreenWidth(context);
     final screenHeight = ResponsiveHelper.getScreenHeight(context);
-    final isTablet = ResponsiveHelper.isTablet(context);
-    final isMobile = ResponsiveHelper.isMobile(context);
-    
+    // responsive flags not needed at build-level here
+
     return Container(
       width: double.infinity,
       color: Colors.white,
-      padding: EdgeInsets.all(ResponsiveHelper.getResponsivePadding(context, 
-        mobile: screenWidth * 0.05, 
-        tablet: screenWidth * 0.06, 
-        desktop: screenWidth * 0.08
-      )),
-      child: ResponsiveHelper.getResponsiveLayout(context, 
+      padding: EdgeInsets.all(ResponsiveHelper.getResponsivePadding(context,
+          mobile: screenWidth * 0.05,
+          tablet: screenWidth * 0.06,
+          desktop: screenWidth * 0.08)),
+      child: ResponsiveHelper.getResponsiveLayout(
+        context,
         mobile: Column(
           children: [
             _buildFeatureCard(
@@ -108,18 +107,17 @@ class FeatureCards extends StatelessWidget {
     );
   }
 
-  Widget _buildFeatureCard(BuildContext context, String title, String description, IconData icon) {
+  Widget _buildFeatureCard(
+      BuildContext context, String title, String description, IconData icon) {
     final screenWidth = ResponsiveHelper.getScreenWidth(context);
     final screenHeight = ResponsiveHelper.getScreenHeight(context);
     final isTablet = ResponsiveHelper.isTablet(context);
-    final isMobile = ResponsiveHelper.isMobile(context);
-    
+
     return Container(
-      padding: EdgeInsets.all(ResponsiveHelper.getResponsivePadding(context, 
-        mobile: screenWidth * 0.05, 
-        tablet: screenWidth * 0.04, 
-        desktop: screenWidth * 0.06
-      )),
+      padding: EdgeInsets.all(ResponsiveHelper.getResponsivePadding(context,
+          mobile: screenWidth * 0.05,
+          tablet: screenWidth * 0.04,
+          desktop: screenWidth * 0.06)),
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12),
@@ -204,7 +202,8 @@ class FeatureCards extends StatelessWidget {
                           height: 1.2,
                         ),
                       ),
-                      SizedBox(height: screenHeight * 0.01), // 1% of screen height
+                      SizedBox(
+                          height: screenHeight * 0.01), // 1% of screen height
                       Text(
                         description,
                         style: TextStyle(

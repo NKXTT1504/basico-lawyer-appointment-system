@@ -7,10 +7,7 @@ linter:
     avoid_unnecessary_containers: true
     avoid_web_libraries_in_flutter: true
     no_logic_in_create_state: true
-    prefer_const_constructors: true
-    prefer_const_constructors_in_immutables: true
-    prefer_const_declarations: true
-    prefer_const_literals_to_create_immutables: true
+    # deduped const rules (already defined above)
     
     # Style rules
     always_declare_return_types: true
@@ -36,8 +33,6 @@ linter:
     avoid_private_typedef_functions: true
     avoid_redundant_argument_values: true
     avoid_renaming_method_parameters: true
-    avoid_returning_null: true
-    avoid_returning_null_for_future: true
     avoid_returning_null_for_void: true
     avoid_returning_this: true
     avoid_setters_without_getters: true
@@ -64,15 +59,12 @@ linter:
     flutter_style_todos: true
     hash_and_equals: true
     implementation_imports: true
-    invariant_booleans: true
-    iterable_contains_unrelated_type: true
     join_return_with_assignment: true
     leading_newlines_in_multiline_strings: true
     library_names: true
     library_prefixes: true
     library_private_types_in_public_api: true
     lines_longer_than_80_chars: true
-    list_remove_unrelated_type: true
     literal_only_boolean_expressions: true
     missing_whitespace_between_adjacent_strings: true
     no_adjacent_strings_in_list: true
@@ -85,7 +77,7 @@ linter:
     one_member_abstracts: true
     only_throw_errors: true
     overridden_fields: true
-    package_api_docs: true
+    # removed deprecated analyzer rules for Dart >= 3.x
     package_names: true
     package_prefixed_library_names: true
     parameter_assignments: true

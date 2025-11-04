@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:get_it/get_it.dart';
+import '../../../../core/widgets/page_header.dart';
 import '../../../../core/theme/app_colors.dart';
 
 // AppBar is managed globally in MainNavigation for mobile
@@ -251,9 +252,13 @@ class _AdminAppointmentsPageState extends State<AdminAppointmentsPage> {
     final isMobile = screenWidth < 600;
 
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.surfaceVariant,
       body: Column(
         children: [
+          PageHeader(
+            title: 'Quản lý đặt lịch',
+            subtitle: 'Xem và lọc danh sách cuộc hẹn (chỉ xem)',
+          ),
           // Search and filters
           Container(
             padding: EdgeInsets.all(isMobile ? 12 : 16),

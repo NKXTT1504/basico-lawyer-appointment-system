@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/theme/app_colors.dart';
+import '../../../../core/widgets/page_header.dart';
 import '../../data/services/user_storage_service.dart';
 import '../../../lawyer/data/services/lawyer_api_service.dart';
 import '../../../appointment/data/services/appointment_api_service.dart';
@@ -194,46 +196,16 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
     final isMobile = screenWidth < 600;
 
     return Scaffold(
-      backgroundColor: Colors.blue[50],
+      backgroundColor: AppColors.surfaceVariant,
       body: SingleChildScrollView(
         padding: EdgeInsets.all(isMobile ? 12.0 : 16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Welcome section
-            Container(
-              width: double.infinity,
-              padding: EdgeInsets.all(isMobile ? 16 : 20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.blue[600]!,
-                    Colors.blue[400]!,
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Chào mừng, ${_currentUser?.name ?? 'Admin'}!',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: isMobile ? 20 : 24,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Quản lý hệ thống đặt lịch luật sư',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.9),
-                      fontSize: isMobile ? 14 : 16,
-                    ),
-                  ),
-                ],
-              ),
+            PageHeader(
+              title: 'Bảng điều khiển luật sư',
+              subtitle:
+                  'Chào mừng, ${_currentUser?.name ?? 'Luật sư'} · Quản lý hoạt động và đặt lịch',
             ),
 
             SizedBox(height: isMobile ? 20 : 24),
@@ -244,7 +216,7 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
                   'Thống kê tổng quan',
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.blue[800],
+                        color: AppColors.primary,
                         fontSize: isMobile ? 18 : 20,
                       ),
                 ),
@@ -286,16 +258,16 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
                     child: Row(
                       children: [
                         const Icon(Icons.calendar_month,
-                            size: 16, color: Colors.blue),
+                            size: 16, color: AppColors.primary),
                         const SizedBox(width: 6),
                         Text(
                           _selectedMonth == null
                               ? '--/----'
                               : '${_monthStart.month}/${_monthStart.year}',
-                          style: const TextStyle(
+                          style: TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
-                              color: Colors.blue),
+                              color: AppColors.primary),
                         ),
                       ],
                     ),
@@ -326,7 +298,7 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
                       'Doanh thu tháng',
                       '₫${_monthlyRevenue.toStringAsFixed(0)}',
                       Icons.attach_money,
-                      Colors.blue,
+                      AppColors.secondary,
                     ),
                   ],
                 );
@@ -340,7 +312,7 @@ class _LawyerDashboardPageState extends State<LawyerDashboardPage> {
               'Trạng thái đặt lịch',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue[800],
+                    color: AppColors.primary,
                     fontSize: isMobile ? 18 : 20,
                   ),
             ),
