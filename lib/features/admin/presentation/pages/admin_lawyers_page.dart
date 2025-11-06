@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/services/user_storage_service.dart';
 import '../../data/services/admin_api_service.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../data/models/lawyer.dart';
+import '../../../lawyer/data/models/lawyer.dart';
 import '../../data/models/admin_user.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/firebase/storage_image.dart';

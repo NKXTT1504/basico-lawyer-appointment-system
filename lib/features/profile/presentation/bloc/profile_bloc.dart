@@ -2,10 +2,10 @@ import 'dart:convert';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../../domain/entities/user_profile.dart';
+import '../../data/models/user_profile.dart';
 import '../../../admin/data/services/user_storage_service.dart';
 import '../../../admin/data/models/admin_user.dart' as admin_model;
-import '../../domain/entities/user_role.dart' as profile_role;
+import '../../data/models/user_role.dart' as profile_role;
 import '../../../auth/data/services/auth_api_service.dart';
 
 part 'profile_event.dart';

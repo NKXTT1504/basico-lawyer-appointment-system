@@ -8,7 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../data/services/user_storage_service.dart';
 import '../../data/models/appointment.dart';
 import '../../data/models/admin_user.dart';
-import '../../../../core/services/appointment_sync_service.dart';
+import '../../../appointment/data/services/appointment_sync_service.dart';
 import '../../data/services/admin_api_service.dart';
 
 class AdminAppointmentsPage extends StatefulWidget {

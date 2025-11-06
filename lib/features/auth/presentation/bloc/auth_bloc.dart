@@ -2,7 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import '../../../admin/data/services/user_storage_service.dart';
 import '../../../admin/data/models/admin_user.dart';
-import '../../../admin/data/models/customer.dart';
+import '../../../customer/data/models/customer.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';

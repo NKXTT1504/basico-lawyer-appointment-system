@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/auth/presentation/pages/register_page.dart';
 import '../../features/auth/presentation/pages/forgot_password_page.dart';
-import '../../features/home/presentation/pages/home_page.dart';
+import '../../features/customer/presentation/pages/customer_home_page.dart';
 import '../../features/appointment/presentation/pages/appointment_list_page.dart';
 import '../../features/appointment/presentation/pages/appointment_detail_page.dart';
 import '../../features/appointment/presentation/pages/appointment_confirmation_page.dart';
@@ -29,11 +29,11 @@ import '../../features/admin/presentation/pages/admin_appointments_page.dart';
 import '../../features/admin/presentation/pages/admin_customers_page.dart';
 import '../../features/admin/presentation/pages/admin_lawyers_page.dart';
 import '../../features/admin/presentation/pages/admin_forms_page.dart';
-import '../../features/admin/presentation/pages/lawyer_dashboard_page.dart'
+import '../../features/lawyer/presentation/pages/lawyer_dashboard_page.dart'
     as lawyer_pages;
-import '../../features/admin/presentation/pages/lawyer_appointments_page.dart';
-import '../../features/admin/presentation/pages/lawyer_profile_page.dart';
-import '../../features/admin/presentation/widgets/main_navigation.dart';
+import '../../features/lawyer/presentation/pages/lawyer_appointments_page.dart';
+import '../../features/lawyer/presentation/pages/lawyer_profile_page.dart';
+import '../../core/layout/main_navigation.dart';
 import '../../features/admin/data/models/admin_user.dart' show UserRole;
 
 class AppRouter {
@@ -130,7 +130,7 @@ class AppRouter {
         path: '/home',
         builder: (context, state) => MainNavigation(
           currentPath: '/home',
-          child: const HomePage(),
+          child: const CustomerHomePage(),
         ),
       ),
       GoRoute(

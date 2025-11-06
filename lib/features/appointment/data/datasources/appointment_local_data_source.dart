@@ -1,6 +1,6 @@
 import '../models/appointment_model.dart';
-import '../../domain/entities/appointment.dart';
-import '../../../../core/services/appointment_sync_service.dart';
+import '../models/appointment.dart';
+import '../services/appointment_sync_service.dart';
 
 abstract class AppointmentLocalDataSource {
   Future<List<AppointmentModel>> getAppointments();

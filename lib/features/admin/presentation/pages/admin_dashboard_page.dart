@@ -2,12 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/page_header.dart';
-import '../../data/services/user_storage_service.dart';
-import '../../data/services/admin_api_service.dart';
 import '../../data/models/admin_user.dart';
 import '../../data/models/appointment.dart';
-import '../../data/models/customer.dart';
-import '../../data/models/lawyer.dart';
+import '../../../customer/data/models/customer.dart';
+import '../../../lawyer/data/models/lawyer.dart';
+import '../controllers/admin_dashboard_controller.dart';
 // import '../../../../core/services/admin_report_service.dart';
 
 class AdminDashboardPage extends StatefulWidget {
@@ -18,6 +17,7 @@ class AdminDashboardPage extends StatefulWidget {
 }
 
 class _AdminDashboardPageState extends State<AdminDashboardPage> {
+  final AdminDashboardController _controller = AdminDashboardController();
   User? _currentUser;
   int _totalCustomers = 0;
   int _totalLawyers = 0;
@@ -56,243 +56,148 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
 
   Future<void> _loadData() async {
     try {
-      final user = await UserStorageService.getCurrentUser();
-      if (user != null && user.role == UserRole.admin) {
-        // Load data from API
-        final adminApi = AdminApiService();
+      print('📡 Fetching dashboard data from API...');
 
-        print('📡 Fetching dashboard data from API...');
+      // Load data using controller
+      final data = await _controller.loadDashboardData();
 
-        // Fetch data from API
-        final customersResp = await adminApi.getCustomers();
-        final lawyersResp = await adminApi.getUsersWithLawyerProfileOnly();
-        final appointmentsResp = await adminApi.getAppointmentsJoined();
+      final user = data['user'] as User;
+      final customers = data['customers'] as List<Customer>;
+      final lawyers = data['lawyers'] as List<Lawyer>;
+      final appointments = data['appointments'] as List<Appointment>;
+      final stats = data['stats'] as Map<String, dynamic>;
 
-        print(
-            '📊 API Status - Customers: ${customersResp.statusCode}, Lawyers: ${lawyersResp.statusCode}, Appointments: ${appointmentsResp.statusCode}');
+      print(
+          '✅ Successfully loaded: ${customers.length} customers, ${lawyers.length} lawyers, ${appointments.length} appointments');
 
-        // Parse API responses
-        final customersData = customersResp.data['result'] as List? ?? [];
-        final lawyersData = lawyersResp.data['result'] as List? ?? [];
-        final appointmentsData = appointmentsResp.data['result'] as List? ?? [];
-
-        print(
-            '📋 API Data - ${customersData.length} customers, ${lawyersData.length} lawyers, ${appointmentsData.length} appointments');
-
-        // Convert to models with safe parsing
-        final customers = customersData.map((json) {
-          try {
-            return Customer.fromJson(json);
-          } catch (e) {
-            print('❌ Customer parse error: $e');
-            // Return a default customer to avoid breaking the UI
-            return Customer(
-              id: (json['id'] ?? '').toString(),
-              name: (json['fullName'] ?? json['name'] ?? 'Unknown').toString(),
-              email: (json['email'] ?? '').toString(),
-              phone: (json['phoneNumber'] ?? json['phone'] ?? '').toString(),
-              address: (json['address'] ?? '').toString(),
-              dateOfBirth: DateTime.now(),
-              gender: 'Không xác định',
-              occupation: 'Không xác định',
-              notes: '',
-              isActive: true,
-              createdAt: DateTime.now(),
-            );
-          }
-        }).toList();
-
-        final lawyers = lawyersData.map((json) {
-          try {
-            final userData = json['user'] as Map<String, dynamic>;
-            return Lawyer.fromJson(userData);
-          } catch (e) {
-            print('❌ Lawyer parse error: $e');
-            // Return a default lawyer
-            return Lawyer(
-              id: (json['user']?['id'] ?? '').toString(),
-              name: (json['user']?['fullName'] ?? 'Unknown').toString(),
-              email: (json['user']?['email'] ?? '').toString(),
-              phone: (json['user']?['phoneNumber'] ?? '').toString(),
-              address: '',
-              specialization: '',
-              licenseNumber: '',
-              experienceYears: 0,
-              hourlyRate: 0,
-              createdAt: DateTime.now(),
-            );
-          }
-        }).toList();
-
-        final appointments = appointmentsData.map((json) {
-          try {
-            return Appointment.fromJson(json);
-          } catch (e) {
-            print('❌ Appointment parse error: $e');
-            // Return a default appointment
-            return Appointment(
-              id: (json['id'] ?? '').toString(),
-              customerId: (json['userId'] ?? '').toString(),
-              customerName: (json['user']?['fullName'] ?? 'Unknown').toString(),
-              lawyerId: (json['lawyerId'] ?? '').toString(),
-              lawyerName: 'Luật sư #${json['lawyerId'] ?? ''}',
-              appointmentDate: DateTime.now(),
-              timeSlot: (json['slot'] ?? '').toString(),
-              duration: '60m',
-              type: (json['spec'] ?? '').toString(),
-              description: '',
-              status: AppointmentStatus.pending,
-              notes: '',
-              fee: 0,
-              createdAt: DateTime.now(),
-              updatedAt: DateTime.now(),
-            );
-          }
-        }).toList();
-
-        print(
-            '✅ Successfully parsed: ${customers.length} customers, ${lawyers.length} lawyers, ${appointments.length} appointments');
-
-        // Try DashboardStatisticsDto
-        try {
-          final statsResp = await adminApi.getDashboardStats();
-          if (statsResp.statusCode == 200) {
-            final body = statsResp.data;
-            final stats = (body is Map<String, dynamic>)
-                ? (body['result'] as Map<String, dynamic>? ?? body)
-                : <String, dynamic>{};
-            final payments = stats['payments'] as Map<String, dynamic>? ??
-                stats['Payments'] as Map<String, dynamic>? ??
+      // Process DashboardStatisticsDto from controller
+      try {
+        final payments = stats['payments'] as Map<String, dynamic>? ??
+            stats['Payments'] as Map<String, dynamic>? ??
+            <String, dynamic>{};
+        final appointmentsStat =
+            stats['appointments'] as Map<String, dynamic>? ??
+                stats['Appointments'] as Map<String, dynamic>? ??
                 <String, dynamic>{};
-            final appointmentsStat =
-                stats['appointments'] as Map<String, dynamic>? ??
-                    stats['Appointments'] as Map<String, dynamic>? ??
-                    <String, dynamic>{};
-            final reviews = stats['reviews'] as Map<String, dynamic>? ??
-                stats['Reviews'] as Map<String, dynamic>? ??
-                <String, dynamic>{};
+        final reviews = stats['reviews'] as Map<String, dynamic>? ??
+            stats['Reviews'] as Map<String, dynamic>? ??
+            <String, dynamic>{};
 
-            // 1) Payments.DailyStatistics -> _seriesPaymentAmount
-            final dailyPay = payments['dailyStatistics'] as List? ??
-                payments['DailyStatistics'] as List? ??
-                const [];
-            final List<double> paySeries = [];
-            for (final d in dailyPay) {
-              if (d is Map) {
-                final amount = d['amount'] ?? d['Amount'] ?? 0;
-                paySeries.add((amount is num) ? amount.toDouble() : 0);
-              }
-            }
-            if (paySeries.isNotEmpty) {
-              _seriesPaymentAmount = paySeries;
-            }
-
-            // 2) Appointments.DailyStatistics -> _seriesAppointmentCount
-            final dailyApt = appointmentsStat['dailyStatistics'] as List? ??
-                appointmentsStat['DailyStatistics'] as List? ??
-                const [];
-            final List<double> aptSeries = [];
-            for (final d in dailyApt) {
-              if (d is Map) {
-                final count = d['count'] ?? d['Count'] ?? 0;
-                aptSeries.add((count is num) ? count.toDouble() : 0);
-              }
-            }
-            if (aptSeries.isNotEmpty) {
-              _seriesAppointmentCount = aptSeries;
-            }
-
-            // 3) Reviews.RatingDistribution -> _barRatings [1..5]
-            final ratingDist =
-                reviews['ratingDistribution'] ?? reviews['RatingDistribution'];
-            if (ratingDist is Map) {
-              final tmp = List<double>.filled(5, 0);
-              ratingDist.forEach((k, v) {
-                final key = int.tryParse(k.toString()) ?? 0;
-                if (key >= 1 && key <= 5) {
-                  tmp[key - 1] = (v is num) ? v.toDouble() : 0;
-                }
-              });
-              _barRatings = tmp;
-            }
-
-            // 4) Payments.CountByVendor -> _barProviders
-            final countByVendor =
-                payments['countByVendor'] ?? payments['CountByVendor'];
-            if (countByVendor is Map) {
-              _barProviders = [];
-              countByVendor.forEach((k, v) {
-                _barProviders
-                    .add(_BarItem(k.toString(), (v is num) ? v.toDouble() : 0));
-              });
-            }
+        // 1) Payments.DailyStatistics -> _seriesPaymentAmount
+        final dailyPay = payments['dailyStatistics'] as List? ??
+            payments['DailyStatistics'] as List? ??
+            const [];
+        final List<double> paySeries = [];
+        for (final d in dailyPay) {
+          if (d is Map) {
+            final amount = d['amount'] ?? d['Amount'] ?? 0;
+            paySeries.add((amount is num) ? amount.toDouble() : 0);
           }
-        } catch (_) {}
+        }
+        if (paySeries.isNotEmpty) {
+          _seriesPaymentAmount = paySeries;
+        }
 
-        // Calculate statistics (fallback)
-        final now = DateTime.now();
-        _selectedMonth ??= DateTime(now.year, now.month);
-        _monthStart = DateTime(_selectedMonth!.year, _selectedMonth!.month);
-        _nextMonthStart =
-            DateTime(_selectedMonth!.year, _selectedMonth!.month + 1);
+        // 2) Appointments.DailyStatistics -> _seriesAppointmentCount
+        final dailyApt = appointmentsStat['dailyStatistics'] as List? ??
+            appointmentsStat['DailyStatistics'] as List? ??
+            const [];
+        final List<double> aptSeries = [];
+        for (final d in dailyApt) {
+          if (d is Map) {
+            final count = d['count'] ?? d['Count'] ?? 0;
+            aptSeries.add((count is num) ? count.toDouble() : 0);
+          }
+        }
+        if (aptSeries.isNotEmpty) {
+          _seriesAppointmentCount = aptSeries;
+        }
 
-        final completedAppointments = appointments
-            .where((apt) => apt.status == AppointmentStatus.completed)
-            .toList();
-
-        // Appointments completed within current month (inclusive start, exclusive end)
-        final monthlyAppointments = completedAppointments
-            .where((apt) =>
-                !apt.appointmentDate.isBefore(_monthStart) &&
-                apt.appointmentDate.isBefore(_nextMonthStart))
-            .toList();
-
-        final totalRevenue = completedAppointments.fold(
-          0.0,
-          (sum, apt) => sum + (apt.fee.isFinite && apt.fee > 0 ? apt.fee : 0),
-        );
-
-        final monthlyRevenue = monthlyAppointments.fold(
-          0.0,
-          (sum, apt) => sum + (apt.fee.isFinite && apt.fee > 0 ? apt.fee : 0),
-        );
-
-        // Get recent data
-        final recentAppointments = appointments
-            .where((apt) => apt.appointmentDate
-                .isAfter(now.subtract(const Duration(days: 7))))
-            .toList()
-          ..sort((a, b) => b.appointmentDate.compareTo(a.appointmentDate));
-        final recentAppointmentsTop5 = recentAppointments.take(5).toList();
-
-        final recentCustomers = customers
-            .where((cust) =>
-                cust.createdAt.isAfter(now.subtract(const Duration(days: 30))))
-            .take(5)
-            .toList();
-
-        // final activeLawyers = lawyers.where((lawyer) => lawyer.isActive).take(5).toList();
-
-        if (mounted) {
-          setState(() {
-            _currentUser = user;
-            _totalCustomers = customers.length;
-            _totalLawyers = lawyers.length;
-            _allAppointments = appointments;
-            // cancelled derived at render time
-            _totalRevenue = totalRevenue;
-            _monthlyRevenue = monthlyRevenue;
-            _recentAppointments = recentAppointmentsTop5;
-            _recentCustomers = recentCustomers;
-            // _activeLawyers = activeLawyers;
-            _isLoading = false;
+        // 3) Reviews.RatingDistribution -> _barRatings [1..5]
+        final ratingDist =
+            reviews['ratingDistribution'] ?? reviews['RatingDistribution'];
+        if (ratingDist is Map) {
+          final tmp = List<double>.filled(5, 0);
+          ratingDist.forEach((k, v) {
+            final key = int.tryParse(k.toString()) ?? 0;
+            if (key >= 1 && key <= 5) {
+              tmp[key - 1] = (v is num) ? v.toDouble() : 0;
+            }
           });
-          _applyRange();
+          _barRatings = tmp;
         }
-      } else {
-        if (mounted) {
-          context.go('/login');
+
+        // 4) Payments.CountByVendor -> _barProviders
+        final countByVendor =
+            payments['countByVendor'] ?? payments['CountByVendor'];
+        if (countByVendor is Map) {
+          _barProviders = [];
+          countByVendor.forEach((k, v) {
+            _barProviders
+                .add(_BarItem(k.toString(), (v is num) ? v.toDouble() : 0));
+          });
         }
+      } catch (_) {}
+
+      // Calculate statistics (fallback)
+      final now = DateTime.now();
+      _selectedMonth ??= DateTime(now.year, now.month);
+      _monthStart = DateTime(_selectedMonth!.year, _selectedMonth!.month);
+      _nextMonthStart =
+          DateTime(_selectedMonth!.year, _selectedMonth!.month + 1);
+
+      final completedAppointments = appointments
+          .where((apt) => apt.status == AppointmentStatus.completed)
+          .toList();
+
+      // Appointments completed within current month (inclusive start, exclusive end)
+      final monthlyAppointments = completedAppointments
+          .where((apt) =>
+              !apt.appointmentDate.isBefore(_monthStart) &&
+              apt.appointmentDate.isBefore(_nextMonthStart))
+          .toList();
+
+      final totalRevenue = completedAppointments.fold(
+        0.0,
+        (sum, apt) => sum + (apt.fee.isFinite && apt.fee > 0 ? apt.fee : 0),
+      );
+
+      final monthlyRevenue = monthlyAppointments.fold(
+        0.0,
+        (sum, apt) => sum + (apt.fee.isFinite && apt.fee > 0 ? apt.fee : 0),
+      );
+
+      // Get recent data
+      final recentAppointments = appointments
+          .where((apt) => apt.appointmentDate
+              .isAfter(now.subtract(const Duration(days: 7))))
+          .toList()
+        ..sort((a, b) => b.appointmentDate.compareTo(a.appointmentDate));
+      final recentAppointmentsTop5 = recentAppointments.take(5).toList();
+
+      final recentCustomers = customers
+          .where((cust) =>
+              cust.createdAt.isAfter(now.subtract(const Duration(days: 30))))
+          .take(5)
+          .toList();
+
+      // final activeLawyers = lawyers.where((lawyer) => lawyer.isActive).take(5).toList();
+
+      if (mounted) {
+        setState(() {
+          _currentUser = user;
+          _totalCustomers = customers.length;
+          _totalLawyers = lawyers.length;
+          _allAppointments = appointments;
+          // cancelled derived at render time
+          _totalRevenue = totalRevenue;
+          _monthlyRevenue = monthlyRevenue;
+          _recentAppointments = recentAppointmentsTop5;
+          _recentCustomers = recentCustomers;
+          // _activeLawyers = activeLawyers;
+          _isLoading = false;
+        });
+        _applyRange();
       }
     } catch (e) {
       if (mounted) {

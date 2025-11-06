@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../../domain/entities/appointment.dart';
+import '../../data/models/appointment.dart';
 import '../../data/datasources/appointment_local_data_source.dart';
 
 part 'appointment_event.dart';

@@ -4,8 +4,8 @@ import 'package:get_it/get_it.dart';
 import '../../../../core/theme/app_colors.dart';
 // AppBar is managed globally in MainNavigation for mobile
 import '../../data/services/user_storage_service.dart';
-import '../../data/services/customer_api_service.dart';
-import '../../data/models/customer.dart';
+import '../../../customer/data/services/customer_api_service.dart';
+import '../../../customer/data/models/customer.dart';
 import '../../data/models/admin_user.dart';
 import '../../data/services/admin_api_service.dart'; // Added import for AdminApiService
 

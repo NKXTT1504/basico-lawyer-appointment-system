@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/slot_mapper.dart';
-import '../../../../core/services/appointment_sync_service.dart';
+import '../../../appointment/data/services/appointment_sync_service.dart';
 import '../../../../core/network/api_services.dart';
 import '../../../lawyer/data/services/lawyer_api_service.dart';
 import '../../data/models/service.dart';

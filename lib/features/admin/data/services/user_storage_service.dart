@@ -4,8 +4,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../models/admin_user.dart';
 import '../models/employee.dart';
-import '../models/customer.dart';
-import '../models/lawyer.dart';
+import '../../../customer/data/models/customer.dart';
+import '../../../lawyer/data/models/lawyer.dart';
 import '../models/appointment.dart';
 
 class UserStorageService {

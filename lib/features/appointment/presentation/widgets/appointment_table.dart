@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../domain/entities/appointment.dart';
+import '../../data/models/appointment.dart';
 
 class AppointmentTable extends StatelessWidget {
   final List<Appointment> appointments;

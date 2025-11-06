@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:go_router/go_router.dart';
 import '../../../admin/data/services/user_storage_service.dart';
-import '../../../admin/data/models/lawyer.dart' as model;
+import '../../data/models/lawyer.dart' as model;
 import '../../data/services/lawyer_api_service.dart';
 import '../../../../core/network/api_services.dart';
 import '../../../../core/firebase/storage_image.dart';

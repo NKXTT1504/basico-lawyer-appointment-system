@@ -1,5 +1,5 @@
-import '../../domain/entities/user_profile.dart';
-import '../../domain/entities/user_role.dart';
+import '../../data/models/user_profile.dart';
+import '../../data/models/user_role.dart';
 
 class ProfileMockData {
   // Mock data cho các loại user khác nhau
@@ -40,7 +40,7 @@ class ProfileMockData {
   static Future<UserProfile> getCurrentUserProfile() async {
     // Simulate API delay
     await Future.delayed(const Duration(milliseconds: 500));
-    
+
     // Trong thực tế, sẽ lấy từ shared preferences hoặc API
     // Giả sử current user là customer
     return mockCustomerProfile;
@@ -50,7 +50,7 @@ class ProfileMockData {
   static Future<UserProfile> updateProfile(UserProfile updatedProfile) async {
     // Simulate API delay
     await Future.delayed(const Duration(milliseconds: 800));
-    
+
     // Trong thực tế, sẽ gọi API để update
     return updatedProfile.copyWith(
       updatedAt: DateTime.now(),
@@ -58,10 +58,11 @@ class ProfileMockData {
   }
 
   // Simulate change password
-  static Future<bool> changePassword(String oldPassword, String newPassword) async {
+  static Future<bool> changePassword(
+      String oldPassword, String newPassword) async {
     // Simulate API delay
     await Future.delayed(const Duration(milliseconds: 1000));
-    
+
     // Simulate random failure
     return true;
   }

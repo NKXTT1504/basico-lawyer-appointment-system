@@ -9,7 +9,13 @@ import '../../features/appointment/data/datasources/appointment_local_data_sourc
 import '../../features/lawyer/presentation/bloc/lawyer_bloc.dart';
 import '../../features/profile/presentation/bloc/profile_bloc.dart';
 import '../../features/admin/data/services/admin_api_service.dart';
-import '../../features/admin/data/services/customer_api_service.dart';
+import '../../features/customer/data/services/customer_api_service.dart';
+import '../../features/admin/di/feature_injector.dart' as admin_injector;
+import '../../features/customer/di/feature_injector.dart' as customer_injector;
+import '../../features/lawyer/di/feature_injector.dart' as lawyer_injector;
+import '../../features/auth/di/feature_injector.dart' as auth_injector;
+import '../../features/services/di/feature_injector.dart' as services_injector;
+import '../../features/chat/di/feature_injector.dart' as chat_injector;
 import '../network/api_client.dart';
 import '../network/network_info.dart';
 
@@ -58,7 +64,17 @@ Future<void> initializeDependencies() async {
   getIt.registerLazySingleton<CustomerApiService>(
     () => CustomerApiService(getIt<AdminApiService>()),
   );
-  
-  print('✅ AdminApiService registered: ${getIt.isRegistered<AdminApiService>()}');
-  print('✅ CustomerApiService registered: ${getIt.isRegistered<CustomerApiService>()}');
+
+  print(
+      '✅ AdminApiService registered: ${getIt.isRegistered<AdminApiService>()}');
+  print(
+      '✅ CustomerApiService registered: ${getIt.isRegistered<CustomerApiService>()}');
+
+  // Feature-specific registrations (kept no-op if empty to preserve logic)
+  admin_injector.registerAdminFeature(getIt);
+  customer_injector.registerCustomerFeature(getIt);
+  lawyer_injector.registerLawyerFeature(getIt);
+  auth_injector.registerAuthFeature(getIt);
+  services_injector.registerServicesFeature(getIt);
+  chat_injector.registerChatFeature(getIt);
 }

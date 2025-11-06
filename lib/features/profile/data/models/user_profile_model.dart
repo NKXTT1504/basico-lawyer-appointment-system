@@ -1,5 +1,5 @@
-import '../../domain/entities/user_profile.dart';
-import '../../domain/entities/user_role.dart';
+import 'user_profile.dart';
+import 'user_role.dart';
 
 class UserProfileModel extends UserProfile {
   const UserProfileModel({
@@ -24,23 +24,23 @@ class UserProfileModel extends UserProfile {
         orElse: () => UserRole.customer,
       ),
       avatarUrl: json['avatarUrl'] as String?,
-      createdAt: json['createdAt'] != null 
+      createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)
           : null,
-      updatedAt: json['updatedAt'] != null 
+      updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'] as String)
           : null,
     );
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'email': email,
-    'fullName': fullName,
-    'phoneNumber': phoneNumber,
-    'role': role.roleValue,
-    'avatarUrl': avatarUrl,
-    'createdAt': createdAt?.toIso8601String(),
-    'updatedAt': updatedAt?.toIso8601String(),
-  };
+        'id': id,
+        'email': email,
+        'fullName': fullName,
+        'phoneNumber': phoneNumber,
+        'role': role.roleValue,
+        'avatarUrl': avatarUrl,
+        'createdAt': createdAt?.toIso8601String(),
+        'updatedAt': updatedAt?.toIso8601String(),
+      };
 }

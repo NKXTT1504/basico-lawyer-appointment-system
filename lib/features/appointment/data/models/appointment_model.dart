@@ -1,4 +1,4 @@
-import '../../domain/entities/appointment.dart';
+import '../models/appointment.dart';
 
 class AppointmentModel extends Appointment {
   const AppointmentModel({
